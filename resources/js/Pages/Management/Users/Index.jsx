@@ -3,12 +3,11 @@ import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Search, Edit, ShieldQuestionMark, Plus, Users } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
-import EmptyState from '@/Components/EmptyState';
 import EditUserModal from './EditUserModal';
-import DeleteUserModal from './DeactivateUserModal';
+import DeleteUserModal from './DeleteUserModal';
 import CreateUserModal from './CreateUserModal';
 
-export default function UserManagementIndex() {
+export default function UsersIndex({ auth }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -16,7 +15,7 @@ export default function UserManagementIndex() {
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     const users = [
-                {
+        {
             id: 1,
             name: 'Aldriane Jay Umiten',
             username: 'Admin',
@@ -53,7 +52,6 @@ export default function UserManagementIndex() {
         }
     ];
 
-
     const filteredUsers = users.filter(user => 
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -74,7 +72,7 @@ export default function UserManagementIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="User Management" />
 
             <div className="mb-6">

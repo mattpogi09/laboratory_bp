@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import EmptyState from '@/Components/EmptyState';
 import { Search, Edit, Plus, TestTube } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
-import EmptyState from '@/Components/EmptyState';
 import EditServiceModal from './EditServiceModal';
 import CreateServiceModal from './CreateServiceModal';
 
-export default function ServiceManagementIndex() {
+export default function ServicesIndex({ auth }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedService, setSelectedService] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -90,7 +90,7 @@ export default function ServiceManagementIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Service Management" />
 
             <div className="mb-6">

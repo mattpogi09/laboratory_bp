@@ -5,7 +5,7 @@ import { Calendar, DollarSign, Package, Shield, FileText, Download } from 'lucid
 import { Button } from '@/Components/ui/button';
 import EmptyState from '@/Components/EmptyState';
 
-export default function ReportsLogsIndex() {
+export default function ReportsLogsIndex({ auth }) {
     const [activeTab, setActiveTab] = useState('financial');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
@@ -229,7 +229,7 @@ export default function ReportsLogsIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Reports & Logs" />
 
             <div className="mb-6">

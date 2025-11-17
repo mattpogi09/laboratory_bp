@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import EmptyState from '@/Components/EmptyState';
 import { Search, Eye, UserCheck } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
-import EmptyState from '@/Components/EmptyState';
 
 export default function Patients() {
     const [searchQuery, setSearchQuery] = useState('');

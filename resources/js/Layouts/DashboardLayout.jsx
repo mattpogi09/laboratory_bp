@@ -9,14 +9,20 @@ import {
     Box,
     Tag,
     ClipboardList,
-    LogOut
+    LogOut,
+    Plus,
+    History,
+    Beaker
 } from 'lucide-react';
 
-
-export default function DashboardLayout({ children }) {
+export default function DashboardLayout({ children, auth }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    
+    const user = auth?.user;
+    const userRole = user?.role || 'cashier';
 
-    const navigation = [
+    // Admin navigation
+    const adminNavigation = [
         { name: 'Dashboard', href: route('dashboard'), icon: LayoutDashboard, current: route().current('dashboard') },
         {
             name: 'Management',
@@ -36,11 +42,47 @@ export default function DashboardLayout({ children }) {
         },
     ];
 
+    // Cashier navigation
+    const cashierNavigation = [
+        {
+            name: 'Main Navigation',
+            children: [
+                { name: 'Patients', href: route('patients'), icon: Users },
+            ],
+        },
+        {
+            name: 'Management',
+            children: [
+                { name: 'New Transaction', href: '#', icon: Plus },
+                { name: 'Transaction History', href: '#', icon: History },
+            ],
+        },
+        
+    ];
+
+    // Lab Staff navigation (Lab Test Queue only)
+    const labStaffNavigation = [
+        {
+            name: 'Laboratory',
+            children: [
+                { name: 'Lab Test Queue', href: route('lab-test-queue'), icon: Beaker },
+                { name: 'Inventory', href: route('inventory'), icon: Box },
+            ],
+        },
+    ];
+
+    // Select navigation based on role
+    const navigation = userRole === 'admin' 
+        ? adminNavigation 
+        : userRole === 'lab_staff' 
+            ? labStaffNavigation 
+            : cashierNavigation;
+
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Sidebar */}
             <div className={cn(
-                "fixed inset-y-0 left-0 z-50 w-64 bg-white text-white transform transition-transform duration-200 ease-in-out",
+                "fixed inset-y-0 left-0 z-50 w-64 bg-white text-black transform transition-transform duration-200 ease-in-out",
                 !isSidebarOpen && "-translate-x-full"
             )}>
                 {/* Logo */}
@@ -97,9 +139,14 @@ export default function DashboardLayout({ children }) {
                 {/* User section */}
                 <div className="absolute bottom-0 left-0 right-0 p-4">
                     <div className="flex items-center px-3 py-2 text-sm font-medium text-gray-300">
+                        <img
+                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}`}
+                            alt=""
+                            className="h-8 w-8 rounded-full"
+                        />
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-black">Admin</p>
-                            <p className="text-xs text-black">Aldriane Jay Umiten</p>
+                            <p className="text-sm font-medium text-white">{user?.name || 'User'}</p>
+                            <p className="text-xs text-gray-400 capitalize">{userRole.replace('_', ' ')}</p>
                         </div>
                     </div>
                     <Link

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import EmptyState from '@/Components/EmptyState';
 import { Search, Eye, Edit, Plus, UserCheck } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
-import EmptyState from '@/Components/EmptyState';
 import PatientDetailsModal from './PatientDetailsModal';
 import EditPatientModal from './EditPatientModal';
 
-export default function PatientsIndex() {
+export default function PatientsIndex({ auth }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -104,7 +104,7 @@ export default function PatientsIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Patient Management" />
 
             <div className="mb-6">

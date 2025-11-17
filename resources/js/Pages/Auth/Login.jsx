@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: '',
+        username: '',
         password: '',
         remember: false,
     });
@@ -54,14 +54,14 @@ export default function Login({ status, canResetPassword }) {
 
                 <form onSubmit={submit} className="space-y-6">
                     <div className="space-y-2">
-                        <InputLabel htmlFor="username" value="Username" className="text-black" />
+                        <InputLabel htmlFor="username" value="Username" className="text-white" />
                         <TextInput
                             id="username"
                             type="text"
-                            name="usernmame"
+                            name="username"
                             value={data.username}
-                            className="w-full bg-white/10 border-black/20 text-black placeholder:text-black/50"
-                            placeholder="admin@example.com"
+                            className="w-full bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                            placeholder="admin"
                             autoComplete="username"
                             isFocused={true}
                             onChange={(e) => setData('username', e.target.value)}

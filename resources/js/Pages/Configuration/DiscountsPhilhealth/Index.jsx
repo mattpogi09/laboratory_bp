@@ -9,7 +9,7 @@ import CreateDiscountModal from './CreateDiscountModal';
 import EditPhilHealthModal from './EditPhilHealthModal';
 import CreatePhilHealthModal from './CreatePhilHealthModal';
 
-export default function DiscountsPhilhealthIndex() {
+export default function DiscountsPhilhealthIndex({ auth }) {
     const [activeTab, setActiveTab] = useState('discounts');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDiscount, setSelectedDiscount] = useState(null);
@@ -70,7 +70,7 @@ export default function DiscountsPhilhealthIndex() {
     );
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Discounts & PhilHealth Management" />
 
             <div className="mb-6">
