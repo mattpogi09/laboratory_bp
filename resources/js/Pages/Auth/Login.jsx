@@ -54,19 +54,19 @@ export default function Login({ status, canResetPassword }) {
 
                 <form onSubmit={submit} className="space-y-6">
                     <div className="space-y-2">
-                        <InputLabel htmlFor="email" value="Email" className="text-white" />
+                        <InputLabel htmlFor="name" value="Name" className="text-white" />
                         <TextInput
-                            id="email"
-                            type="email"
-                            name="email"
-                            value={data.email}
+                            id="name"
+                            type="name"
+                            name="name"
+                            value={data.name}
                             className="w-full bg-white/10 border-white/20 text-white placeholder:text-white/50"
                             placeholder="admin@example.com"
                             autoComplete="username"
                             isFocused={true}
-                            onChange={(e) => setData('email', e.target.value)}
+                            onChange={(e) => setData('name', e.target.value)}
                         />
-                        <InputError message={errors.email} className="text-red-300" />
+                        <InputError message={errors.name} className="text-red-300" />
                     </div>
 
                     <div className="space-y-2">
