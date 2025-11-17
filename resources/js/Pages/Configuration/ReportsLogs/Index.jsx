@@ -229,7 +229,7 @@ export default function ReportsLogsIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Reports & Logs" />
 
             <div className="mb-6">

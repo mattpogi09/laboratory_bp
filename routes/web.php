@@ -10,6 +10,17 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
+    $user = auth()->user();
+    
+    // Role-based dashboard routing
+    if ($user->role === 'admin') {
+        return Inertia::render('Dashboard');
+    } elseif ($user->role === 'lab_staff') {
+        return Inertia::render('LabStaffDashboard');
+    } elseif ($user->role === 'cashier') {
+        return Inertia::render('CashierDashboard');
+    }
+    
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 

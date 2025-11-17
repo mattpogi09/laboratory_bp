@@ -73,7 +73,7 @@ export default function UserManagementIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="User Management" />
 
             <div className="mb-6">

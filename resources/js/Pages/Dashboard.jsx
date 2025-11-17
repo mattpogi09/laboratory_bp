@@ -3,7 +3,7 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 import { DollarSign, Users, AlertTriangle, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function Dashboard() {
+export default function Dashboard({ auth }) {
     const stats = [
         { 
             title: 'Total Revenue Today', 
@@ -62,7 +62,7 @@ export default function Dashboard() {
     ];
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Dashboard" />
 
             <div className="mb-6">

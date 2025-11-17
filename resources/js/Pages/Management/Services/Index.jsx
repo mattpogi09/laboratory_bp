@@ -90,7 +90,7 @@ export default function ServiceManagementIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Service Management" />
 
             <div className="mb-6">

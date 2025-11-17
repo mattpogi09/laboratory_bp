@@ -144,7 +144,7 @@ export default function InventoryIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Inventory Management" />
 
             <div className="mb-6">

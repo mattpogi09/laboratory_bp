@@ -104,7 +104,7 @@ export default function PatientsIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Patient Management" />
 
             <div className="mb-6">

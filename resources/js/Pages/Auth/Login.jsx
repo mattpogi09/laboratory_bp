@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: '',
+        username: '',
         password: '',
         remember: false,
     });
