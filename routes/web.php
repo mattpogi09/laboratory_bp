@@ -54,6 +54,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports-logs', function () {
         return Inertia::render('Configuration/ReportsLogs/Index');
     })->name('reports-logs');
+    
+    // Laboratory Routes
+    Route::get('/lab-test-queue', function () {
+        return Inertia::render('Laboratory/LabTestQueue/Index');
+    })->name('lab-test-queue');
+    
+    Route::get('/lab-test-queue/enter-results/{transactionId}', function ($transactionId) {
+        return Inertia::render('Laboratory/LabTestQueue/EnterResults', [
+            'transactionId' => $transactionId
+        ]);
+    })->name('lab-test-queue.enter-results');
 });
 
 require __DIR__.'/auth.php';

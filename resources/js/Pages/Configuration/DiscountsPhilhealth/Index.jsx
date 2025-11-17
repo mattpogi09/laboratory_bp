@@ -69,7 +69,7 @@ export default function DiscountsPhilhealthIndex({ auth }) {
     );
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Discounts & PhilHealth Management" />
 
             <div className="mb-6">

@@ -11,7 +11,8 @@ import {
     ClipboardList,
     LogOut,
     Plus,
-    History
+    History,
+    Beaker
 } from 'lucide-react';
 
 export default function DashboardLayout({ children, auth }) {
@@ -61,10 +62,10 @@ export default function DashboardLayout({ children, auth }) {
 
     // Lab Staff navigation (Lab Test Queue only)
     const labStaffNavigation = [
-        { name: 'Dashboard', href: route('dashboard'), icon: LayoutDashboard, current: route().current('dashboard') },
         {
             name: 'Laboratory',
             children: [
+                { name: 'Lab Test Queue', href: route('lab-test-queue'), icon: Beaker },
                 { name: 'Inventory', href: route('inventory'), icon: Box },
             ],
         },
