@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         // Create Admin User
         User::factory()->create([
             'name' => 'Admin User',
+            'username' => 'admin',
             'email' => 'admin@bpdiagnostic.com',
             'password' => bcrypt('password123'),
         ]);
@@ -25,6 +26,7 @@ class DatabaseSeeder extends Seeder
         // Create Lab Staff User
         User::factory()->create([
             'name' => 'KuyaDats Lab Staff',
+            'username' => 'kuyadats',
             'email' => 'staff@bpdiagnostic.com',
             'password' => bcrypt('password123'),
         ]);
@@ -32,6 +34,7 @@ class DatabaseSeeder extends Seeder
         // Create Cashier User
         User::factory()->create([
             'name' => 'Jun Cashier',
+            'username' => 'cashier',
             'email' => 'cashier@bpdiagnostic.com',
             'password' => bcrypt('password123'),
         ]);
