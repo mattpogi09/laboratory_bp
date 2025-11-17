@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Calendar, DollarSign, Package, Shield, FileText, Download } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
+import EmptyState from '@/Components/EmptyState';
 
 export default function ReportsLogsIndex({ auth }) {
     const [activeTab, setActiveTab] = useState('financial');

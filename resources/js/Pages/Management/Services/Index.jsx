@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Edit, Plus } from 'lucide-react';
+import EmptyState from '@/Components/EmptyState';
+import { Search, Edit, Plus, TestTube } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import EditServiceModal from './EditServiceModal';
 import CreateServiceModal from './CreateServiceModal';
@@ -119,6 +120,7 @@ export default function ServicesIndex({ auth }) {
             </div>
 
             {/* Services Table */}
+            {filteredServices.length > 0 ? (
             <div className="rounded-lg bg-white shadow-md overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -166,8 +168,17 @@ export default function ServicesIndex({ auth }) {
                     </table>
                 </div>
             </div>
+            ) : (
+                <div className="rounded-lg bg-white shadow-md">
+                    <EmptyState 
+                        icon={TestTube}
+                        title="No Services Available"
+                        description="No laboratory tests or services have been added yet. Click 'Add Service' to create your first test offering."
+                    />
+                </div>
+            )}
 
-            {/* Modals */}
+            {/* Modals */}}
             <CreateServiceModal
                 show={showCreateModal}
                 onClose={() => setShowCreateModal(false)}

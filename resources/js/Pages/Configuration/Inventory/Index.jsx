@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Search, Edit, Plus, Package } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
+import EmptyState from '@/Components/EmptyState';
 import EditStockModal from './EditStockModal';
 import AddStockModal from './AddStockModal';
 import StockOutModal from './StockOutModal';
@@ -283,6 +284,17 @@ export default function InventoryIndex({ auth }) {
                                                 <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(item.status)}`}>
                                                     {item.status}
                                                 </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedItem(item);
+                                                        setShowEditModal(true);
+                                                    }}
+                                                    className="p-1.5 text-blue-600 hover:bg-blue-100 rounded transition-colors"
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}

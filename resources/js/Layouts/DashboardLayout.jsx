@@ -86,9 +86,9 @@ export default function DashboardLayout({ children, auth }) {
                 !isSidebarOpen && "-translate-x-full"
             )}>
                 {/* Logo */}
-                <div className="h-16 flex items-center px-6 bg-black/20">
+                <div className="h-16 flex items-center px-6 bg-white/20 border-black/50">
                     <img src="/images/logo.png" alt="Logo" className="h-8" />
-                    <span className="ml-3 text-lg font-semibold">BP Diagnostic</span>
+                    <span className="ml-3 text-lg font-semibold text-black">BP Diagnostic</span>
                 </div>
 
                 {/* Navigation */}
@@ -101,8 +101,8 @@ export default function DashboardLayout({ children, auth }) {
                                 className={cn(
                                     "flex items-center px-3 py-2 text-sm font-medium rounded-md",
                                     item.current
-                                        ? "bg-black/20 text-black"
-                                        : "text-gray-300 hover:bg-black/10 hover:text-white"
+                                        ? "bg-[#990000] text-white"
+                                        : "text-black hover:bg-[#990000]/10 hover:text-[#990000]"
                                 )}
                             >
                                 <item.icon className="mr-3 h-5 w-5" />
@@ -122,8 +122,8 @@ export default function DashboardLayout({ children, auth }) {
                                             className={cn(
                                                 "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
                                                 isActive
-                                                    ? "bg-red-600 text-white"
-                                                    : "text-gray-700 hover:bg-black/10 hover:text-black"
+                                                    ? "bg-[#990000] text-white"
+                                                    : "text-black hover:bg-[#990000]/10 hover:text-[#990000]"
                                             )}
                                         >
                                             <subItem.icon className="mr-3 h-5 w-5" />
@@ -153,7 +153,7 @@ export default function DashboardLayout({ children, auth }) {
                         href={route('logout')}
                         method="post"
                         as="button"
-                        className="mt-2 flex w-full items-center px-3 py-2 text-sm font-medium text-red-400 rounded-md hover:bg-red-500/10"
+                        className="mt-2 flex w-full items-center px-3 py-2 text-sm font-medium bg-[#ac3434] text-white rounded-md hover:bg-[#990000]/10 hover:text-[#990000]"
                     >
                         <LogOut className="mr-3 h-5 w-5" />
                         Logout

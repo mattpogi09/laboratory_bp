@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Eye, Edit, Plus } from 'lucide-react';
+import EmptyState from '@/Components/EmptyState';
+import { Search, Eye, Edit, Plus, UserCheck } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import PatientDetailsModal from './PatientDetailsModal';
 import EditPatientModal from './EditPatientModal';
@@ -130,6 +131,7 @@ export default function PatientsIndex({ auth }) {
             </div>
 
             {/* Patients Table */}
+            {filteredPatients.length > 0 ? (
             <div className="rounded-lg border border-gray-500 bg-white overflow-hidden shadow-xl">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -189,6 +191,15 @@ export default function PatientsIndex({ auth }) {
                     </table>
                 </div>
             </div>
+            ) : (
+                <div className="rounded-lg bg-white shadow-md">
+                    <EmptyState 
+                        icon={UserCheck}
+                        title="No Patients Found"
+                        description="No patient records exist yet. Patient data will appear here once they are registered in the system."
+                    />
+                </div>
+            )}
 
             {/* Modals */}
             {selectedPatient && (
