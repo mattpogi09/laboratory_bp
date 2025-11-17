@@ -73,7 +73,7 @@ export default function Dashboard() {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {stats.map((stat, index) => (
-                    <div key={index} className="bg-white rounded-xl shadow-sm p-6">
+                    <div key={index} className="bg-white rounded-xl shadow-md p-6">
                         <div className="flex items-center">
                             <div className={cn("p-3 rounded-lg", stat.color)}>
                                 <stat.icon className="h-6 w-6 text-white" />
@@ -89,18 +89,18 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Low Stock Items */}
-                <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="bg-white rounded-xl shadow-md p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Low Stock Items</h2>
                     <div className="space-y-4">
                         {lowStockItems.map((item, index) => (
                             <div key={index} className="space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">{item.name}</span>
+                                    <span className="text-gray-700">{item.name}</span>
                                     <span className="text-gray-900">{item.current}/{item.total}</span>
                                 </div>
                                 <div className="h-2 bg-gray-200 rounded-full">
                                     <div 
-                                        className="h-2 bg-amber-500 rounded-full" 
+                                        className="h-2 bg-orange-500 rounded-full" 
                                         style={{ width: `${(item.current/item.total) * 100}%` }}
                                     />
                                 </div>
@@ -110,9 +110,9 @@ export default function Dashboard() {
                 </div>
 
                 {/* Pending Tasks */}
-                <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="bg-white rounded-xl shadow-md p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Tasks</h2>
-                    <div className="divide-y">
+                    <div className="divide-y divide-gray-200">
                         {pendingTasks.map((task, index) => (
                             <div key={index} className="py-3 flex justify-between items-center">
                                 <div>

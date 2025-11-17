@@ -16,27 +16,27 @@ export default function DashboardLayout({ children }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     const navigation = [
-        { name: 'Dashboard', href: route('dashboard'), icon: LayoutDashboard, current: true },
+        { name: 'Dashboard', href: route('dashboard'), icon: LayoutDashboard, current: route().current('dashboard') },
         {
             name: 'Management',
             children: [
-                { name: 'Patients', href: '#', icon: Users },
-                { name: 'User Management', href: '#', icon: UserCog },
-                { name: 'Service Management', href: '#', icon: Settings },
+                { name: 'Patients', href: route('patients'), icon: Users },
+                { name: 'User Management', href: route('users'), icon: UserCog },
+                { name: 'Service Management', href: route('services'), icon: Settings },
             ],
         },
         {
             name: 'Configuration',
             children: [
-                { name: 'Inventory', href: '#', icon: Box },
-                { name: 'Discounts & PhilHealth', href: '#', icon: Tag },
-                { name: 'Reports & Logs', href: '#', icon: ClipboardList },
+                { name: 'Inventory', href: route('inventory'), icon: Box },
+                { name: 'Discounts & PhilHealth', href: route('discounts-philhealth'), icon: Tag },
+                { name: 'Reports & Logs', href: route('reports-logs'), icon: ClipboardList },
             ],
         },
     ];
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-50">
             {/* Sidebar */}
             <div className={cn(
                 "fixed inset-y-0 left-0 z-50 w-64 bg-[#1a1f37] text-white transform transition-transform duration-200 ease-in-out",
@@ -70,16 +70,24 @@ export default function DashboardLayout({ children }) {
                                 <div className="px-3 pt-4 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                                     {item.name}
                                 </div>
-                                {item.children.map((subItem) => (
-                                    <Link
-                                        key={subItem.name}
-                                        href={subItem.href}
-                                        className="flex items-center px-3 py-2 text-sm font-medium text-gray-300 rounded-md hover:bg-black/10 hover:text-white"
-                                    >
-                                        <subItem.icon className="mr-3 h-5 w-5" />
-                                        {subItem.name}
-                                    </Link>
-                                ))}
+                                {item.children.map((subItem) => {
+                                    const isActive = route().current() === subItem.href.replace(route().t.url + '/', '');
+                                    return (
+                                        <Link
+                                            key={subItem.name}
+                                            href={subItem.href}
+                                            className={cn(
+                                                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                                                isActive
+                                                    ? "bg-blue-600 text-white"
+                                                    : "text-gray-300 hover:bg-black/10 hover:text-white"
+                                            )}
+                                        >
+                                            <subItem.icon className="mr-3 h-5 w-5" />
+                                            {subItem.name}
+                                        </Link>
+                                    );
+                                })}
                             </div>
                         )
                     )}
