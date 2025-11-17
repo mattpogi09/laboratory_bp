@@ -6,7 +6,7 @@ import { Button } from '@/Components/ui/button';
 import EditStockModal from './EditStockModal';
 import AddStockModal from './AddStockModal';
 
-export default function InventoryIndex() {
+export default function InventoryIndex({ auth }) {
     const [activeTab, setActiveTab] = useState('stock');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedItem, setSelectedItem] = useState(null);
@@ -143,7 +143,7 @@ export default function InventoryIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Inventory Management" />
 
             <div className="mb-6">

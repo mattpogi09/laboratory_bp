@@ -8,7 +8,7 @@ import CreateDiscountModal from './CreateDiscountModal';
 import EditPhilHealthModal from './EditPhilHealthModal';
 import CreatePhilHealthModal from './CreatePhilHealthModal';
 
-export default function DiscountsPhilhealthIndex() {
+export default function DiscountsPhilhealthIndex({ auth }) {
     const [activeTab, setActiveTab] = useState('discounts');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDiscount, setSelectedDiscount] = useState(null);

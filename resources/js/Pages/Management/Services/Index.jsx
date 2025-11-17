@@ -6,7 +6,7 @@ import { Button } from '@/Components/ui/button';
 import EditServiceModal from './EditServiceModal';
 import CreateServiceModal from './CreateServiceModal';
 
-export default function ServiceManagementIndex() {
+export default function ServicesIndex({ auth }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedService, setSelectedService] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -89,7 +89,7 @@ export default function ServiceManagementIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Service Management" />
 
             <div className="mb-6">

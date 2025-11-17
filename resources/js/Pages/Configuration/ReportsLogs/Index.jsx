@@ -4,7 +4,7 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Calendar, DollarSign, Package, Shield, FileText, Download } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 
-export default function ReportsLogsIndex() {
+export default function ReportsLogsIndex({ auth }) {
     const [activeTab, setActiveTab] = useState('financial');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
@@ -228,7 +228,7 @@ export default function ReportsLogsIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Reports & Logs" />
 
             <div className="mb-6">

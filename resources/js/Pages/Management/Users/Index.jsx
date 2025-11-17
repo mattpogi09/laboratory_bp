@@ -7,7 +7,7 @@ import EditUserModal from './EditUserModal';
 import DeleteUserModal from './DeleteUserModal';
 import CreateUserModal from './CreateUserModal';
 
-export default function UserManagementIndex() {
+export default function UsersIndex({ auth }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -72,7 +72,7 @@ export default function UserManagementIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="User Management" />
 
             <div className="mb-6">
