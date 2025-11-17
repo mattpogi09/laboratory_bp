@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Eye } from 'lucide-react';
+import { Search, Eye, UserCheck } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
+import EmptyState from '@/Components/EmptyState';
 
 export default function Patients() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -93,6 +94,7 @@ export default function Patients() {
             </div>
 
             {/* Patients Table */}
+            {filteredPatients.length > 0 ? (
             <div className="rounded-lg border border-white/10 bg-[#1a1f37] overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -146,6 +148,15 @@ export default function Patients() {
                     </table>
                 </div>
             </div>
+            ) : (
+                <div className="rounded-lg bg-white/5 border border-white/10">
+                    <EmptyState 
+                        icon={UserCheck}
+                        title="No Patients Found"
+                        description="No patient records exist yet. Patient data will appear here once they are registered in the system."
+                    />
+                </div>
+            )}
         </DashboardLayout>
     );
 }

@@ -3,10 +3,11 @@ import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Search, Edit, Plus, Package } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
+import EmptyState from '@/Components/EmptyState';
 import EditStockModal from './EditStockModal';
 import AddStockModal from './AddStockModal';
 
-export default function InventoryIndex({ auth }) {
+export default function InventoryIndex() {
     const [activeTab, setActiveTab] = useState('stock');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedItem, setSelectedItem] = useState(null);
@@ -257,10 +258,12 @@ export default function InventoryIndex({ auth }) {
                         </div>
                     </div>
                 ) : (
-                    <div className="rounded-lg bg-white shadow-md p-12 text-center">
-                        <Package className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Inventory Management</h3>
-                        <p className="text-gray-600">Inventory tracking disabled until first item</p>
+                    <div className="rounded-lg bg-white shadow-md">
+                        <EmptyState 
+                            icon={Package}
+                            title="No Inventory Items Yet"
+                            description="Inventory tracking will start once you add your first item. Click 'Add Stock' to begin managing your laboratory supplies and equipment."
+                        />
                     </div>
                 )
             ) : (

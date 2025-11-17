@@ -32,7 +32,7 @@ export default function Login({ status, canResetPassword }) {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-custom flex items-center justify-center p-6">
+        <div className="min-h-screen bg[#F8F8F8] flex items-center justify-center p-6">
             <Head title="Log in" />
             
             <div className="glass-panel w-full max-w-md p-8">
@@ -42,8 +42,8 @@ export default function Login({ status, canResetPassword }) {
                         alt="BP Diagnostic and Clinical Laboratory" 
                         className="mx-auto h-16 mb-4"
                     />
-                    <h2 className="text-white text-xl font-semibold">BP Diagnostic</h2>
-                    <p className="text-white/80">Admin Panel</p>
+                    <h2 className="text-black text-xl font-semibold">BP Diagnostic</h2>
+                    <p className="text-black/80">Admin Panel</p>
                 </div>
 
                 {status && (
@@ -54,14 +54,14 @@ export default function Login({ status, canResetPassword }) {
 
                 <form onSubmit={submit} className="space-y-6">
                     <div className="space-y-2">
-                        <InputLabel htmlFor="username" value="Username" className="text-white" />
+                        <InputLabel htmlFor="username" value="Username" className="text-black" />
                         <TextInput
                             id="username"
                             type="text"
-                            name="username"
+                            name="usernmame"
                             value={data.username}
-                            className="w-full bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                            placeholder="admin"
+                            className="w-full bg-white/10 border-black/20 text-black placeholder:text-black/50"
+                            placeholder="admin@example.com"
                             autoComplete="username"
                             isFocused={true}
                             onChange={(e) => setData('username', e.target.value)}
@@ -70,13 +70,13 @@ export default function Login({ status, canResetPassword }) {
                     </div>
 
                     <div className="space-y-2">
-                        <InputLabel htmlFor="password" value="Password" className="text-white" />
+                        <InputLabel htmlFor="password" value="Password" className="text-black" />
                         <TextInput
                             id="password"
                             type="password"
                             name="password"
                             value={data.password}
-                            className="w-full bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                            className="w-full bg-white/10 border-black/20 text-black placeholder:text-black/50"
                             placeholder="••••••••"
                             autoComplete="current-password"
                             onChange={(e) => setData('password', e.target.value)}
@@ -90,15 +90,15 @@ export default function Login({ status, canResetPassword }) {
                                 name="remember"
                                 checked={data.remember}
                                 onChange={(e) => setData('remember', e.target.checked)}
-                                className="border-white/20 bg-white/10 data-[state=checked]:bg-white data-[state=checked]:text-black"
+                                className="border-black/20 bg-black/10 data-[state=checked]:bg-black data-[state=checked]:text-black"
                             />
-                            <span className="ml-2 text-sm text-white/80">Remember me</span>
+                            <span className="ml-2 text-sm text-black/80">Remember me</span>
                         </label>
 
                         {canResetPassword && (
                             <Link
                                 href={route('password.request')}
-                                className="text-sm text-white/80 hover:text-white"
+                                className="text-sm text-black/80 hover:text-black"
                             >
                                 Forgot password?
                             </Link>
@@ -106,7 +106,7 @@ export default function Login({ status, canResetPassword }) {
                     </div>
 
                     <Button 
-                        className="w-full bg-white text-black hover:bg-white/90" 
+                        className="w-full bg-[#ac3434] text-white hover:bg-black/90" 
                         disabled={processing}
                     >
                         {isLoading ? (
@@ -115,7 +115,7 @@ export default function Login({ status, canResetPassword }) {
                                 Logging in...
                             </>
                         ) : (
-                            'Log in'
+                            'LOGIN'
                         )}
                     </Button>
                 </form>

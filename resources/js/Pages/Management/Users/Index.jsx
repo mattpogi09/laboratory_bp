@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Edit, Trash2, Plus } from 'lucide-react';
+import { Search, Edit, ShieldQuestionMark, Plus, Users } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
+import EmptyState from '@/Components/EmptyState';
 import EditUserModal from './EditUserModal';
-import DeleteUserModal from './DeleteUserModal';
+import DeleteUserModal from './DeactivateUserModal';
 import CreateUserModal from './CreateUserModal';
 
-export default function UsersIndex({ auth }) {
+export default function UserManagementIndex() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -15,7 +16,7 @@ export default function UsersIndex({ auth }) {
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     const users = [
-        {
+                {
             id: 1,
             name: 'Aldriane Jay Umiten',
             username: 'Admin',
@@ -102,6 +103,7 @@ export default function UsersIndex({ auth }) {
             </div>
 
             {/* Users Table */}
+            {filteredUsers.length > 0 ? (
             <div className="rounded-lg bg-white shadow-md overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -146,7 +148,7 @@ export default function UsersIndex({ auth }) {
                                                 }}
                                                 className="p-1.5 text-red-400 hover:bg-red-500/10 rounded transition-colors"
                                             >
-                                                <Trash2 className="h-4 w-4" />
+                                                <ShieldQuestionMark  className="h-4 w-4" />
                                             </button>
                                         </div>
                                     </td>
@@ -156,6 +158,15 @@ export default function UsersIndex({ auth }) {
                     </table>
                 </div>
             </div>
+            ) : (
+                <div className="rounded-lg bg-white shadow-md">
+                    <EmptyState 
+                        icon={Users}
+                        title="No Users Found"
+                        description="No users have been added yet. Click 'Add User' to create your first staff account and start managing user access."
+                    />
+                </div>
+            )}
 
             {/* Modals */}
             <CreateUserModal
