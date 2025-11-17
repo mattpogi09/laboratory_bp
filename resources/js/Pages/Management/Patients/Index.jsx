@@ -201,7 +201,7 @@ export default function PatientsIndex() {
                 </div>
             )}
 
-            {/* Modals */}}
+            {/* Modals */}
             {selectedPatient && (
                 <>
                     <PatientDetailsModal

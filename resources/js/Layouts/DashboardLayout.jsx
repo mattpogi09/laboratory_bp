@@ -12,6 +12,7 @@ import {
     LogOut
 } from 'lucide-react';
 
+
 export default function DashboardLayout({ children }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -45,7 +46,7 @@ export default function DashboardLayout({ children }) {
                 {/* Logo */}
                 <div className="h-16 flex items-center px-6 bg-white/20 border-black/50">
                     <img src="/images/logo.png" alt="Logo" className="h-8" />
-                    <span className="ml-3 text-lg font-semibold text-black/50">BP Diagnostic</span>
+                    <span className="ml-3 text-lg font-semibold text-black">BP Diagnostic</span>
                 </div>
 
                 {/* Navigation */}
@@ -59,7 +60,7 @@ export default function DashboardLayout({ children }) {
                                     "flex items-center px-3 py-2 text-sm font-medium rounded-md",
                                     item.current
                                         ? "bg-[#990000] text-white"
-                                        : "text-black/50 hover:bg-[#990000]/10 hover:text-[#990000]"
+                                        : "text-black hover:bg-[#990000]/10 hover:text-[#990000]"
                                 )}
                             >
                                 <item.icon className="mr-3 h-5 w-5" />
@@ -80,7 +81,7 @@ export default function DashboardLayout({ children }) {
                                                 "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
                                                 isActive
                                                     ? "bg-[#990000] text-white"
-                                                    : "text-black/50 hover:bg-[#990000]/10 hover:text-[#990000]"
+                                                    : "text-black hover:bg-[#990000]/10 hover:text-[#990000]"
                                             )}
                                         >
                                             <subItem.icon className="mr-3 h-5 w-5" />
@@ -96,14 +97,9 @@ export default function DashboardLayout({ children }) {
                 {/* User section */}
                 <div className="absolute bottom-0 left-0 right-0 p-4">
                     <div className="flex items-center px-3 py-2 text-sm font-medium text-gray-300">
-                        <img
-                            src="https://ui-avatars.com/api/?name=Admin+User"
-                            alt=""
-                            className="h-8 w-8 rounded-full"
-                        />
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-white">Admin User</p>
-                            <p className="text-xs text-gray-400">admin@bpdiagnostic.com</p>
+                            <p className="text-sm font-medium text-black">Admin</p>
+                            <p className="text-xs text-black">Aldriane Jay Umiten</p>
                         </div>
                     </div>
                     <Link
