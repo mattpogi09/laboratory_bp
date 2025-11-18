@@ -7,7 +7,7 @@ import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/Components/ui/button';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -18,6 +18,7 @@ export default function Login({ status, canResetPassword }) {
 
     // Add loading state if needed
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     const submit = async (e) => {
         e.preventDefault();
@@ -71,16 +72,29 @@ export default function Login({ status, canResetPassword }) {
 
                     <div className="space-y-2">
                         <InputLabel htmlFor="password" value="Password" className="text-gray-700 font-medium" />
-                        <TextInput
-                            id="password"
-                            type="password"
-                            name="password"
-                            value={data.password}
-                            className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#ac3434] focus:ring-[#ac3434]"
-                            placeholder="Enter your Password"
-                            autoComplete="current-password"
-                            onChange={(e) => setData('password', e.target.value)}
-                        />
+                        <div className="relative">
+                            <TextInput
+                                id="password"
+                                type={showPassword ? "password" : "text"}
+                                name="password"
+                                value={data.password}
+                                className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#ac3434] focus:ring-[#ac3434] pr-10"
+                                placeholder="Enter your Password"
+                                autoComplete="current-password"
+                                onChange={(e) => setData('password', e.target.value)}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="h-5 w-5" />
+                                ) : (
+                                    <Eye className="h-5 w-5" />
+                                )}
+                            </button>
+                        </div>
                         <InputError message={errors.password} className="text-red-600" />
                     </div>
 
