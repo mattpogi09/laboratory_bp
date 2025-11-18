@@ -75,7 +75,7 @@ export default function Login({ status, canResetPassword }) {
                         <div className="relative">
                             <TextInput
                                 id="password"
-                                type={showPassword ? "password" : "text"}
+                                type={showPassword ? "text" : "password"}
                                 name="password"
                                 value={data.password}
                                 className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#ac3434] focus:ring-[#ac3434] pr-10"
@@ -89,9 +89,10 @@ export default function Login({ status, canResetPassword }) {
                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                             >
                                 {showPassword ? (
-                                    <EyeOff className="h-5 w-5" />
+                                    <Eye className = "h-5 w-5" />
                                 ) : (
-                                    <Eye className="h-5 w-5" />
+                                        
+                                <EyeOff className="h-5 w-5" />
                                 )}
                             </button>
                         </div>
