@@ -228,28 +228,43 @@ export default function InventoryIndex({ auth }) {
             </div>
 
             {/* Search and Actions */}
-            {activeTab === 'stock' && (
-                <div className="mb-6 flex gap-4">
-                    {userRole === 'lab_staff' && (
-                        <Button
-                            onClick={() => setShowStockOutModal(true)}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                            <Package className="h-4 w-4 mr-2" />
-                            Stock Out / Use Items
-                        </Button>
-                    )}
-                    {userRole === 'admin' && (
-                        <Button
-                            onClick={() => setShowAddStockModal(true)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Stock
-                        </Button>
-                    )}
+            <div className="mb-6 flex flex-col sm:flex-row gap-4">
+                {/* Search Bar */}
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <input
+                        type="text"
+                        placeholder={activeTab === 'stock' ? 'Search items by name or category...' : 'Search transactions by item name...'}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+                    />
                 </div>
-            )}
+
+                {/* Action Buttons */}
+                {activeTab === 'stock' && (
+                    <>
+                        {userRole === 'lab_staff' && (
+                            <Button
+                                onClick={() => setShowStockOutModal(true)}
+                                className="bg-red-600 hover:bg-red-700 text-white whitespace-nowrap"
+                            >
+                                <Package className="h-4 w-4 mr-2" />
+                                Stock Out / Use Items
+                            </Button>
+                        )}
+                        {userRole === 'admin' && (
+                            <Button
+                                onClick={() => setShowAddStockModal(true)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap"
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Stock
+                            </Button>
+                        )}
+                    </>
+                )}
+            </div>
 
             {/* Content */}
             {activeTab === 'stock' ? (
@@ -271,7 +286,11 @@ export default function InventoryIndex({ auth }) {
                                     {filteredStockItems.map((item) => (
                                         <tr
                                             key={item.id}
-                                            className="hover:bg-gray-50 transition-colors"
+                                            className={`transition-colors ${
+                                                item.currentStock < item.minimumStock 
+                                                    ? 'bg-yellow-100 hover:bg-yellow-50' 
+                                                    : 'hover:bg-gray-100'
+                                            }`}
                                         >
                                             <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.name}</td>
                                             <td className="px-4 py-3 text-sm text-gray-600">{item.category}</td>

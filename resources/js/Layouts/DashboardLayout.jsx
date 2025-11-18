@@ -23,21 +23,21 @@ export default function DashboardLayout({ children, auth }) {
 
     // Admin navigation
     const adminNavigation = [
-        { name: 'Dashboard', href: route('dashboard'), icon: LayoutDashboard, current: route().current('dashboard') },
+        { name: 'Dashboard', href: route('dashboard'), icon: LayoutDashboard, routeName: 'dashboard' },
         {
             name: 'Management',
             children: [
-                { name: 'Patients', href: route('patients'), icon: Users },
-                { name: 'User Management', href: route('users'), icon: UserCog },
-                { name: 'Service Management', href: route('services'), icon: Settings },
+                { name: 'Patients', href: route('patients'), icon: Users, routeName: 'patients' },
+                { name: 'User Management', href: route('users'), icon: UserCog, routeName: 'users' },
+                { name: 'Service Management', href: route('services'), icon: Settings, routeName: 'services' },
             ],
         },
         {
             name: 'Configuration',
             children: [
-                { name: 'Inventory', href: route('inventory'), icon: Box },
-                { name: 'Discounts & PhilHealth', href: route('discounts-philhealth'), icon: Tag },
-                { name: 'Reports & Logs', href: route('reports-logs'), icon: ClipboardList },
+                { name: 'Inventory', href: route('inventory'), icon: Box, routeName: 'inventory' },
+                { name: 'Discounts & PhilHealth', href: route('discounts-philhealth'), icon: Tag, routeName: 'discounts-philhealth' },
+                { name: 'Reports & Logs', href: route('reports-logs'), icon: ClipboardList, routeName: 'reports-logs' },
             ],
         },
     ];
@@ -47,14 +47,14 @@ export default function DashboardLayout({ children, auth }) {
         {
             name: 'Main Navigation',
             children: [
-                { name: 'Patients', href: route('patients'), icon: Users },
+                { name: 'Patients', href: route('patients'), icon: Users, routeName: 'patients' },
             ],
         },
         {
             name: 'Management',
             children: [
-                { name: 'New Transaction', href: '#', icon: Plus },
-                { name: 'Transaction History', href: '#', icon: History },
+                { name: 'New Transaction', href: '#', icon: Plus, routeName: null },
+                { name: 'Transaction History', href: '#', icon: History, routeName: null },
             ],
         },
         
@@ -65,8 +65,8 @@ export default function DashboardLayout({ children, auth }) {
         {
             name: 'Laboratory',
             children: [
-                { name: 'Lab Test Queue', href: route('lab-test-queue'), icon: Beaker },
-                { name: 'Inventory', href: route('inventory'), icon: Box },
+                { name: 'Lab Test Queue', href: route('lab-test-queue'), icon: Beaker, routeName: 'lab-test-queue' },
+                { name: 'Inventory', href: route('inventory'), icon: Box, routeName: 'inventory' },
             ],
         },
     ];
@@ -100,7 +100,7 @@ export default function DashboardLayout({ children, auth }) {
                                 href={item.href}
                                 className={cn(
                                     "flex items-center px-3 py-2 text-sm font-medium rounded-md",
-                                    item.current
+                                    item.routeName && route().current(item.routeName)
                                         ? "bg-[#990000] text-white"
                                         : "text-black hover:bg-[#990000]/10 hover:text-[#990000]"
                                 )}
@@ -114,7 +114,8 @@ export default function DashboardLayout({ children, auth }) {
                                     {item.name}
                                 </div>
                                 {item.children.map((subItem) => {
-                                    const isActive = route().current() === subItem.href.replace(route().t.url + '/', '');
+                                    const isActive = subItem.routeName ? route().current(subItem.routeName) : false;
+                                    
                                     return (
                                         <Link
                                             key={subItem.name}
@@ -139,14 +140,9 @@ export default function DashboardLayout({ children, auth }) {
                 {/* User section */}
                 <div className="absolute bottom-0 left-0 right-0 p-4">
                     <div className="flex items-center px-3 py-2 text-sm font-medium text-gray-300">
-                        <img
-                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}`}
-                            alt=""
-                            className="h-8 w-8 rounded-full"
-                        />
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-white">{user?.name || 'User'}</p>
-                            <p className="text-xs text-gray-400 capitalize">{userRole.replace('_', ' ')}</p>
+                            <p className="text-sm font-medium text-black">{user?.name || 'User'}</p>
+                            <p className="text-xs text-black capitalize">{userRole.replace('_', ' ')}</p>
                         </div>
                     </div>
                     <Link

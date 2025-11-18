@@ -16,9 +16,11 @@ Route::get('/dashboard', function () {
     if ($user->role === 'admin') {
         return Inertia::render('Dashboard');
     } elseif ($user->role === 'lab_staff') {
-        return Inertia::render('LabStaffDashboard');
+        // Redirect lab staff directly to their main working page
+        return redirect()->route('lab-test-queue');
     } elseif ($user->role === 'cashier') {
-        return Inertia::render('CashierDashboard');
+        // Redirect cashier directly to their main working page
+        return redirect()->route('patients');
     }
     
     return Inertia::render('Dashboard');

@@ -4,14 +4,14 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Search, Edit, ShieldQuestionMark, Plus, Users } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import EditUserModal from './EditUserModal';
-import DeleteUserModal from './DeleteUserModal';
+import DeactivateUserModal from './DeactivateUserModal';
 import CreateUserModal from './CreateUserModal';
 
 export default function UsersIndex({ auth }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showDeactivateModal, setShowDeactivateModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     const users = [
@@ -143,9 +143,9 @@ export default function UsersIndex({ auth }) {
                                             <button
                                                 onClick={() => {
                                                     setSelectedUser(user);
-                                                    setShowDeleteModal(true);
+                                                    setShowDeactivateModal(true);
                                                 }}
-                                                className="p-1.5 text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                                                className="p-1.5 text-amber-400 hover:bg-amber-500/10 rounded transition-colors"
                                             >
                                                 <ShieldQuestionMark  className="h-4 w-4" />
                                             </button>
@@ -183,11 +183,11 @@ export default function UsersIndex({ auth }) {
                             setSelectedUser(null);
                         }}
                     />
-                    <DeleteUserModal
+                    <DeactivateUserModal
                         user={selectedUser}
-                        show={showDeleteModal}
+                        show={showDeactivateModal}
                         onClose={() => {
-                            setShowDeleteModal(false);
+                            setShowDeactivateModal(false);
                             setSelectedUser(null);
                         }}
                     />

@@ -43,7 +43,7 @@ export default function Login({ status, canResetPassword }) {
                         className="mx-auto h-16 mb-4"
                     />
                     <h2 className="text-black text-xl font-semibold">BP Diagnostic</h2>
-                    <p className="text-black/80">Admin Panel</p>
+                    
                 </div>
 
                 {status && (
@@ -54,34 +54,34 @@ export default function Login({ status, canResetPassword }) {
 
                 <form onSubmit={submit} className="space-y-6">
                     <div className="space-y-2">
-                        <InputLabel htmlFor="username" value="Username" className="text-white" />
+                        <InputLabel htmlFor="username" value="Username" className="text-gray-700 font-medium" />
                         <TextInput
                             id="username"
                             type="text"
                             name="username"
                             value={data.username}
-                            className="w-full bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                            placeholder="admin"
+                            className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#ac3434] focus:ring-[#ac3434]"
+                            placeholder="Enter your Username"
                             autoComplete="username"
                             isFocused={true}
                             onChange={(e) => setData('username', e.target.value)}
                         />
-                        <InputError message={errors.username} className="text-red-300" />
+                        <InputError message={errors.username} className="text-red-600" />
                     </div>
 
                     <div className="space-y-2">
-                        <InputLabel htmlFor="password" value="Password" className="text-black" />
+                        <InputLabel htmlFor="password" value="Password" className="text-gray-700 font-medium" />
                         <TextInput
                             id="password"
                             type="password"
                             name="password"
                             value={data.password}
-                            className="w-full bg-white/10 border-black/20 text-black placeholder:text-black/50"
-                            placeholder="••••••••"
+                            className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#ac3434] focus:ring-[#ac3434]"
+                            placeholder="Enter your Password"
                             autoComplete="current-password"
                             onChange={(e) => setData('password', e.target.value)}
                         />
-                        <InputError message={errors.password} className="text-red-300" />
+                        <InputError message={errors.password} className="text-red-600" />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -90,15 +90,15 @@ export default function Login({ status, canResetPassword }) {
                                 name="remember"
                                 checked={data.remember}
                                 onChange={(e) => setData('remember', e.target.checked)}
-                                className="border-black/20 bg-black/10 data-[state=checked]:bg-black data-[state=checked]:text-black"
+                                className="border-gray-300 bg-white data-[state=checked]:bg-[#ac3434] data-[state=checked]:text-white"
                             />
-                            <span className="ml-2 text-sm text-black/80">Remember me</span>
+                            <span className="ml-2 text-sm text-gray-700">Remember me</span>
                         </label>
 
                         {canResetPassword && (
                             <Link
                                 href={route('password.request')}
-                                className="text-sm text-black/80 hover:text-black"
+                                className="text-sm text-[#ac3434] hover:text-[#990000]"
                             >
                                 Forgot password?
                             </Link>
