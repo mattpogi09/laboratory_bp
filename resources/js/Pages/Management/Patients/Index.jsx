@@ -6,12 +6,14 @@ import { Search, Eye, Edit, Plus, UserCheck } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import PatientDetailsModal from './PatientDetailsModal';
 import EditPatientModal from './EditPatientModal';
+import CreatePatientModal from './CreatePatientModal';
 
 export default function PatientsIndex({ auth }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     const patients = [
         {
@@ -124,7 +126,10 @@ export default function PatientsIndex({ auth }) {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => setShowCreateModal(true)}
+                >
                     <Plus className="h-4 w-4 mr-2" />
                     Add New Patient
                 </Button>
@@ -202,6 +207,11 @@ export default function PatientsIndex({ auth }) {
             )}
 
             {/* Modals */}
+            <CreatePatientModal
+                show={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+            />
+            
             {selectedPatient && (
                 <>
                     <PatientDetailsModal

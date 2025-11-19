@@ -178,7 +178,7 @@ export default function ServicesIndex({ auth }) {
                 </div>
             )}
 
-            {/* Modals */}}
+            {/* Modals */}
             <CreateServiceModal
                 show={showCreateModal}
                 onClose={() => setShowCreateModal(false)}

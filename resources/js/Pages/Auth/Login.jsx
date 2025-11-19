@@ -20,6 +20,8 @@ export default function Login({ status, canResetPassword }) {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    const isFormValid = data.username.trim() !== '' && data.password.trim() !== '';
+
     const submit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
@@ -61,10 +63,10 @@ export default function Login({ status, canResetPassword }) {
                             type="text"
                             name="username"
                             value={data.username}
-                            className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#ac3434] focus:ring-[#ac3434]"
+                            className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#eea7a7] focus:ring-[#ac3434]"
                             placeholder="Enter your Username"
                             autoComplete="username"
-                            isFocused={true}
+                            isFocused={false}
                             onChange={(e) => setData('username', e.target.value)}
                         />
                         <InputError message={errors.username} className="text-red-600" />
@@ -78,7 +80,7 @@ export default function Login({ status, canResetPassword }) {
                                 type={showPassword ? "text" : "password"}
                                 name="password"
                                 value={data.password}
-                                className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#ac3434] focus:ring-[#ac3434] pr-10"
+                                className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#eea7a7] focus:ring-[#ac3434] pr-10"
                                 placeholder="Enter your Password"
                                 autoComplete="current-password"
                                 onChange={(e) => setData('password', e.target.value)}
@@ -121,8 +123,8 @@ export default function Login({ status, canResetPassword }) {
                     </div>
 
                     <Button 
-                        className="w-full bg-[#ac3434] text-white hover:bg-black/90" 
-                        disabled={processing}
+                        className="w-full bg-[#ac3434] text-white hover:bg-[#ba4242] " 
+                        disabled={processing || !isFormValid}
                     >
                         {isLoading ? (
                             <>

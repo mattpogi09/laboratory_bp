@@ -78,8 +78,8 @@ export default function LabStaffDashboard({ auth }) {
             <Head title="Lab Staff Panel" />
 
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-gray-900">Lab Test Management</h1>
-                <p className="text-gray-600">Manage test results and laboratory workflow</p>
+                <h1 className="text-2xl font-semibold text-black">Lab Test Management</h1>
+                <p className="text-black">Manage test results and laboratory workflow</p>
             </div>
 
             {/* Stats Grid */}
