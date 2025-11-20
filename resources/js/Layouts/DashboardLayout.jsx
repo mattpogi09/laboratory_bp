@@ -47,14 +47,24 @@ export default function DashboardLayout({ children, auth }) {
         {
             name: 'Main Navigation',
             children: [
+                { 
+                    name: 'Transactions', 
+                    href: route('cashier.transactions.index'), 
+                    icon: Plus, 
+                    routeName: 'cashier.transactions.index'
+                },
                 { name: 'Patients', href: route('patients'), icon: Users, routeName: 'patients' },
             ],
         },
         {
             name: 'Management',
             children: [
-                { name: 'New Transaction', href: '#', icon: Plus, routeName: null },
-                { name: 'Transaction History', href: '#', icon: History, routeName: null },
+                { 
+                    name: 'Transaction History', 
+                    href: route('cashier.transactions.history'), 
+                    icon: History,
+                    routeName: 'cashier.transactions.history'
+                },
             ],
         },
         
@@ -114,7 +124,9 @@ export default function DashboardLayout({ children, auth }) {
                                     {item.name}
                                 </div>
                                 {item.children.map((subItem) => {
-                                    const isActive = subItem.routeName ? route().current(subItem.routeName) : false;
+                                    const isActive = subItem.routeName
+                                        ? route().current(subItem.routeName)
+                                        : false;
                                     
                                     return (
                                         <Link

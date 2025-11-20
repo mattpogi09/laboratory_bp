@@ -1,179 +1,176 @@
 import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { ArrowLeft, Save } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export default function EnterResults({ auth, transactionId }) {
+export default function EnterResults({ auth, test }) {
+    const { errors, flash } = usePage().props;
     const [formData, setFormData] = useState({
-        resultValue: '',
-        normalRange: '',
-        remarks: '',
-        status: 'processing'
+        result_value: test.result_values?.result_value || '',
+        normal_range: test.result_values?.normal_range || '',
+        result_notes: test.result_notes || '',
+        status: test.status || 'pending',
     });
 
-    // Sample patient data
-    const patientData = {
-        name: 'Juan Dela Cruz',
-        patientId: 'P2024-001',
-        birthdate: '1980-05-15',
-        transactionCode: 'T-00123',
-        testName: 'Complete Blood Count',
-        createdAt: 'Nov 6, 2025, 10:15 AM'
+    const handleChange = (field, value) => {
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Handle form submission
-        console.log('Form data:', formData);
+        router.patch(
+            route('lab-test-queue.tests.update', test.id),
+            {
+                status: formData.status,
+                result_notes: formData.result_notes,
+                result_values: {
+                    result_value: formData.result_value,
+                    normal_range: formData.normal_range,
+                },
+            },
+            { preserveScroll: true }
+        );
     };
 
-    const handleChange = (field, value) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
+    const statusStyles = {
+        pending: 'bg-red-500 text-white',
+        in_progress: 'bg-amber-500 text-white',
+        completed: 'bg-emerald-500 text-white',
     };
 
     return (
         <DashboardLayout auth={auth}>
             <Head title="Test Result Entry" />
 
-            {/* Header */}
             <div className="mb-6">
                 <Link
                     href={route('lab-test-queue')}
-                    className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+                    className="mb-4 inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
                 >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Dashboard
                 </Link>
                 <h1 className="text-2xl font-semibold text-gray-900">Test Result Entry</h1>
-                <p className="text-gray-600">Enter clinical laboratory results</p>
+                <p className="text-gray-600">
+                    Update findings for queue #{test.queue_number} - {test.transaction_number}
+                </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Patient Information */}
-                <div className="bg-white rounded-xl shadow-md p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Patient Information</h2>
-                    
-                    <div className="space-y-3">
+            {flash?.success && (
+                <div className="mb-6 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    {flash.success}
+                </div>
+            )}
+
+            <div className="grid gap-6 lg:grid-cols-3">
+                <div className="rounded-xl bg-white p-6 shadow">
+                    <h2 className="text-lg font-semibold text-gray-900">Patient Information</h2>
+                    <dl className="mt-4 space-y-3 text-sm text-gray-600">
                         <div>
-                            <p className="text-sm text-gray-600">Patient Name</p>
-                            <p className="text-base font-medium text-gray-900">{patientData.name}</p>
+                            <dt className="text-gray-500">Patient Name</dt>
+                            <dd className="text-base font-semibold text-gray-900">{test.transaction?.patient?.name}</dd>
                         </div>
-                        
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <p className="text-sm text-gray-600">Patient ID</p>
-                                <p className="text-base font-medium text-gray-900">{patientData.patientId}</p>
+                                <dt className="text-gray-500">Age</dt>
+                                <dd className="font-medium text-gray-900">{test.transaction?.patient?.age || '—'}</dd>
                             </div>
                             <div>
-                                <p className="text-sm text-gray-600">Birthdate</p>
-                                <p className="text-base font-medium text-gray-900">{patientData.birthdate}</p>
+                                <dt className="text-gray-500">Gender</dt>
+                                <dd className="font-medium text-gray-900">{test.transaction?.patient?.gender || '—'}</dd>
                             </div>
                         </div>
-
                         <div>
-                            <p className="text-sm text-gray-600">Transaction Code</p>
-                            <p className="text-base font-medium text-gray-900">{patientData.transactionCode}</p>
+                            <dt className="text-gray-500">Contact</dt>
+                            <dd className="font-medium text-gray-900">{test.transaction?.patient?.contact || '—'}</dd>
                         </div>
-                    </div>
+                        <div>
+                            <dt className="text-gray-500">Test Name</dt>
+                            <dd className="font-semibold text-gray-900">{test.test_name}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-gray-500">Requested On</dt>
+                            <dd className="font-medium text-gray-900">{test.transaction?.created_at}</dd>
+                        </div>
+                        <div>
+                            <dt className="text-gray-500">Status</dt>
+                            <dd>
+                                <span
+                                    className={cn(
+                                        'inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize',
+                                        statusStyles[test.status] || 'bg-gray-200 text-gray-600'
+                                    )}
+                                >
+                                    {test.status?.replace('_', ' ')}
+                                </span>
+                            </dd>
+                        </div>
+                    </dl>
                 </div>
 
-                {/* Clinical Results Form */}
-                <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Clinical Results</h2>
-                    
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Result Value */}
+                <div className="lg:col-span-2 rounded-xl bg-white p-6 shadow">
+                    <h2 className="text-lg font-semibold text-gray-900">Clinical Results</h2>
+
+                    <form onSubmit={handleSubmit} className="mt-4 space-y-5">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="text-sm font-medium text-gray-700">
                                 Result Value <span className="text-red-500">*</span>
                             </label>
-                            <button
-                                type="button"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-left text-gray-900 hover:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
-                                onClick={() => {
-                                    // Open test selector modal
-                                }}
-                            >
-                                {formData.resultValue || 'Add Test'}
-                            </button>
-                            <div className="mt-3 p-4 bg-gray-50 rounded-lg">
-                                <p className="text-sm text-gray-600">Normal Range</p>
-                                <p className="text-base text-gray-900 mt-1">
-                                    {formData.normalRange || 'It will indicate here the percentage depending on result value'}
-                                </p>
-                            </div>
+                            <input
+                                type="text"
+                                value={formData.result_value}
+                                onChange={(e) => handleChange('result_value', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                                placeholder="e.g. RBC 4.10 x10^12/L"
+                            />
+                            {errors?.result_values && (
+                                <p className="mt-1 text-xs text-red-600">{errors.result_values}</p>
+                            )}
                         </div>
 
-                        {/* Test Information */}
-                        <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                            <div>
-                                <p className="text-sm text-gray-600">Test Name</p>
-                                <p className="text-base font-medium text-gray-900">{patientData.testName}</p>
-                            </div>
-                            <div>
-                                <p className="text-sm text-gray-600">Created At</p>
-                                <p className="text-base text-gray-900">{patientData.createdAt}</p>
-                            </div>
-                        </div>
-
-                        {/* Test Status */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Test Status
-                            </label>
-                            <div className="relative">
-                                <select
-                                    value={formData.status}
-                                    onChange={(e) => handleChange('status', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 appearance-none"
-                                >
-                                    <option value="">Status</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="processing">Processing</option>
-                                    <option value="completed">Completed</option>
-                                </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            <div className="mt-3 px-4 py-2 bg-amber-500 text-white rounded-lg text-center font-medium">
-                                Status: Processing
-                            </div>
-                        </div>
-
-                        {/* Current Status Display */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Current Status
-                            </label>
-                            <div className="px-4 py-2 bg-amber-500 text-white rounded-lg text-center font-medium">
-                                Status: Processing
-                            </div>
-                        </div>
-
-                        {/* Remarks / Notes */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Remarks / Notes
-                            </label>
-                            <textarea
-                                value={formData.remarks}
-                                onChange={(e) => handleChange('remarks', e.target.value)}
-                                placeholder="Enter any relevant remarks or observations"
-                                rows="4"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 resize-none"
+                            <label className="text-sm font-medium text-gray-700">Normal Range</label>
+                            <input
+                                type="text"
+                                value={formData.normal_range}
+                                onChange={(e) => handleChange('normal_range', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                                placeholder="e.g. 4.0 - 5.2 x10^12/L"
                             />
                         </div>
 
-                        {/* Submit Button */}
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">Test Status</label>
+                            <select
+                                value={formData.status}
+                                onChange={(e) => handleChange('status', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                            >
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                            {errors?.status && <p className="mt-1 text-xs text-red-600">{errors.status}</p>}
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-gray-700">Remarks / Notes</label>
+                            <textarea
+                                rows="4"
+                                value={formData.result_notes}
+                                onChange={(e) => handleChange('result_notes', e.target.value)}
+                                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                                placeholder="Enter any remarks or interpretation"
+                            />
+                        </div>
+
                         <button
                             type="submit"
-                            className="w-full px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 font-medium"
+                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-3 text-base font-semibold text-white transition hover:bg-red-700"
                         >
                             <Save className="h-5 w-5" />
                             Save Results
