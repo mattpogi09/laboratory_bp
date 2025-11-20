@@ -15,19 +15,23 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call(LabTestSeeder::class);
+
         // Create Admin User
         User::factory()->create([
             'name' => 'Admin User',
             'username' => 'admin',
             'email' => 'admin@bpdiagnostic.com',
+            'role' => 'admin',
             'password' => bcrypt('password123'),
         ]);
 
         // Create Lab Staff User
         User::factory()->create([
             'name' => 'KuyaDats Lab Staff',
-            'username' => 'kuyadats',
+            'username' => 'labstaff',
             'email' => 'staff@bpdiagnostic.com',
+            'role' => 'lab_staff',
             'password' => bcrypt('password123'),
         ]);
 
@@ -36,6 +40,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Jun Cashier',
             'username' => 'cashier',
             'email' => 'cashier@bpdiagnostic.com',
+            'role' => 'cashier',
             'password' => bcrypt('password123'),
         ]);
     }

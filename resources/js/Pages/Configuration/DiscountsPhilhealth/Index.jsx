@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Edit, Plus } from 'lucide-react';
+import { Search, Edit, Plus, Percent, Shield } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
+import EmptyState from '@/Components/EmptyState';
 import EditDiscountModal from './EditDiscountModal';
 import CreateDiscountModal from './CreateDiscountModal';
 import EditPhilHealthModal from './EditPhilHealthModal';
 import CreatePhilHealthModal from './CreatePhilHealthModal';
 
-export default function DiscountsPhilhealthIndex() {
+export default function DiscountsPhilhealthIndex({ auth }) {
     const [activeTab, setActiveTab] = useState('discounts');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDiscount, setSelectedDiscount] = useState(null);
@@ -69,7 +70,7 @@ export default function DiscountsPhilhealthIndex() {
     );
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Discounts & PhilHealth Management" />
 
             <div className="mb-6">
@@ -132,6 +133,7 @@ export default function DiscountsPhilhealthIndex() {
 
             {/* Content */}
             {activeTab === 'discounts' ? (
+                filteredDiscounts.length > 0 ? (
                 <div className="rounded-lg bg-white shadow-md overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -173,7 +175,17 @@ export default function DiscountsPhilhealthIndex() {
                         </table>
                     </div>
                 </div>
+                ) : (
+                    <div className="rounded-lg bg-white shadow-md">
+                        <EmptyState 
+                            icon={Percent}
+                            title="No Discounts Available"
+                            description="No discount types have been configured yet. Click 'Add Discount' to create discount options for senior citizens, PWD, or other categories."
+                        />
+                    </div>
+                )
             ) : (
+                filteredPlans.length > 0 ? (
                 <div className="rounded-lg bg-white shadow-md overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -215,6 +227,15 @@ export default function DiscountsPhilhealthIndex() {
                         </table>
                     </div>
                 </div>
+                ) : (
+                    <div className="rounded-lg bg-white shadow-md">
+                        <EmptyState 
+                            icon={Shield}
+                            title="No PhilHealth Plans Available"
+                            description="No PhilHealth coverage plans have been set up yet. Click 'Add Plan' to configure insurance coverage options for patients."
+                        />
+                    </div>
+                )
             )}
 
             {/* Modals */}

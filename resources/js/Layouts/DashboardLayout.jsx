@@ -9,43 +9,96 @@ import {
     Box,
     Tag,
     ClipboardList,
-    LogOut
+    LogOut,
+    Plus,
+    History,
+    Beaker
 } from 'lucide-react';
 
-export default function DashboardLayout({ children }) {
+export default function DashboardLayout({ children, auth }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    
+    const user = auth?.user;
+    const userRole = user?.role || 'cashier';
 
-    const navigation = [
-        { name: 'Dashboard', href: route('dashboard'), icon: LayoutDashboard, current: route().current('dashboard') },
+    // Admin navigation
+    const adminNavigation = [
+        { name: 'Dashboard', href: route('dashboard'), icon: LayoutDashboard, routeName: 'dashboard' },
         {
             name: 'Management',
             children: [
-                { name: 'Patients', href: route('patients'), icon: Users },
-                { name: 'User Management', href: route('users'), icon: UserCog },
-                { name: 'Service Management', href: route('services'), icon: Settings },
+                { name: 'Patients', href: route('patients'), icon: Users, routeName: 'patients' },
+                { name: 'User Management', href: route('users'), icon: UserCog, routeName: 'users' },
+                { name: 'Service Management', href: route('services'), icon: Settings, routeName: 'services' },
             ],
         },
         {
             name: 'Configuration',
             children: [
-                { name: 'Inventory', href: route('inventory'), icon: Box },
-                { name: 'Discounts & PhilHealth', href: route('discounts-philhealth'), icon: Tag },
-                { name: 'Reports & Logs', href: route('reports-logs'), icon: ClipboardList },
+                { name: 'Inventory', href: route('inventory'), icon: Box, routeName: 'inventory' },
+                { name: 'Discounts & PhilHealth', href: route('discounts-philhealth'), icon: Tag, routeName: 'discounts-philhealth' },
+                { name: 'Reports & Logs', href: route('reports-logs'), icon: ClipboardList, routeName: 'reports-logs' },
             ],
         },
     ];
+
+    // Cashier navigation
+    const cashierNavigation = [
+        {
+            name: 'Main Navigation',
+            children: [
+                { 
+                    name: 'Transactions', 
+                    href: route('cashier.transactions.index'), 
+                    icon: Plus, 
+                    routeName: 'cashier.transactions.index'
+                },
+                { name: 'Patients', href: route('patients'), icon: Users, routeName: 'patients' },
+            ],
+        },
+        {
+            name: 'Management',
+            children: [
+                { 
+                    name: 'Transaction History', 
+                    href: route('cashier.transactions.history'), 
+                    icon: History,
+                    routeName: 'cashier.transactions.history'
+                },
+            ],
+        },
+        
+    ];
+
+    // Lab Staff navigation (Lab Test Queue only)
+    const labStaffNavigation = [
+        {
+            name: 'Laboratory',
+            children: [
+                { name: 'Lab Test Queue', href: route('lab-test-queue'), icon: Beaker, routeName: 'lab-test-queue' },
+                { name: 'Inventory', href: route('inventory'), icon: Box, routeName: 'inventory' },
+            ],
+        },
+    ];
+
+    // Select navigation based on role
+    const navigation = userRole === 'admin' 
+        ? adminNavigation 
+        : userRole === 'lab_staff' 
+            ? labStaffNavigation 
+            : cashierNavigation;
 
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Sidebar */}
             <div className={cn(
-                "fixed inset-y-0 left-0 z-50 w-64 bg-[#1a1f37] text-white transform transition-transform duration-200 ease-in-out",
+                "fixed inset-y-0 left-0 z-50 w-64 bg-white text-black transform transition-transform duration-200 ease-in-out",
                 !isSidebarOpen && "-translate-x-full"
             )}>
                 {/* Logo */}
-                <div className="h-16 flex items-center px-6 bg-black/20">
+                <div className="h-16 flex items-center px-6 bg-white/20 border-black/50">
                     <img src="/images/logo.png" alt="Logo" className="h-8" />
-                    <span className="ml-3 text-lg font-semibold">BP Diagnostic</span>
+                    <span className="ml-3 text-lg font-semibold text-black">BP Diagnostic</span>
                 </div>
 
                 {/* Navigation */}
@@ -57,9 +110,9 @@ export default function DashboardLayout({ children }) {
                                 href={item.href}
                                 className={cn(
                                     "flex items-center px-3 py-2 text-sm font-medium rounded-md",
-                                    item.current
-                                        ? "bg-black/20 text-white"
-                                        : "text-gray-300 hover:bg-black/10 hover:text-white"
+                                    item.routeName && route().current(item.routeName)
+                                        ? "bg-[#990000] text-white"
+                                        : "text-black hover:bg-[#990000]/10 hover:text-[#990000]"
                                 )}
                             >
                                 <item.icon className="mr-3 h-5 w-5" />
@@ -71,7 +124,10 @@ export default function DashboardLayout({ children }) {
                                     {item.name}
                                 </div>
                                 {item.children.map((subItem) => {
-                                    const isActive = route().current() === subItem.href.replace(route().t.url + '/', '');
+                                    const isActive = subItem.routeName
+                                        ? route().current(subItem.routeName)
+                                        : false;
+                                    
                                     return (
                                         <Link
                                             key={subItem.name}
@@ -79,8 +135,8 @@ export default function DashboardLayout({ children }) {
                                             className={cn(
                                                 "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
                                                 isActive
-                                                    ? "bg-blue-600 text-white"
-                                                    : "text-gray-300 hover:bg-black/10 hover:text-white"
+                                                    ? "bg-[#990000] text-white"
+                                                    : "text-black hover:bg-[#990000]/10 hover:text-[#990000]"
                                             )}
                                         >
                                             <subItem.icon className="mr-3 h-5 w-5" />
@@ -96,21 +152,16 @@ export default function DashboardLayout({ children }) {
                 {/* User section */}
                 <div className="absolute bottom-0 left-0 right-0 p-4">
                     <div className="flex items-center px-3 py-2 text-sm font-medium text-gray-300">
-                        <img
-                            src="https://ui-avatars.com/api/?name=Admin+User"
-                            alt=""
-                            className="h-8 w-8 rounded-full"
-                        />
                         <div className="ml-3">
-                            <p className="text-sm font-medium text-white">Admin User</p>
-                            <p className="text-xs text-gray-400">admin@bpdiagnostic.com</p>
+                            <p className="text-sm font-medium text-black">{user?.name || 'User'}</p>
+                            <p className="text-xs text-black capitalize">{userRole.replace('_', ' ')}</p>
                         </div>
                     </div>
                     <Link
                         href={route('logout')}
                         method="post"
                         as="button"
-                        className="mt-2 flex w-full items-center px-3 py-2 text-sm font-medium text-red-400 rounded-md hover:bg-red-500/10"
+                        className="mt-2 flex w-full items-center px-3 py-2 text-sm font-medium bg-[#ac3434] text-white rounded-md hover:bg-[#990000]/10 hover:text-[#990000]"
                     >
                         <LogOut className="mr-3 h-5 w-5" />
                         Logout

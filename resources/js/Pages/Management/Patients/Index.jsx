@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Eye, Edit, Plus } from 'lucide-react';
+import EmptyState from '@/Components/EmptyState';
+import { Search, Eye, Edit, Plus, UserCheck } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import PatientDetailsModal from './PatientDetailsModal';
 import EditPatientModal from './EditPatientModal';
+import CreatePatientModal from './CreatePatientModal';
 
-export default function PatientsIndex() {
+export default function PatientsIndex({ auth }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
 
     const patients = [
         {
@@ -103,7 +106,7 @@ export default function PatientsIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="Patient Management" />
 
             <div className="mb-6">
@@ -123,13 +126,17 @@ export default function PatientsIndex() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => setShowCreateModal(true)}
+                >
                     <Plus className="h-4 w-4 mr-2" />
                     Add New Patient
                 </Button>
             </div>
 
             {/* Patients Table */}
+            {filteredPatients.length > 0 ? (
             <div className="rounded-lg border border-gray-500 bg-white overflow-hidden shadow-xl">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -189,8 +196,22 @@ export default function PatientsIndex() {
                     </table>
                 </div>
             </div>
+            ) : (
+                <div className="rounded-lg bg-white shadow-md">
+                    <EmptyState 
+                        icon={UserCheck}
+                        title="No Patients Found"
+                        description="No patient records exist yet. Patient data will appear here once they are registered in the system."
+                    />
+                </div>
+            )}
 
             {/* Modals */}
+            <CreatePatientModal
+                show={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+            />
+            
             {selectedPatient && (
                 <>
                     <PatientDetailsModal

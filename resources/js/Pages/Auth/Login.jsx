@@ -7,7 +7,7 @@ import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/Components/ui/button';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -18,6 +18,9 @@ export default function Login({ status, canResetPassword }) {
 
     // Add loading state if needed
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+
+    const isFormValid = data.username.trim() !== '' && data.password.trim() !== '';
 
     const submit = async (e) => {
         e.preventDefault();
@@ -32,7 +35,7 @@ export default function Login({ status, canResetPassword }) {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-custom flex items-center justify-center p-6">
+        <div className="min-h-screen bg[#F8F8F8] flex items-center justify-center p-6">
             <Head title="Log in" />
             
             <div className="glass-panel w-full max-w-md p-8">
@@ -42,8 +45,8 @@ export default function Login({ status, canResetPassword }) {
                         alt="BP Diagnostic and Clinical Laboratory" 
                         className="mx-auto h-16 mb-4"
                     />
-                    <h2 className="text-white text-xl font-semibold">BP Diagnostic</h2>
-                    <p className="text-white/80">Admin Panel</p>
+                    <h2 className="text-black text-xl font-semibold">BP Diagnostic</h2>
+                    
                 </div>
 
                 {status && (
@@ -54,34 +57,48 @@ export default function Login({ status, canResetPassword }) {
 
                 <form onSubmit={submit} className="space-y-6">
                     <div className="space-y-2">
-                        <InputLabel htmlFor="username" value="Username" className="text-white" />
+                        <InputLabel htmlFor="username" value="Username" className="text-gray-700 font-medium" />
                         <TextInput
                             id="username"
                             type="text"
                             name="username"
                             value={data.username}
-                            className="w-full bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                            placeholder="admin"
+                            className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#eea7a7] focus:ring-[#ac3434]"
+                            placeholder="Enter your Username"
                             autoComplete="username"
-                            isFocused={true}
+                            isFocused={false}
                             onChange={(e) => setData('username', e.target.value)}
                         />
-                        <InputError message={errors.username} className="text-red-300" />
+                        <InputError message={errors.username} className="text-red-600" />
                     </div>
 
                     <div className="space-y-2">
-                        <InputLabel htmlFor="password" value="Password" className="text-white" />
-                        <TextInput
-                            id="password"
-                            type="password"
-                            name="password"
-                            value={data.password}
-                            className="w-full bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                            placeholder="••••••••"
-                            autoComplete="current-password"
-                            onChange={(e) => setData('password', e.target.value)}
-                        />
-                        <InputError message={errors.password} className="text-red-300" />
+                        <InputLabel htmlFor="password" value="Password" className="text-gray-700 font-medium" />
+                        <div className="relative">
+                            <TextInput
+                                id="password"
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                value={data.password}
+                                className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#eea7a7] focus:ring-[#ac3434] pr-10"
+                                placeholder="Enter your Password"
+                                autoComplete="current-password"
+                                onChange={(e) => setData('password', e.target.value)}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            >
+                                {showPassword ? (
+                                    <Eye className = "h-5 w-5" />
+                                ) : (
+                                        
+                                <EyeOff className="h-5 w-5" />
+                                )}
+                            </button>
+                        </div>
+                        <InputError message={errors.password} className="text-red-600" />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -90,15 +107,15 @@ export default function Login({ status, canResetPassword }) {
                                 name="remember"
                                 checked={data.remember}
                                 onChange={(e) => setData('remember', e.target.checked)}
-                                className="border-white/20 bg-white/10 data-[state=checked]:bg-white data-[state=checked]:text-black"
+                                className="border-gray-300 bg-white data-[state=checked]:bg-[#ac3434] data-[state=checked]:text-white"
                             />
-                            <span className="ml-2 text-sm text-white/80">Remember me</span>
+                            <span className="ml-2 text-sm text-gray-700">Remember me</span>
                         </label>
 
                         {canResetPassword && (
                             <Link
                                 href={route('password.request')}
-                                className="text-sm text-white/80 hover:text-white"
+                                className="text-sm text-[#ac3434] hover:text-[#990000]"
                             >
                                 Forgot password?
                             </Link>
@@ -106,8 +123,8 @@ export default function Login({ status, canResetPassword }) {
                     </div>
 
                     <Button 
-                        className="w-full bg-white text-black hover:bg-white/90" 
-                        disabled={processing}
+                        className="w-full bg-[#ac3434] text-white hover:bg-[#ba4242] " 
+                        disabled={processing || !isFormValid}
                     >
                         {isLoading ? (
                             <>
@@ -115,7 +132,7 @@ export default function Login({ status, canResetPassword }) {
                                 Logging in...
                             </>
                         ) : (
-                            'Log in'
+                            'LOGIN'
                         )}
                     </Button>
                 </form>

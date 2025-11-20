@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Edit, Trash2, Plus } from 'lucide-react';
+import { Search, Edit, ShieldQuestionMark, Plus, Users } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import EditUserModal from './EditUserModal';
-import DeleteUserModal from './DeleteUserModal';
+import DeactivateUserModal from './DeactivateUserModal';
 import CreateUserModal from './CreateUserModal';
 
-export default function UserManagementIndex() {
+export default function UsersIndex({ auth }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showDeactivateModal, setShowDeactivateModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     const users = [
@@ -72,7 +72,7 @@ export default function UserManagementIndex() {
     };
 
     return (
-        <DashboardLayout>
+        <DashboardLayout auth={auth}>
             <Head title="User Management" />
 
             <div className="mb-6">
@@ -102,6 +102,7 @@ export default function UserManagementIndex() {
             </div>
 
             {/* Users Table */}
+            {filteredUsers.length > 0 ? (
             <div className="rounded-lg bg-white shadow-md overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -142,11 +143,11 @@ export default function UserManagementIndex() {
                                             <button
                                                 onClick={() => {
                                                     setSelectedUser(user);
-                                                    setShowDeleteModal(true);
+                                                    setShowDeactivateModal(true);
                                                 }}
-                                                className="p-1.5 text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                                                className="p-1.5 text-amber-400 hover:bg-amber-500/10 rounded transition-colors"
                                             >
-                                                <Trash2 className="h-4 w-4" />
+                                                <ShieldQuestionMark  className="h-4 w-4" />
                                             </button>
                                         </div>
                                     </td>
@@ -156,6 +157,15 @@ export default function UserManagementIndex() {
                     </table>
                 </div>
             </div>
+            ) : (
+                <div className="rounded-lg bg-white shadow-md">
+                    <EmptyState 
+                        icon={Users}
+                        title="No Users Found"
+                        description="No users have been added yet. Click 'Add User' to create your first staff account and start managing user access."
+                    />
+                </div>
+            )}
 
             {/* Modals */}
             <CreateUserModal
@@ -173,11 +183,11 @@ export default function UserManagementIndex() {
                             setSelectedUser(null);
                         }}
                     />
-                    <DeleteUserModal
+                    <DeactivateUserModal
                         user={selectedUser}
-                        show={showDeleteModal}
+                        show={showDeactivateModal}
                         onClose={() => {
-                            setShowDeleteModal(false);
+                            setShowDeactivateModal(false);
                             setSelectedUser(null);
                         }}
                     />
