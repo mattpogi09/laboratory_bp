@@ -8,90 +8,18 @@ import PatientDetailsModal from './PatientDetailsModal';
 import EditPatientModal from './EditPatientModal';
 import CreatePatientModal from './CreatePatientModal';
 
-export default function PatientsIndex({ auth }) {
+export default function PatientsIndex({ auth, patients: initialPatients = [] }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
 
-    const patients = [
-        {
-            id: 'P2024-001',
-            name: 'Juan Dela Cruz',
-            email: 'juan@email.com',
-            age: 45,
-            gender: 'Male',
-            contact: '0917-123-4567',
-            lastVisit: '2024-10-28',
-            totalTests: 5,
-            tests: [
-                { name: 'Complete Blood Count', date: '2024-10-28', status: 'Completed' },
-                { name: 'Dengue', date: '2024-08-15', status: 'Completed' },
-                { name: 'Blood Uric Acid', date: '2024-08-01', status: 'Released' },
-                { name: 'Routine Urinalysis', date: '2024-05-10', status: 'Released' },
-                { name: 'Chest X-Ray', date: '2024-08-30', status: 'Released' }
-            ]
-        },
-        {
-            id: 'P2024-002',
-            name: 'Maria Santos',
-            email: 'maria@email.com',
-            age: 32,
-            gender: 'Female',
-            contact: '0918-234-5678',
-            lastVisit: '2024-10-30',
-            totalTests: 3,
-            tests: [
-                { name: 'Urinalysis', date: '2024-10-30', status: 'Completed' },
-                { name: 'Complete Blood Count', date: '2024-09-15', status: 'Released' },
-                { name: 'Lipid Profile', date: '2024-08-20', status: 'Released' }
-            ]
-        },
-        {
-            id: 'P2024-003',
-            name: 'Pedro Garcia',
-            email: 'pedro@email.com',
-            age: 28,
-            gender: 'Male',
-            contact: '0919-345-6789',
-            lastVisit: '2024-11-01',
-            totalTests: 7,
-            tests: [
-                { name: 'Lipid Profile', date: '2024-11-01', status: 'Completed' }
-            ]
-        },
-        {
-            id: 'P2024-004',
-            name: 'Ana Reyes',
-            email: 'ana@email.com',
-            age: 55,
-            gender: 'Female',
-            contact: '0920-456-7890',
-            lastVisit: '2024-10-25',
-            totalTests: 12,
-            tests: [
-                { name: 'Chest X-Ray', date: '2024-10-25', status: 'Released' }
-            ]
-        },
-        {
-            id: 'P2024-005',
-            name: 'Carlos Lopez',
-            email: 'carlos@email.com',
-            age: 38,
-            gender: 'Male',
-            contact: '0921-567-8901',
-            lastVisit: '2024-10-20',
-            totalTests: 2,
-            tests: [
-                { name: 'Blood Sugar', date: '2024-10-20', status: 'Released' }
-            ]
-        }
-    ];
+    const userRole = auth.user.role;
 
-    const filteredPatients = patients.filter(patient => 
+    const filteredPatients = initialPatients.filter(patient => 
         patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient.patient_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         patient.contact.includes(searchQuery)
     );
 
@@ -111,7 +39,7 @@ export default function PatientsIndex({ auth }) {
 
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-gray-900">Patient Management</h1>
-                <p className="text-gray-600">{patients.length} total patients</p>
+                <p className="text-gray-600">{initialPatients.length} total patients</p>
             </div>
 
             {/* Search and Actions */}
@@ -126,13 +54,6 @@ export default function PatientsIndex({ auth }) {
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <Button 
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => setShowCreateModal(true)}
-                >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add New Patient
-                </Button>
             </div>
 
             {/* Patients Table */}
@@ -157,21 +78,21 @@ export default function PatientsIndex({ auth }) {
                                     key={patient.id}
                                     className="hover:bg-gray-300 transition-colors"
                                 >
-                                    <td className="px-4 py-3 text-sm text-gray-900">{patient.id}</td>
+                                    <td className="px-4 py-3 text-sm text-gray-900">{patient.patient_id}</td>
                                     <td className="px-4 py-3">
                                         <div>
                                             <div className="text-sm font-medium text-gray-900">{patient.name}</div>
-                                            <div className="text-sm text-gray-500">{patient.email}</div>
+                                            <div className="text-sm text-gray-500">{patient.email || 'N/A'}</div>
                                         </div>
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-900">
                                         {patient.age} / {patient.gender}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-900">{patient.contact}</td>
-                                    <td className="px-4 py-3 text-sm text-gray-900">{patient.lastVisit}</td>
+                                    <td className="px-4 py-3 text-sm text-gray-900">{patient.last_visit}</td>
                                     <td className="px-4 py-3">
                                         <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-400">
-                                            {patient.totalTests} tests
+                                            {patient.total_tests} tests
                                         </span>
                                     </td>
                                     <td className="px-4 py-3">
@@ -225,6 +146,7 @@ export default function PatientsIndex({ auth }) {
                     <EditPatientModal
                         patient={selectedPatient}
                         show={showEditModal}
+                        userRole={userRole}
                         onClose={() => {
                             setShowEditModal(false);
                             setSelectedPatient(null);

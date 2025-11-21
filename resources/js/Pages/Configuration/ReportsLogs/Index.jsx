@@ -18,7 +18,7 @@ export default function ReportsLogsIndex({
 
     const totals = financial.totals || { revenue: 0, discounts: 0, transactions: 0 };
     const financialRows = financial.rows || [];
-    const labStats = labReport.stats || { total: 0, released: 0, in_progress: 0, pending: 0 };
+    const labStats = labReport.stats || { total: 0, released: 0, processing: 0, pending: 0 };
     const labRows = labReport.rows || [];
 
     const submitFilters = () => {
@@ -180,9 +180,9 @@ export default function ReportsLogsIndex({
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <StatCard label="Total Tests" value={labStats.total} />
-                        <StatCard label="Released" value={labStats.released} accent="text-emerald-600" />
-                        <StatCard label="In Progress" value={labStats.in_progress} accent="text-blue-600" />
-                        <StatCard label="Pending" value={labStats.pending} accent="text-amber-600" />
+                        <StatCard label="Released" value={labStats.released} accent="text-green-600" />
+                        <StatCard label="In Progress" value={labStats.processing} accent="text-yellow-600" />
+                        <StatCard label="Pending" value={labStats.pending} accent="text-red-600" />
                     </div>
 
                     <div className="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm">
@@ -309,13 +309,16 @@ function severityColor(severity) {
 
 function statusBadge(status) {
     switch (status) {
-        case 'completed':
-            return 'bg-emerald-500/10 text-emerald-600';
-        case 'in_progress':
-            return 'bg-blue-500/10 text-blue-600';
         case 'pending':
+            return 'bg-red-500/10 text-red-600';
+        case 'processing':
+            return 'bg-yellow-500/10 text-yellow-600';
+        case 'completed':
+            return 'bg-blue-500/10 text-blue-600';
+        case 'released':
+            return 'bg-green-500/10 text-green-600';
         default:
-            return 'bg-amber-500/10 text-amber-600';
+            return 'bg-gray-500/10 text-gray-600';
     }
 }
 

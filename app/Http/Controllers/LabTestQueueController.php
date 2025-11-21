@@ -12,12 +12,13 @@ class LabTestQueueController extends Controller
     public function index(Request $request): Response
     {
         $pending = $this->getTestsByStatus('pending');
-        $inProgress = $this->getTestsByStatus('in_progress');
+        $processing = $this->getTestsByStatus('processing');
         $completed = $this->getTestsByStatus('completed', 10);
+        $released = $this->getTestsByStatus('released', 10);
 
         $stats = [
             'pending' => $pending['count'],
-            'in_progress' => $inProgress['count'],
+            'processing' => $processing['count'],
             'completed_today' => TransactionTest::where('status', 'completed')
                 ->whereDate('updated_at', now()->toDateString())
                 ->count(),
@@ -27,8 +28,9 @@ class LabTestQueueController extends Controller
             'stats' => $stats,
             'tests' => [
                 'pending' => $pending['items'],
-                'in_progress' => $inProgress['items'],
+                'processing' => $processing['items'],
                 'completed' => $completed['items'],
+                'released' => $released['items'],
                 'full_history' => $this->transformCollection(
                     TransactionTest::with('transaction')
                         ->latest()
@@ -66,7 +68,7 @@ class LabTestQueueController extends Controller
 
     protected function transformCollection($tests)
     {
-        return $tests->map(fn (TransactionTest $test) => $this->transformTest($test));
+        return $tests->map(fn(TransactionTest $test) => $this->transformTest($test));
     }
 
     protected function transformTest(TransactionTest $test, bool $includeResults = false): array

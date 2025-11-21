@@ -38,8 +38,9 @@ export default function EnterResults({ auth, test }) {
 
     const statusStyles = {
         pending: 'bg-red-500 text-white',
-        in_progress: 'bg-amber-500 text-white',
-        completed: 'bg-emerald-500 text-white',
+        processing: 'bg-yellow-500 text-white',
+        completed: 'bg-blue-500 text-white',
+        released: 'bg-green-500 text-white',
     };
 
     return (
@@ -151,8 +152,9 @@ export default function EnterResults({ auth, test }) {
                                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
                             >
                                 <option value="pending">Pending</option>
-                                <option value="in_progress">In Progress</option>
+                                <option value="processing">Processing</option>
                                 <option value="completed">Completed</option>
+                                <option value="released">Released</option>
                             </select>
                             {errors?.status && <p className="mt-1 text-xs text-red-600">{errors.status}</p>}
                         </div>

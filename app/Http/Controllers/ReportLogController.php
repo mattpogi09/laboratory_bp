@@ -57,8 +57,8 @@ class ReportLogController extends Controller
 
         $labStats = [
             'total' => $labTests->count(),
-            'released' => $labTests->where('status', 'completed')->count(),
-            'in_progress' => $labTests->where('status', 'in_progress')->count(),
+            'released' => $labTests->where('status', 'released')->count(),
+            'processing' => $labTests->where('status', 'processing')->count(),
             'pending' => $labTests->where('status', 'pending')->count(),
         ];
 

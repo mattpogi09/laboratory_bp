@@ -38,7 +38,7 @@ class CashierTransactionController extends Controller
         $stats = [
             'todayTransactions' => Transaction::today()->count(),
             'pendingLab' => Transaction::where('lab_status', 'pending')->count(),
-            'inProgressLab' => Transaction::where('lab_status', 'in_progress')->count(),
+            'processingLab' => Transaction::where('lab_status', 'processing')->count(),
             'completedToday' => Transaction::where('lab_status', 'completed')
                 ->whereDate('updated_at', now()->toDateString())
                 ->count(),
@@ -77,6 +77,7 @@ class CashierTransactionController extends Controller
             'patient.first_name' => ['required_without:patient.id', 'string', 'max:255'],
             'patient.last_name' => ['required_without:patient.id', 'string', 'max:255'],
             'patient.middle_name' => ['nullable', 'string', 'max:255'],
+            'patient.email' => ['nullable', 'email', 'max:255'],
             'patient.age' => ['nullable', 'integer', 'min:0', 'max:120'],
             'patient.gender' => ['nullable', 'string', 'max:30'],
             'patient.contact' => ['nullable', 'string', 'max:50'],
@@ -208,7 +209,7 @@ class CashierTransactionController extends Controller
             'discount_name' => $transaction->discount_name,
             'discount_rate' => $transaction->discount_rate,
             'created_at' => $transaction->created_at?->toDateTimeString(),
-            'tests' => $transaction->tests->map(fn (TransactionTest $test) => [
+            'tests' => $transaction->tests->map(fn(TransactionTest $test) => [
                 'id' => $test->id,
                 'name' => $test->test_name,
                 'category' => $test->category,
@@ -244,7 +245,7 @@ class CashierTransactionController extends Controller
                 'amount' => $transaction->discount_amount,
             ];
 
-            $base['events'] = $transaction->events->map(fn (TransactionEvent $event) => [
+            $base['events'] = $transaction->events->map(fn(TransactionEvent $event) => [
                 'id' => $event->id,
                 'event_type' => $event->event_type,
                 'description' => $event->description,
@@ -268,6 +269,7 @@ class CashierTransactionController extends Controller
         return Patient::create([
             'first_name' => $patientData['first_name'],
             'last_name' => $patientData['last_name'],
+            'email' => $patientData['email'] ?? null,
             'age' => $patientData['age'] ?? null,
             'gender' => $patientData['gender'] ?? null,
             'contact_number' => $patientData['contact'] ?? null,
@@ -302,7 +304,7 @@ class CashierTransactionController extends Controller
             ->latest()
             ->take($limit)
             ->get()
-            ->map(fn (Transaction $transaction) => $this->transformTransaction($transaction))
+            ->map(fn(Transaction $transaction) => $this->transformTransaction($transaction))
             ->values();
     }
 

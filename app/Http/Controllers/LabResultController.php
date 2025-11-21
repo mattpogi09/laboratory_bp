@@ -11,7 +11,7 @@ class LabResultController extends Controller
     public function update(Request $request, TransactionTest $transactionTest)
     {
         $validated = $request->validate([
-            'status' => ['required', 'in:pending,in_progress,completed'],
+            'status' => ['required', 'in:pending,processing,completed,released'],
             'result_values' => ['nullable', 'array'],
             'result_notes' => ['nullable', 'string'],
         ]);
@@ -21,7 +21,7 @@ class LabResultController extends Controller
         $transactionTest->result_notes = $validated['result_notes'] ?? null;
         $transactionTest->performed_by = $request->user()->id;
 
-        if ($validated['status'] === 'in_progress' && !$transactionTest->started_at) {
+        if ($validated['status'] === 'processing' && !$transactionTest->started_at) {
             $transactionTest->started_at = now();
         }
 

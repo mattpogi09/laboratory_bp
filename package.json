@@ -28,7 +28,9 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
-        "@radix-ui/react-slot": "^1.2.3"
+        "@radix-ui/react-slot": "^1.2.3",
+        "chart.js": "^4.5.1",
+        "react-chartjs-2": "^5.3.1"
     },
     "overrides": {
         "glob": "^11.0.0"

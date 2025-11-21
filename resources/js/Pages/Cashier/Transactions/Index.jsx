@@ -13,6 +13,7 @@ const initialPatient = {
     first_name: '',
     middle_name: '',
     last_name: '',
+    email: '',
     age: '',
     gender: '',
     contact: '',
@@ -190,13 +191,6 @@ export default function TransactionsIndex({
                     />
                 </div>
             </div>
-
-            <TransactionsTable
-                transactions={transactions}
-                search={search}
-                onSearchChange={setSearch}
-                onSubmit={submitSearch}
-            />
         </DashboardLayout>
     );
 }

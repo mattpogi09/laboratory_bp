@@ -27,7 +27,7 @@ export default function DashboardLayout({ children, auth }) {
         {
             name: 'Management',
             children: [
-                { name: 'Patients', href: route('patients'), icon: Users, routeName: 'patients' },
+                { name: 'Patients', href: route('patients.index'), icon: Users, routeName: 'patients.index' },
                 { name: 'User Management', href: route('users'), icon: UserCog, routeName: 'users' },
                 { name: 'Service Management', href: route('services'), icon: Settings, routeName: 'services' },
             ],
@@ -53,7 +53,7 @@ export default function DashboardLayout({ children, auth }) {
                     icon: Plus, 
                     routeName: 'cashier.transactions.index'
                 },
-                { name: 'Patients', href: route('patients'), icon: Users, routeName: 'patients' },
+                { name: 'Patients', href: route('patients.index'), icon: Users, routeName: 'patients.index' },
             ],
         },
         {

@@ -37,13 +37,11 @@ export default function PaymentSummary({
                         className="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
                     >
                         <option value="cash">Cash</option>
-                        <option value="gcash">GCash</option>
-                        <option value="card">Card</option>
                     </select>
                 </div>
 
                 <TextField
-                    label="Amount Tendered"
+                    label="Amount Paid"
                     type="number"
                     min="0"
                     value={payment.amount_tendered}
@@ -86,7 +84,7 @@ export default function PaymentSummary({
                         value={formatCurrency(totals.net)}
                         valueClass="font-semibold text-gray-900"
                     />
-                    <SummaryRow label="Amount Tendered" value={formatCurrency(totals.tendered)} />
+                    <SummaryRow label="Amount Paid" value={formatCurrency(totals.tendered)} />
                     <SummaryRow
                         label="Change Due"
                         value={formatCurrency(totals.change)}

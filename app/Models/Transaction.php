@@ -85,11 +85,13 @@ class Transaction extends Model
 
         if ($statuses->count() === 0) {
             $this->lab_status = 'pending';
-        } elseif ($statuses->every(fn ($status) => $status === 'completed')) {
-            $this->lab_status = 'completed';
+        } elseif ($statuses->every(fn($status) => $status === 'released')) {
+            $this->lab_status = 'released';
             $this->completed_at = $this->completed_at ?? now();
-        } elseif ($statuses->contains('in_progress')) {
-            $this->lab_status = 'in_progress';
+        } elseif ($statuses->every(fn($status) => in_array($status, ['completed', 'released']))) {
+            $this->lab_status = 'completed';
+        } elseif ($statuses->contains('processing')) {
+            $this->lab_status = 'processing';
         } else {
             $this->lab_status = 'pending';
         }

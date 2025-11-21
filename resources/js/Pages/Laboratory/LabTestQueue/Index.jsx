@@ -16,13 +16,13 @@ export default function LabTestQueueIndex({ auth, stats = {}, tests = {} }) {
             statusClass: 'bg-red-500/10 text-red-600',
             dataKey: 'pending',
         },
-        in_progress: {
-            label: 'In Progress',
+        processing: {
+            label: 'Processing',
             icon: Clock,
-            badgeClass: 'bg-amber-100 text-amber-600',
-            headerClass: 'border-amber-500',
-            statusClass: 'bg-amber-500/10 text-amber-600',
-            dataKey: 'in_progress',
+            badgeClass: 'bg-yellow-100 text-yellow-600',
+            headerClass: 'border-yellow-500',
+            statusClass: 'bg-yellow-500/10 text-yellow-600',
+            dataKey: 'processing',
         },
         completed: {
             label: 'Completed',
@@ -31,6 +31,14 @@ export default function LabTestQueueIndex({ auth, stats = {}, tests = {} }) {
             headerClass: 'border-blue-500',
             statusClass: 'bg-blue-500/10 text-blue-600',
             dataKey: 'completed',
+        },
+        released: {
+            label: 'Released',
+            icon: CheckCircle,
+            badgeClass: 'bg-green-100 text-green-600',
+            headerClass: 'border-green-500',
+            statusClass: 'bg-green-500/10 text-green-600',
+            dataKey: 'released',
         },
         full_history: {
             label: 'Full History',
@@ -46,15 +54,17 @@ export default function LabTestQueueIndex({ auth, stats = {}, tests = {} }) {
 
     const counts = {
         pending: tests.pending?.length || 0,
-        in_progress: tests.in_progress?.length || 0,
+        processing: tests.processing?.length || 0,
         completed: tests.completed?.length || 0,
+        released: tests.released?.length || 0,
         full_history: tests.full_history?.length || 0,
     };
 
     const statusStyles = {
         pending: 'bg-red-500/10 text-red-600',
-        in_progress: 'bg-amber-500/10 text-amber-600',
+        processing: 'bg-yellow-500/10 text-yellow-600',
         completed: 'bg-blue-500/10 text-blue-600',
+        released: 'bg-green-500/10 text-green-600',
     };
 
     return (
@@ -66,10 +76,11 @@ export default function LabTestQueueIndex({ auth, stats = {}, tests = {} }) {
                 <p className="text-gray-600">Live queue synced from cashier transactions</p>
             </div>
 
-            <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
                 <StatCard label="Pending Tests" value={stats.pending || counts.pending} icon={AlertCircle} color="bg-red-500" />
-                <StatCard label="In Progress" value={stats.in_progress || counts.in_progress} icon={Clock} color="bg-amber-500" />
+                <StatCard label="Processing" value={stats.processing || counts.processing} icon={Clock} color="bg-yellow-500" />
                 <StatCard label="Completed Today" value={stats.completed_today || counts.completed} icon={CheckCircle} color="bg-blue-500" />
+                <StatCard label="Released" value={counts.released} icon={CheckCircle} color="bg-green-500" />
             </div>
 
             <div className="rounded-xl bg-white shadow">

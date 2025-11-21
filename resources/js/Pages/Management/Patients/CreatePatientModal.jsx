@@ -4,22 +4,41 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { X } from 'lucide-react';
+import { useForm } from '@inertiajs/react';
 
 export default function CreatePatientModal({ show, onClose }) {
-    const [formData, setFormData] = useState({
-        name: '',
+    const [showOtherGender, setShowOtherGender] = useState(false);
+    
+    const { data, setData, post, processing, errors, reset } = useForm({
+        first_name: '',
+        last_name: '',
         email: '',
         age: '',
         gender: '',
-        contact: '',
+        contact_number: '',
         address: '',
-        birthdate: ''
+        birth_date: ''
     });
+
+    const handleGenderChange = (e) => {
+        const value = e.target.value;
+        if (value === 'Other') {
+            setShowOtherGender(true);
+            setData('gender', '');
+        } else {
+            setShowOtherGender(false);
+            setData('gender', value);
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Create patient:', formData);
-        onClose();
+        post(route('patients.store'), {
+            onSuccess: () => {
+                reset();
+                onClose();
+            },
+        });
     };
 
     return (
@@ -38,23 +57,25 @@ export default function CreatePatientModal({ show, onClose }) {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <InputLabel>Full Name *</InputLabel>
+                            <InputLabel>First Name *</InputLabel>
                             <TextInput
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="Enter full name..."
+                                value={data.first_name}
+                                onChange={(e) => setData('first_name', e.target.value)}
+                                placeholder="Enter first name..."
                                 required
                             />
+                            {errors.first_name && <p className="text-red-600 text-sm mt-1">{errors.first_name}</p>}
                         </div>
 
                         <div>
-                            <InputLabel>Email</InputLabel>
+                            <InputLabel>Last Name *</InputLabel>
                             <TextInput
-                                type="email"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                placeholder="Enter email..."
+                                value={data.last_name}
+                                onChange={(e) => setData('last_name', e.target.value)}
+                                placeholder="Enter last name..."
+                                required
                             />
+                            {errors.last_name && <p className="text-red-600 text-sm mt-1">{errors.last_name}</p>}
                         </div>
                     </div>
 
@@ -63,64 +84,96 @@ export default function CreatePatientModal({ show, onClose }) {
                             <InputLabel>Age *</InputLabel>
                             <TextInput
                                 type="number"
-                                value={formData.age}
-                                onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                                value={data.age}
+                                onChange={(e) => setData('age', e.target.value)}
                                 placeholder="Enter age..."
                                 min="0"
                                 max="150"
                                 required
                             />
+                            {errors.age && <p className="text-red-600 text-sm mt-1">{errors.age}</p>}
                         </div>
 
                         <div>
                             <InputLabel>Gender *</InputLabel>
                             <select
-                                value={formData.gender}
-                                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                value={showOtherGender ? 'Other' : data.gender}
+                                onChange={handleGenderChange}
                                 className="w-full rounded-lg border border-gray-400 bg-white px-4 py-2.5 text-black focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
                                 required
                             >
                                 <option value="">Select gender</option>
                                 <option value="Male">Male</option>
                                 <option value="Female">Female</option>
+                                <option value="Other">Others (Please Specify)</option>
                             </select>
+                            {errors.gender && <p className="text-red-600 text-sm mt-1">{errors.gender}</p>}
                         </div>
+
+                        {showOtherGender && (
+                            <div>
+                                <InputLabel>Please Specify Gender *</InputLabel>
+                                <TextInput
+                                    value={data.gender}
+                                    onChange={(e) => setData('gender', e.target.value)}
+                                    placeholder="Enter gender..."
+                                    required
+                                />
+                                {errors.gender && <p className="text-red-600 text-sm mt-1">{errors.gender}</p>}
+                            </div>
+                        )}
 
                         <div>
                             <InputLabel>Birthdate</InputLabel>
                             <TextInput
                                 type="date"
-                                value={formData.birthdate}
-                                onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
+                                value={data.birth_date}
+                                onChange={(e) => setData('birth_date', e.target.value)}
                             />
+                            {errors.birth_date && <p className="text-red-600 text-sm mt-1">{errors.birth_date}</p>}
                         </div>
                     </div>
 
-                    <div>
-                        <InputLabel>Contact Number *</InputLabel>
-                        <TextInput
-                            type="tel"
-                            value={formData.contact}
-                            onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                            placeholder="e.g., 0917-123-4567"
-                            required
-                        />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <InputLabel>Email</InputLabel>
+                            <TextInput
+                                type="email"
+                                value={data.email}
+                                onChange={(e) => setData('email', e.target.value)}
+                                placeholder="Enter email..."
+                            />
+                            {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+                        </div>
+
+                        <div>
+                            <InputLabel>Contact Number *</InputLabel>
+                            <TextInput
+                                type="tel"
+                                value={data.contact_number}
+                                onChange={(e) => setData('contact_number', e.target.value)}
+                                placeholder="e.g., 0917-123-4567"
+                                required
+                            />
+                            {errors.contact_number && <p className="text-red-600 text-sm mt-1">{errors.contact_number}</p>}
+                        </div>
                     </div>
 
                     <div>
                         <InputLabel>Address</InputLabel>
                         <textarea
-                            value={formData.address}
-                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            value={data.address}
+                            onChange={(e) => setData('address', e.target.value)}
                             placeholder="Enter complete address..."
                             rows="3"
                             className="w-full rounded-lg border border-gray-400 bg-white px-4 py-2.5 text-black focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors resize-none"
                         />
+                        {errors.address && <p className="text-red-600 text-sm mt-1">{errors.address}</p>}
                     </div>
 
                     <div className="flex gap-3 pt-4">
-                        <PrimaryButton type="submit" className="flex-1">
-                            Add Patient
+                        <PrimaryButton type="submit" className="flex-1" disabled={processing}>
+                            {processing ? 'Adding...' : 'Add Patient'}
                         </PrimaryButton>
                         <button
                             type="button"

@@ -4,12 +4,14 @@ import { X, FileText } from 'lucide-react';
 export default function PatientDetailsModal({ patient, show, onClose }) {
     const getStatusColor = (status) => {
         switch (status.toLowerCase()) {
+            case 'pending':
+                return 'text-red-600 bg-red-500/10';
+            case 'processing':
+                return 'text-yellow-600 bg-yellow-500/10';
             case 'completed':
-                return 'text-blue-400 bg-blue-500/10';
+                return 'text-blue-600 bg-blue-500/10';
             case 'released':
-                return 'text-emerald-400 bg-emerald-500/10';
-            case 'normal':
-                return 'text-emerald-400 bg-emerald-500/10';
+                return 'text-green-600 bg-green-500/10';
             default:
                 return 'text-gray-400 bg-gray-500/10';
         }
@@ -58,31 +60,33 @@ export default function PatientDetailsModal({ patient, show, onClose }) {
 
                 {/* Test History */}
                 <div>
-                    <h3 className="text-base font-semibold text-white mb-4">Test History</h3>
-                    <div className="space-y-2">
-                        {patient.tests?.map((test, index) => (
-                            <div
-                                key={index}
-                                className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <FileText className="h-5 w-5 text-blue-400" />
-                                    <div>
-                                        <p className="text-sm font-medium text-black">{test.name}</p>
-                                        <p className="text-xs text-black">{test.date}</p>
+                    <h3 className="text-base font-semibold text-gray-900 mb-4">Test History</h3>
+                    {patient.tests && patient.tests.length > 0 ? (
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {patient.tests.map((test, index) => (
+                                <div
+                                    key={index}
+                                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3 flex-1">
+                                        <FileText className="h-5 w-5 text-blue-600" />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-gray-900">{test.name}</p>
+                                            <p className="text-xs text-gray-500">{test.date}</p>
+                                            {test.result && (
+                                                <p className="text-xs text-gray-600 mt-1">Result: {test.result}</p>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(test.status)}`}>
+                                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(test.status)}`}>
                                         {test.status}
                                     </span>
-                                    <button className="text-emerald-400 hover:text-emerald-300 text-xs font-medium">
-                                        Normal
-                                    </button>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500 text-center py-8">No test history available</p>
+                    )}
                 </div>
             </div>
         </Modal>
