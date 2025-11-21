@@ -298,7 +298,9 @@ class CashierTransactionController extends Controller
                         ->where('transaction_number', 'like', "%{$search}%")
                         ->orWhere('receipt_number', 'like', "%{$search}%")
                         ->orWhere('patient_first_name', 'like', "%{$search}%")
-                        ->orWhere('patient_last_name', 'like', "%{$search}%");
+                        ->orWhere('patient_last_name', 'like', "%{$search}%")
+                        ->orWhereRaw("CONCAT(patient_first_name, ' ', patient_last_name) ILIKE ?", ["%{$search}%"])
+                        ->orWhereRaw("CONCAT(patient_last_name, ' ', patient_first_name) ILIKE ?", ["%{$search}%"]);
                 });
             })
             ->latest()
