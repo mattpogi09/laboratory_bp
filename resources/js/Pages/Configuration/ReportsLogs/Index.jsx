@@ -18,7 +18,7 @@ export default function ReportsLogsIndex({
 
     const totals = financial.totals || { revenue: 0, discounts: 0, transactions: 0 };
     const financialRows = financial.rows || [];
-    const labStats = labReport.stats || { total: 0, released: 0, processing: 0, pending: 0 };
+    const labStats = labReport.stats || { total: 0, pending: 0, processing: 0, completed: 0, released: 0 };
     const labRows = labReport.rows || [];
 
     const submitFilters = () => {
@@ -178,11 +178,12 @@ export default function ReportsLogsIndex({
 
             {activeTab === 'lab' && (
                 <div className="space-y-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <StatCard label="Total Tests" value={labStats.total} />
-                        <StatCard label="Released" value={labStats.released} accent="text-green-600" />
-                        <StatCard label="In Progress" value={labStats.processing} accent="text-yellow-600" />
                         <StatCard label="Pending" value={labStats.pending} accent="text-red-600" />
+                        <StatCard label="Processing" value={labStats.processing} accent="text-yellow-600" />
+                        <StatCard label="Completed" value={labStats.completed} accent="text-blue-600" />
+                        <StatCard label="Released" value={labStats.released} accent="text-green-600" />
                     </div>
 
                     <div className="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm">

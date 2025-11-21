@@ -57,9 +57,10 @@ class ReportLogController extends Controller
 
         $labStats = [
             'total' => $labTests->count(),
-            'released' => $labTests->where('status', 'released')->count(),
-            'processing' => $labTests->where('status', 'processing')->count(),
             'pending' => $labTests->where('status', 'pending')->count(),
+            'processing' => $labTests->where('status', 'processing')->count(),
+            'completed' => $labTests->where('status', 'completed')->count(),
+            'released' => $labTests->where('status', 'released')->count(),
         ];
 
         $labRows = $labTests->map(function (TransactionTest $test) {
