@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InventoryItem;
 use App\Models\Patient;
 use App\Models\Transaction;
 use App\Models\TransactionTest;
@@ -42,8 +43,20 @@ class DashboardController extends Controller
       ->orWhere('status', 'processing')
       ->count();
 
-    // Low Stock Items (you'll need to implement inventory model)
-    $lowStockItems = []; // Placeholder
+    // Low Stock Items - Get items that are low stock or out of stock
+    $lowStockItems = InventoryItem::whereIn('status', ['low_stock', 'out_of_stock'])
+      ->orderBy('current_stock')
+      ->get()
+      ->map(function ($item) {
+        return [
+          'id' => $item->id,
+          'name' => $item->name,
+          'current_stock' => $item->current_stock,
+          'minimum_stock' => $item->minimum_stock,
+          'unit' => $item->unit,
+          'status' => $item->status,
+        ];
+      });
 
     // Pending Tasks (Tests that need to be done)
     $pendingTasks = TransactionTest::with(['transaction.patient'])

@@ -12,6 +12,7 @@ class Patient extends Model
     protected $fillable = [
         'first_name',
         'last_name',
+        'middle_name',
         'email',
         'age',
         'gender',
@@ -35,6 +36,7 @@ class Patient extends Model
 
     public function getFullNameAttribute(): string
     {
-        return trim("{$this->first_name} {$this->last_name}");
+        $middleName = $this->middle_name ? " {$this->middle_name} " : ' ';
+        return trim("{$this->first_name}{$middleName}{$this->last_name}");
     }
 }

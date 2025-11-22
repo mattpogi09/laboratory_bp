@@ -1,11 +1,75 @@
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Search, X, CheckCircle2 } from 'lucide-react';
 import TextField from './TextField';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export default function PatientInfoForm({ patient, errors = {}, onChange }) {
     const [showOtherGender, setShowOtherGender] = useState(
         patient.gender && !['Male', 'Female'].includes(patient.gender)
     );
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showSearch, setShowSearch] = useState(!patient.id);
+    const [selectedPatient, setSelectedPatient] = useState(null);
+
+    useEffect(() => {
+        if (searchQuery.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setIsSearching(true);
+            try {
+                const response = await axios.get(route('patients.search'), {
+                    params: { query: searchQuery }
+                });
+                setSearchResults(response.data);
+            } catch (error) {
+                console.error('Error searching patients:', error);
+                setSearchResults([]);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const selectExistingPatient = (patientData) => {
+        setSelectedPatient(patientData);
+        setShowSearch(false);
+        setSearchQuery('');
+        setSearchResults([]);
+        
+        // Update all patient fields
+        onChange('id', patientData.id);
+        onChange('first_name', patientData.first_name);
+        onChange('last_name', patientData.last_name);
+        onChange('middle_name', patientData.middle_name || '');
+        onChange('email', patientData.email || '');
+        onChange('age', patientData.age || '');
+        onChange('gender', patientData.gender || '');
+        onChange('contact', patientData.contact_number || '');
+        onChange('address', patientData.address || '');
+    };
+
+    const clearSelection = () => {
+        setSelectedPatient(null);
+        setShowSearch(true);
+        
+        // Clear all patient fields
+        onChange('id', null);
+        onChange('first_name', '');
+        onChange('last_name', '');
+        onChange('middle_name', '');
+        onChange('email', '');
+        onChange('age', '');
+        onChange('gender', '');
+        onChange('contact', '');
+        onChange('address', '');
+    };
 
     const handleChange = (field) => (e) => onChange(field, e.target.value);
 
@@ -20,15 +84,100 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
         }
     };
 
+    const isExistingPatient = !!patient.id || !!selectedPatient;
+
     return (
         <section className="rounded-xl bg-white p-6 shadow">
             <header className="mb-4 flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-red-600" />
                 <div>
                     <h2 className="text-lg font-semibold text-gray-900">Patient Information</h2>
-                    <p className="text-sm text-gray-500">Basic details for queueing and receipts</p>
+                    <p className="text-sm text-gray-500">Search existing patient or add new patient details</p>
                 </div>
             </header>
+
+            {/* Patient Search */}
+            {showSearch && !isExistingPatient && (
+                <div className="mb-6 space-y-3">
+                    <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">
+                            Search Existing Patient
+                        </label>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search by name, ID, or contact number..."
+                                className="w-full rounded-lg border border-gray-300 pl-10 pr-3 py-2 text-gray-900 placeholder:text-gray-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Search Results Dropdown */}
+                    {searchResults.length > 0 && (
+                        <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-lg">
+                            {searchResults.map((result) => (
+                                <button
+                                    key={result.id}
+                                    type="button"
+                                    onClick={() => selectExistingPatient(result)}
+                                    className="w-full border-b border-gray-200 p-3 text-left hover:bg-gray-50 transition-colors last:border-b-0"
+                                >
+                                    <div className="font-medium text-gray-900">
+                                        {result.full_name}
+                                    </div>
+                                    <div className="mt-1 text-sm text-gray-600">
+                                        ID: {result.patient_id} • {result.age} / {result.gender} • {result.contact_number}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {isSearching && searchQuery && (
+                        <div className="text-sm text-gray-500">Searching...</div>
+                    )}
+
+                    {!isSearching && searchQuery.length >= 2 && searchResults.length === 0 && (
+                        <div className="text-sm text-gray-500">No patients found. Add as new patient below.</div>
+                    )}
+
+                    <div className="flex items-center gap-2 pt-2">
+                        <div className="h-px flex-1 bg-gray-300" />
+                        <span className="text-xs text-gray-500">OR ADD NEW PATIENT</span>
+                        <div className="h-px flex-1 bg-gray-300" />
+                    </div>
+                </div>
+            )}
+
+            {/* Selected Patient Badge */}
+            {isExistingPatient && (
+                <div className="mb-6 flex items-center justify-between rounded-lg border-2 border-green-500 bg-green-50 p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500">
+                            <CheckCircle2 className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                            <div className="font-semibold text-green-900">
+                                {patient.first_name} {patient.middle_name} {patient.last_name}
+                            </div>
+                            <div className="text-sm text-green-700">
+                                Existing patient selected • Contact: {patient.contact}
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={clearSelection}
+                        className="rounded-lg p-2 text-green-700 hover:bg-green-100 transition-colors"
+                        title="Clear selection"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+            )}
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <TextField
@@ -37,19 +186,25 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
                     value={patient.first_name}
                     onChange={handleChange('first_name')}
                     error={errors['patient.first_name']}
+                    disabled={isExistingPatient}
                 />
+                
+                <TextField
+                    label="Middle Name"
+                    value={patient.middle_name}
+                    onChange={handleChange('middle_name')}
+                    disabled={isExistingPatient}
+                />
+                
                 <TextField
                     label="Last Name"
                     required
                     value={patient.last_name}
                     onChange={handleChange('last_name')}
                     error={errors['patient.last_name']}
+                    disabled={isExistingPatient}
                 />
-                <TextField
-                    label="Middle Name"
-                    value={patient.middle_name}
-                    onChange={handleChange('middle_name')}
-                />
+
                 <TextField
                     label="Email"
                     type="email"
@@ -62,6 +217,7 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
                     type="number"
                     value={patient.age}
                     onChange={handleChange('age')}
+                    disabled={isExistingPatient}
                 />
                 <div>
                     <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -70,7 +226,8 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
                     <select
                         value={showOtherGender ? 'Other' : patient.gender}
                         onChange={handleGenderChange}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                        disabled={isExistingPatient}
                     >
                         <option value="">Select Gender</option>
                         <option value="Male">Male</option>
@@ -81,7 +238,7 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
                         <p className="mt-1 text-xs text-red-600">{errors['patient.gender']}</p>
                     )}
                 </div>
-                {showOtherGender && (
+                {showOtherGender && !isExistingPatient && (
                     <TextField
                         label="Please Specify Gender"
                         value={patient.gender}

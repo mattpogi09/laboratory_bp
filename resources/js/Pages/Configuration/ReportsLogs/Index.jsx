@@ -115,6 +115,7 @@ export default function ReportsLogsIndex({
                             <thead>
                                 <tr className="border-b border-gray-200 bg-gray-50">
                                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Date</th>
+                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Transaction Code</th>
                                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Item</th>
                                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Type</th>
                                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Quantity</th>
@@ -126,6 +127,7 @@ export default function ReportsLogsIndex({
                                 {inventoryLogs.map((log, index) => (
                                     <tr key={index} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-4 py-3 text-sm text-gray-900">{log.date}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-900">{log.transactionCode || '-'}</td>
                                         <td className="px-4 py-3 text-sm text-gray-900">{log.item}</td>
                                         <td className="px-4 py-3">
                                             <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
@@ -311,15 +313,15 @@ function severityColor(severity) {
 function statusBadge(status) {
     switch (status) {
         case 'pending':
-            return 'bg-red-500/10 text-red-600';
+            return 'bg-red-500/10 text-red-700';
         case 'processing':
-            return 'bg-yellow-500/10 text-yellow-600';
+            return 'bg-yellow-500/10 text-yellow-700';
         case 'completed':
-            return 'bg-blue-500/10 text-blue-600';
+            return 'bg-blue-500/10 text-blue-700';
         case 'released':
-            return 'bg-green-500/10 text-green-600';
+            return 'bg-green-500/10 text-green-700';
         default:
-            return 'bg-gray-500/10 text-gray-600';
+            return 'bg-gray-500/10 text-gray-700';
     }
 }
 

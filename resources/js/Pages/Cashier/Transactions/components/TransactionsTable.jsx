@@ -10,11 +10,11 @@ export default function TransactionsTable({ transactions = [], search, onSearchC
 
     const statusBadge = (status) => {
         const map = {
-            pending: 'bg-amber-500/10 text-amber-700',
+            pending: 'bg-red-500/10 text-red-700',
+            processing: 'bg-yellow-500/10 text-yellow-700',
+            completed: 'bg-blue-500/10 text-blue-700',
+            released: 'bg-green-500/10 text-green-700',
             paid: 'bg-emerald-500/10 text-emerald-700',
-            completed: 'bg-emerald-500/10 text-emerald-700',
-            in_progress: 'bg-blue-500/10 text-blue-700',
-            released: 'bg-purple-500/10 text-purple-700',
         };
         return map[status] || 'bg-gray-100 text-gray-700';
     };

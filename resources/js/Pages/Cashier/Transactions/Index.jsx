@@ -8,6 +8,7 @@ import PaymentSummary from './components/PaymentSummary';
 import SelectedTestsCard from './components/SelectedTestsCard';
 import QueuePreview from './components/QueuePreview';
 import TransactionsTable from './components/TransactionsTable';
+import axios from 'axios';
 
 const initialPatient = {
     first_name: '',
@@ -43,12 +44,31 @@ export default function TransactionsIndex({
     const [selectedDiscount, setSelectedDiscount] = useState(
         discountOptions[0] || { id: 'none', name: 'No Discount', rate: 0 }
     );
+    const [duplicateTests, setDuplicateTests] = useState([]);
 
     useEffect(() => {
         if (discountOptions.length) {
             setSelectedDiscount(discountOptions[0]);
         }
     }, [discountOptions]);
+
+    // Check for duplicate tests when patient or selected tests change
+    useEffect(() => {
+        if (patient.id && selectedTests.length > 0) {
+            axios.post(route('cashier.transactions.check-duplicates'), {
+                patient_id: patient.id,
+                test_ids: selectedTests,
+            })
+            .then(response => {
+                setDuplicateTests(response.data.duplicates || []);
+            })
+            .catch(() => {
+                setDuplicateTests([]);
+            });
+        } else {
+            setDuplicateTests([]);
+        }
+    }, [patient.id, selectedTests]);
 
     const catalogById = useMemo(() => {
         const flat = {};
@@ -129,7 +149,22 @@ export default function TransactionsIndex({
         );
     };
 
-    const patientFullName = [patient.first_name, patient.last_name].filter(Boolean).join(' ');
+    const patientFullName = [patient.first_name, patient.middle_name, patient.last_name].filter(Boolean).join(' ');
+
+    const getStatusBadgeClass = (status) => {
+        switch (status?.toLowerCase()) {
+            case 'pending':
+                return 'bg-red-500/10 text-red-700';
+            case 'processing':
+                return 'bg-yellow-500/10 text-yellow-700';
+            case 'completed':
+                return 'bg-blue-500/10 text-blue-700';
+            case 'released':
+                return 'bg-green-500/10 text-green-700';
+            default:
+                return 'bg-gray-500/10 text-gray-700';
+        }
+    };
 
     return (
         <DashboardLayout auth={auth}>
@@ -148,12 +183,44 @@ export default function TransactionsIndex({
                 </div>
             )}
 
+
+
             <StatsCards stats={stats} />
 
             <div className="grid gap-6 lg:grid-cols-3">
                 <div className="lg:col-span-2 space-y-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <PatientInfoForm patient={patient} errors={errors} onChange={handlePatientChange} />
+                        
+                        {duplicateTests.length > 0 && (
+                            <div className="rounded-lg border-2 border-amber-400 bg-amber-50 px-4 py-3 shadow-lg">
+                                <div className="flex items-start gap-3">
+                                    <svg className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                                    </svg>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-amber-900 mb-1">⚠️ Duplicate Tests Detected</h3>
+                                        <p className="text-sm text-amber-800 mb-2">
+                                            This patient already has the following tests that are pending or in progress:
+                                        </p>
+                                        <ul className="list-disc list-inside text-sm text-amber-800 space-y-1">
+                                            {duplicateTests.map((test, index) => (
+                                                <li key={index}>
+                                                    <span className="font-medium">{test.test_name}</span>
+                                                    <span className={`ml-2 text-xs px-2 py-0.5 rounded-full capitalize font-semibold ${getStatusBadgeClass(test.status)}`}>
+                                                        {test.status}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <p className="text-sm text-amber-800 mt-2 font-medium">
+                                            ❌ You cannot submit this transaction until these tests are completed or removed from selection.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
                         <TestCatalog
                             labTests={labTests}
                             selectedTests={selectedTests}

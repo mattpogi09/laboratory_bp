@@ -32,6 +32,7 @@ class PatientController extends Controller
                 'name' => $patient->full_name,
                 'first_name' => $patient->first_name,
                 'last_name' => $patient->last_name,
+                'middle_name' => $patient->middle_name,
                 'email' => $patient->email,
                 'age' => $patient->age,
                 'gender' => $patient->gender,
@@ -112,6 +113,47 @@ class PatientController extends Controller
         $patient->delete();
 
         return redirect()->back()->with('success', 'Patient deleted successfully.');
+    }
+
+    /**
+     * Search patients for transaction forms
+     */
+    public function search(Request $request)
+    {
+        $query = $request->input('query', '');
+
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $patients = Patient::query()
+            ->where(function ($q) use ($query) {
+                $q->where('first_name', 'ILIKE', "%{$query}%")
+                    ->orWhere('last_name', 'ILIKE', "%{$query}%")
+                    ->orWhere('contact_number', 'ILIKE', "%{$query}%")
+                    ->orWhere('email', 'ILIKE', "%{$query}%")
+                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) ILIKE ?", ["%{$query}%"])
+                    ->orWhereRaw("CONCAT(last_name, ' ', first_name) ILIKE ?", ["%{$query}%"]);
+            })
+            ->limit(10)
+            ->get()
+            ->map(function ($patient) {
+                return [
+                    'id' => $patient->id,
+                    'patient_id' => 'P' . date('Y') . '-' . str_pad($patient->id, 3, '0', STR_PAD_LEFT),
+                    'first_name' => $patient->first_name,
+                    'last_name' => $patient->last_name,
+                    'middle_name' => $patient->middle_name,
+                    'full_name' => $patient->full_name,
+                    'email' => $patient->email,
+                    'age' => $patient->age,
+                    'gender' => $patient->gender,
+                    'contact_number' => $patient->contact_number,
+                    'address' => $patient->address,
+                ];
+            });
+
+        return response()->json($patients);
     }
 }
 

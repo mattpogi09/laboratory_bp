@@ -19,7 +19,7 @@ export default function DashboardLayout({ children, auth }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     
     const user = auth?.user;
-    const userRole = user?.role || 'cashier';
+    const userRole = user?.role;
 
     // Admin navigation
     const adminNavigation = [
@@ -70,12 +70,17 @@ export default function DashboardLayout({ children, auth }) {
         
     ];
 
-    // Lab Staff navigation (Lab Test Queue only)
+    // Lab Staff navigation (Lab Test Queue and Inventory)
     const labStaffNavigation = [
         {
             name: 'Laboratory',
             children: [
                 { name: 'Lab Test Queue', href: route('lab-test-queue'), icon: Beaker, routeName: 'lab-test-queue' },
+            ],
+        },
+        {
+            name: 'Configuration',
+            children: [
                 { name: 'Inventory', href: route('inventory'), icon: Box, routeName: 'inventory' },
             ],
         },
@@ -154,7 +159,7 @@ export default function DashboardLayout({ children, auth }) {
                     <div className="flex items-center px-3 py-2 text-sm font-medium text-gray-300">
                         <div className="ml-3">
                             <p className="text-sm font-medium text-black">{user?.name || 'User'}</p>
-                            <p className="text-xs text-black capitalize">{userRole.replace('_', ' ')}</p>
+                            <p className="text-xs text-black capitalize">{userRole?.replace('_', ' ') || 'User'}</p>
                         </div>
                     </div>
                     <Link

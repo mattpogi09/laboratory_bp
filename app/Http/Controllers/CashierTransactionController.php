@@ -58,6 +58,32 @@ class CashierTransactionController extends Controller
         ]);
     }
 
+    public function checkDuplicateTests(Request $request)
+    {
+        $validated = $request->validate([
+            'patient_id' => ['required', 'exists:patients,id'],
+            'test_ids' => ['required', 'array'],
+            'test_ids.*' => ['required', 'exists:lab_tests,id'],
+        ]);
+
+        $duplicateTests = TransactionTest::whereHas('transaction', function ($query) use ($validated) {
+            $query->where('patient_id', $validated['patient_id'])
+                ->whereIn('lab_status', ['pending', 'processing']);
+        })
+            ->whereIn('lab_test_id', $validated['test_ids'])
+            ->with('labTest')
+            ->get()
+            ->map(function ($transactionTest) {
+                return [
+                    'test_id' => $transactionTest->lab_test_id,
+                    'test_name' => $transactionTest->test_name,
+                    'status' => $transactionTest->status,
+                ];
+            });
+
+        return response()->json(['duplicates' => $duplicateTests]);
+    }
+
     public function history(Request $request): Response
     {
         $transactions = $this->paginatedTransactions($request, 50);
@@ -104,6 +130,22 @@ class CashierTransactionController extends Controller
 
             if ($labTests->isEmpty()) {
                 abort(422, 'No valid lab tests were selected.');
+            }
+
+            // Check for duplicate pending/processing tests for this patient
+            if ($patient->id) {
+                $existingTests = TransactionTest::whereHas('transaction', function ($query) use ($patient) {
+                    $query->where('patient_id', $patient->id)
+                        ->whereIn('lab_status', ['pending', 'processing']);
+                })
+                    ->whereIn('lab_test_id', $selectedTests)
+                    ->with('labTest')
+                    ->get();
+
+                if ($existingTests->isNotEmpty()) {
+                    $duplicateTestNames = $existingTests->pluck('test_name')->join(', ');
+                    abort(422, "This patient already has pending/processing tests: {$duplicateTestNames}. Please check existing transactions.");
+                }
             }
 
             $totalAmount = $labTests->sum('price');
@@ -266,9 +308,24 @@ class CashierTransactionController extends Controller
             return Patient::findOrFail($patientData['id']);
         }
 
+        // Check for existing patient with same name to prevent duplicates
+        $existingPatient = Patient::where('first_name', 'ILIKE', $patientData['first_name'])
+            ->where('last_name', 'ILIKE', $patientData['last_name'])
+            ->where(function ($query) use ($patientData) {
+                $query->whereNull('middle_name')
+                    ->orWhere('middle_name', 'ILIKE', $patientData['middle_name'] ?? '');
+            })
+            ->first();
+
+        if ($existingPatient) {
+            // Return existing patient instead of creating duplicate
+            return $existingPatient;
+        }
+
         return Patient::create([
             'first_name' => $patientData['first_name'],
             'last_name' => $patientData['last_name'],
+            'middle_name' => $patientData['middle_name'] ?? null,
             'email' => $patientData['email'] ?? null,
             'age' => $patientData['age'] ?? null,
             'gender' => $patientData['gender'] ?? null,

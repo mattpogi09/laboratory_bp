@@ -28,6 +28,10 @@ return new class extends Migration {
             $table->enum('payment_status', ['pending', 'paid', 'refunded', 'void'])->default('pending');
             $table->string('payment_method')->default('cash');
             $table->decimal('total_amount', 12, 2)->default(0);
+            $table->string('discount_name')->nullable();
+            $table->decimal('discount_rate', 5, 2)->default(0);
+            $table->decimal('discount_amount', 12, 2)->default(0);
+            $table->decimal('net_total', 12, 2)->default(0);
             $table->decimal('amount_tendered', 12, 2)->default(0);
             $table->decimal('change_due', 12, 2)->default(0);
             $table->decimal('balance_due', 12, 2)->default(0);

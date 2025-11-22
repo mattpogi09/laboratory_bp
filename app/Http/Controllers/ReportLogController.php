@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InventoryItem;
+use App\Models\InventoryTransaction;
 use App\Models\Transaction;
 use App\Models\TransactionTest;
 use Illuminate\Http\Request;
@@ -88,39 +90,38 @@ class ReportLogController extends Controller
                 'stats' => $labStats,
                 'rows' => $labRows,
             ],
-            'inventoryLogs' => $this->inventoryLogs(),
+            'inventoryLogs' => $this->inventoryLogs($dateFrom, $dateTo),
             'auditLogs' => $this->auditLogs(),
         ]);
     }
 
-    protected function inventoryLogs(): array
+    protected function inventoryLogs($dateFrom = null, $dateTo = null): array
     {
-        return [
-            [
-                'date' => now()->subDays(1)->toDateString(),
-                'item' => 'Blood Collection Tubes',
-                'type' => 'OUT',
-                'quantity' => 30,
-                'reason' => 'CBC tests',
-                'performedBy' => 'KuyaDats (Staff)',
-            ],
-            [
-                'date' => now()->subDays(2)->toDateString(),
-                'item' => 'Alcohol Swabs',
-                'type' => 'IN',
-                'quantity' => 500,
-                'reason' => 'Weekly restock',
-                'performedBy' => 'Admin',
-            ],
-            [
-                'date' => now()->subDays(3)->toDateString(),
-                'item' => 'Test Strips (Glucose)',
-                'type' => 'OUT',
-                'quantity' => 20,
-                'reason' => 'Blood sugar tests',
-                'performedBy' => 'Al (Staff)',
-            ],
-        ];
+        $query = InventoryTransaction::with(['item', 'user'])
+            ->latest();
+
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        return $query->take(100)
+            ->get()
+            ->map(function ($transaction) {
+                return [
+                    'date' => $transaction->created_at->toDateString(),
+                    'transactionCode' => $transaction->transaction_code,
+                    'item' => $transaction->item->name,
+                    'type' => strtoupper($transaction->type),
+                    'quantity' => $transaction->quantity,
+                    'reason' => $transaction->reason,
+                    'performedBy' => $transaction->user->name,
+                ];
+            })
+            ->toArray();
     }
 
     protected function auditLogs(): array

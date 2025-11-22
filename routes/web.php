@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CashierTransactionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LabResultController;
 use App\Http\Controllers\LabTestQueueController;
 use App\Http\Controllers\PatientController;
@@ -24,6 +25,7 @@ Route::middleware('auth')->group(function () {
 
     // Management Routes
     Route::resource('patients', PatientController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::get('/api/patients/search', [PatientController::class, 'search'])->name('patients.search');
 
     Route::get('/users', function () {
         return Inertia::render('Management/Users/Index');
@@ -34,9 +36,13 @@ Route::middleware('auth')->group(function () {
     })->name('services');
 
     // Configuration Routes
-    Route::get('/inventory', function () {
-        return Inertia::render('Configuration/Inventory/Index');
-    })->name('inventory');
+    Route::middleware('auth')->prefix('inventory')->group(function () {
+        Route::get('/', [InventoryController::class, 'index'])->name('inventory');
+        Route::post('/', [InventoryController::class, 'store'])->name('inventory.store');
+        Route::post('/stock-in', [InventoryController::class, 'stockIn'])->name('inventory.stock-in');
+        Route::post('/stock-out', [InventoryController::class, 'stockOut'])->name('inventory.stock-out');
+        Route::post('/{id}/adjust', [InventoryController::class, 'adjust'])->name('inventory.adjust');
+    });
 
     Route::get('/discounts-philhealth', function () {
         return Inertia::render('Configuration/DiscountsPhilhealth/Index');
@@ -50,6 +56,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/transactions/history', [CashierTransactionController::class, 'history'])->name('transactions.history');
         Route::post('/transactions', [CashierTransactionController::class, 'store'])->name('transactions.store');
         Route::get('/transactions/{transaction}', [CashierTransactionController::class, 'show'])->name('transactions.show');
+        Route::post('/transactions/check-duplicates', [CashierTransactionController::class, 'checkDuplicateTests'])->name('transactions.check-duplicates');
     });
 
     // Laboratory Routes
