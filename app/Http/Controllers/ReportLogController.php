@@ -117,6 +117,8 @@ class ReportLogController extends Controller
                     'item' => $transaction->item->name,
                     'type' => strtoupper($transaction->type),
                     'quantity' => $transaction->quantity,
+                    'previousStock' => $transaction->previous_stock,
+                    'newStock' => $transaction->new_stock,
                     'reason' => $transaction->reason,
                     'performedBy' => $transaction->user->name,
                 ];

@@ -175,161 +175,169 @@ export default function InventoryIndex({ auth, items, transactions, stats, lowSt
                             </nav>
                         </div>
 
-                        <div className="p-6">
-                            {activeTab === 'stock' && (
-                                <>
-                                    {/* Search */}
-                                    <div className="mb-6">
-                                        <div className="relative">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                            <input
-                                                type="text"
-                                                placeholder="Search by item name or category..."
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Stock Table */}
-                                    {filteredItems.length === 0 ? (
-                                        <div className="text-center py-12">
-                                            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                            <h3 className="text-lg font-medium text-gray-900 mb-2">No items found</h3>
-                                            <p className="text-gray-500">
-                                                {searchQuery ? 'Try adjusting your search' : 'Start by creating your first stock item'}
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full">
-                                                <thead>
-                                                    <tr className="border-b border-gray-200">
-                                                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Item Name</th>
-                                                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Category</th>
-                                                        <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Current Stock</th>
-                                                        <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Minimum Stock</th>
-                                                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
-                                                        {auth.user.role === 'admin' && (
-                                                            <th className="text-center py-3 px-4 text-sm font-medium text-gray-700">Actions</th>
-                                                        )}
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {filteredItems.map((item) => (
-                                                        <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                                                            <td className="py-4 px-4">
-                                                                <div className="font-medium text-gray-900">{item.name}</div>
-                                                            </td>
-                                                            <td className="py-4 px-4 text-gray-600">{item.category}</td>
-                                                            <td className={`py-4 px-4 text-right ${getStockTextColor(item.status)}`}>
-                                                                {item.current_stock} {item.unit}
-                                                            </td>
-                                                            <td className="py-4 px-4 text-right text-gray-600">
-                                                                {item.minimum_stock} {item.unit}
-                                                            </td>
-                                                            <td className="py-4 px-4">
-                                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
-                                                                    {item.status === 'good' && 'Good'}
-                                                                    {item.status === 'low_stock' && 'Low Stock'}
-                                                                    {item.status === 'out_of_stock' && 'Out of Stock'}
-                                                                </span>
-                                                            </td>
-                                                            <td className="py-4 px-4 text-center">
-                                                                {auth.user.role === 'admin' && (
-                                                                    <button
-                                                                        onClick={() => handleAdjustStock(item)}
-                                                                        className="inline-flex items-center gap-1 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                                    >
-                                                                        <Edit className="h-4 w-4" />
-                                                                        Adjust
-                                                                    </button>
-                                                                )}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-
-                            {activeTab === 'transactions' && (
-                                <div className="overflow-x-auto">
-                                    {transactions && transactions.length === 0 ? (
-                                        <div className="text-center py-12">
-                                            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                            <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
-                                            <p className="text-gray-500">Transaction history will appear here</p>
-                                        </div>
-                                    ) : (
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="border-b border-gray-200">
-                                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Date</th>
-                                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Item</th>
-                                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Type</th>
-                                                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Quantity</th>
-                                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Transaction Code</th>
-                                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">User</th>
-                                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Reason</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {transactions?.map((transaction) => (
-                                                    <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50">
-                                                        <td className="py-4 px-4 text-gray-600">
-                                                            {new Date(transaction.created_at).toLocaleDateString('en-US', {
-                                                                year: 'numeric',
-                                                                month: 'short',
-                                                                day: 'numeric',
-                                                                hour: '2-digit',
-                                                                minute: '2-digit'
-                                                            })}
-                                                        </td>
-                                                        <td className="py-4 px-4 font-medium text-gray-900">{transaction.item?.name}</td>
-                                                        <td className="py-4 px-4">
-                                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                                transaction.type === 'in' 
-                                                                    ? 'bg-green-100 text-green-800 border border-green-300'
-                                                                    : 'bg-red-100 text-red-800 border border-red-300'
-                                                            }`}>
-                                                                {transaction.type === 'in' ? (
-                                                                    <>
-                                                                        <TrendingUp className="h-3 w-3" />
-                                                                        Stock In
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <TrendingDown className="h-3 w-3" />
-                                                                        Stock Out
-                                                                    </>
-                                                                )}
-                                                            </span>
-                                                        </td>
-                                                        <td className={`py-4 px-4 text-right font-semibold ${
-                                                            transaction.type === 'in' ? 'text-green-600' : 'text-red-600'
-                                                        }`}>
-                                                            {transaction.type === 'in' ? '+' : '-'}{transaction.quantity} {transaction.item?.unit}
-                                                        </td>
-                                                        <td className="py-4 px-4 text-gray-600">
-                                                            {transaction.transaction_code || '-'}
-                                                        </td>
-                                                        <td className="py-4 px-4 text-gray-600">{transaction.user?.name}</td>
-                                                        <td className="py-4 px-4 text-gray-600">{transaction.reason}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    )}
-                                </div>
-                            )}
+            <div className="p-6">
+                {activeTab === 'stock' && (
+                    <>
+                        {/* Search */}
+                        <div className="mb-6">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by item name or category..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                />
+                            </div>
                         </div>
+
+                        {/* Stock Table */}
+                        {filteredItems.length === 0 ? (
+                            <div className="text-center py-12">
+                                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">No items found</h3>
+                                <p className="text-gray-500">
+                                    {searchQuery ? 'Try adjusting your search' : 'Start by creating your first stock item'}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b border-gray-200">
+                                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Item Name</th>
+                                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Category</th>
+                                            <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Current Stock</th>
+                                            <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Minimum Stock</th>
+                                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Status</th>
+                                            {auth.user.role === 'admin' && (
+                                                <th className="text-center py-3 px-4 text-sm font-medium text-gray-700">Actions</th>
+                                            )}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredItems.map((item) => (
+                                            <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                                <td className="py-4 px-4">
+                                                    <div className="font-medium text-gray-900">{item.name}</div>
+                                                </td>
+                                                <td className="py-4 px-4 text-gray-600">{item.category}</td>
+                                                <td className={`py-4 px-4 text-right ${getStockTextColor(item.status)}`}>
+                                                    {item.current_stock} {item.unit}
+                                                </td>
+                                                <td className="py-4 px-4 text-right text-gray-600">
+                                                    {item.minimum_stock} {item.unit}
+                                                </td>
+                                                <td className="py-4 px-4">
+                                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
+                                                        {item.status === 'good' && 'Good'}
+                                                        {item.status === 'low_stock' && 'Low Stock'}
+                                                        {item.status === 'out_of_stock' && 'Out of Stock'}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-4 text-center">
+                                                    {auth.user.role === 'admin' && (
+                                                        <button
+                                                            onClick={() => handleAdjustStock(item)}
+                                                            className="inline-flex items-center gap-1 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                            Adjust
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {activeTab === 'transactions' && (
+                    <div className="overflow-x-auto">
+                        {transactions && transactions.length === 0 ? (
+                            <div className="text-center py-12">
+                                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
+                                <p className="text-gray-500">Transaction history will appear here</p>
+                            </div>
+                        ) : (
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-gray-200">
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Date</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Item</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Type</th>
+                                        <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Quantity</th>
+                                        <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Previous Stock</th>
+                                        <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">New Stock</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Transaction Code</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">User</th>
+                                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Reason</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {transactions?.map((transaction) => (
+                                        <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                            <td className="py-4 px-4 text-gray-600">
+                                                {new Date(transaction.created_at).toLocaleDateString('en-US', {
+                                                    year: 'numeric',
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                })}
+                                            </td>
+                                            <td className="py-4 px-4 font-medium text-gray-900">{transaction.item?.name}</td>
+                                            <td className="py-4 px-4">
+                                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                    transaction.type === 'in' 
+                                                        ? 'bg-green-100 text-green-800 border border-green-300'
+                                                        : 'bg-red-100 text-red-800 border border-red-300'
+                                                }`}>
+                                                    {transaction.type === 'in' ? (
+                                                        <>
+                                                            <TrendingUp className="h-3 w-3" />
+                                                            Stock In
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <TrendingDown className="h-3 w-3" />
+                                                            Stock Out
+                                                        </>
+                                                    )}
+                                                </span>
+                                            </td>
+                                            <td className={`py-4 px-4 text-right font-semibold ${
+                                                transaction.type === 'in' ? 'text-green-600' : 'text-red-600'
+                                            }`}>
+                                                {transaction.type === 'in' ? '+' : '-'}{transaction.quantity} {transaction.item?.unit}
+                                            </td>
+                                            <td className="py-4 px-4 text-right text-gray-600">
+                                                {transaction.previous_stock !== null ? `${transaction.previous_stock} ${transaction.item?.unit}` : '-'}
+                                            </td>
+                                            <td className="py-4 px-4 text-right font-medium text-gray-900">
+                                                {transaction.new_stock !== null ? `${transaction.new_stock} ${transaction.item?.unit}` : '-'}
+                                            </td>
+                                            <td className="py-4 px-4 text-gray-600">
+                                                {transaction.transaction_code || '-'}
+                                            </td>
+                                            <td className="py-4 px-4 text-gray-600">{transaction.user?.name}</td>
+                                            <td className="py-4 px-4 text-gray-600">{transaction.reason}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
-                </div>
+                )}
             </div>
+        </div>
+    </div>
+</div>
 
             {/* Modals */}
             <CreateStockModal show={showCreateModal} onClose={() => setShowCreateModal(false)} />

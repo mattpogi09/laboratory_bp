@@ -12,6 +12,8 @@ class InventoryTransaction extends Model
         'user_id',
         'type',
         'quantity',
+        'previous_stock',
+        'new_stock',
         'transaction_code',
         'reason',
     ];

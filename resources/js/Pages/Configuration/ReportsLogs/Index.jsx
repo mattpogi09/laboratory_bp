@@ -119,6 +119,8 @@ export default function ReportsLogsIndex({
                                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Item</th>
                                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Type</th>
                                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Quantity</th>
+                                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">Previous Stock</th>
+                                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">New Stock</th>
                                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Performed By</th>
                                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Reason</th>
                                 </tr>
@@ -137,6 +139,12 @@ export default function ReportsLogsIndex({
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-900">{log.quantity}</td>
+                                        <td className="px-4 py-3 text-right text-sm text-gray-600">
+                                            {log.previousStock !== null ? log.previousStock : '-'}
+                                        </td>
+                                        <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                                            {log.newStock !== null ? log.newStock : '-'}
+                                        </td>
                                         <td className="px-4 py-3 text-sm text-gray-900">{log.performedBy}</td>
                                         <td className="px-4 py-3 text-sm text-gray-700">{log.reason}</td>
                                     </tr>

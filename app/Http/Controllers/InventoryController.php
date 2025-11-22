@@ -82,6 +82,8 @@ class InventoryController extends Controller
                     'user_id' => $request->user()->id,
                     'type' => 'in',
                     'quantity' => $validated['initial_quantity'],
+                    'previous_stock' => 0,
+                    'new_stock' => $validated['initial_quantity'],
                     'transaction_code' => $this->generateTransactionCode(),
                     'reason' => 'Initial stock',
                 ]);
@@ -110,7 +112,9 @@ class InventoryController extends Controller
         DB::beginTransaction();
         try {
             $item = InventoryItem::findOrFail($validated['item_id']);
+            $previousStock = $item->current_stock;
             $item->current_stock += $validated['quantity'];
+            $newStock = $item->current_stock;
             $item->save();
             $item->updateStatus();
 
@@ -119,6 +123,8 @@ class InventoryController extends Controller
                 'user_id' => $request->user()->id,
                 'type' => 'in',
                 'quantity' => $validated['quantity'],
+                'previous_stock' => $previousStock,
+                'new_stock' => $newStock,
                 'transaction_code' => $this->generateTransactionCode(),
                 'reason' => $validated['reason'],
             ]);
@@ -152,7 +158,9 @@ class InventoryController extends Controller
                 return back()->with('error', 'Insufficient stock');
             }
 
+            $previousStock = $item->current_stock;
             $item->current_stock -= $validated['quantity'];
+            $newStock = $item->current_stock;
             $item->save();
             $item->updateStatus();
 
@@ -161,6 +169,8 @@ class InventoryController extends Controller
                 'user_id' => $request->user()->id,
                 'type' => 'out',
                 'quantity' => $validated['quantity'],
+                'previous_stock' => $previousStock,
+                'new_stock' => $newStock,
                 'transaction_code' => $this->generateTransactionCode(),
                 'reason' => $validated['reason'],
             ]);
@@ -206,6 +216,8 @@ class InventoryController extends Controller
                 'user_id' => $request->user()->id,
                 'type' => $difference >= 0 ? 'in' : 'out',
                 'quantity' => abs($difference),
+                'previous_stock' => $oldQuantity,
+                'new_stock' => $validated['new_quantity'],
                 'transaction_code' => $this->generateTransactionCode(),
                 'reason' => $validated['reason'],
             ]);
