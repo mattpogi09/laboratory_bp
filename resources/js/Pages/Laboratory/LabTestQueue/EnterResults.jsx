@@ -32,7 +32,7 @@ export default function EnterResults({ auth, test }) {
                     normal_range: formData.normal_range,
                 },
             },
-            { preserveScroll: true }
+            { onSuccess: () => router.visit(route('lab-test-queue')) }
         );
     };
 
@@ -83,6 +83,10 @@ export default function EnterResults({ auth, test }) {
                             <div>
                                 <dt className="text-gray-500">Gender</dt>
                                 <dd className="font-medium text-gray-900">{test.transaction?.patient?.gender || '—'}</dd>
+                            </div>
+                            <div>
+                                <dt className="text-gray-500">Email</dt>
+                                <dd className="font-medium text-gray-900">{test.transaction?.patient?.email || '—'}</dd>
                             </div>
                         </div>
                         <div>

@@ -34,6 +34,7 @@ export default function TransactionsIndex({
     filters = {},
     nextQueueNumber = 1,
     discountOptions = [],
+    philHealthOptions = [],
 }) {
     const { errors, flash } = usePage().props;
     const [patient, setPatient] = useState(initialPatient);
@@ -43,6 +44,9 @@ export default function TransactionsIndex({
     const [search, setSearch] = useState(filters.search || '');
     const [selectedDiscount, setSelectedDiscount] = useState(
         discountOptions[0] || { id: 'none', name: 'No Discount', rate: 0 }
+    );
+    const [selectedPhilHealth, setSelectedPhilHealth] = useState(
+        { id: 'none', name: 'No PhilHealth', coverage_rate: 0 }
     );
     const [duplicateTests, setDuplicateTests] = useState([]);
 
@@ -87,7 +91,9 @@ export default function TransactionsIndex({
     const totalAmount = selectedTestDetails.reduce((sum, test) => sum + Number(test.price || 0), 0);
     const discountRate = selectedDiscount?.rate ?? 0;
     const discountAmount = Number((totalAmount * discountRate) / 100);
-    const netTotal = Math.max(totalAmount - discountAmount, 0);
+    const philhealthCoverageRate = selectedPhilHealth?.coverage_rate ?? 0;
+    const philhealthCoverage = Number(((totalAmount - discountAmount) * philhealthCoverageRate) / 100);
+    const netTotal = Math.max(totalAmount - discountAmount - philhealthCoverage, 0);
     const amountTendered = Number(payment.amount_tendered || netTotal);
     const changeDue = amountTendered > netTotal ? amountTendered - netTotal : 0;
     const balanceDue = netTotal > amountTendered ? netTotal - amountTendered : 0;
@@ -130,12 +136,13 @@ export default function TransactionsIndex({
                     : null,
             },
             {
-                preserveScroll: true,
                 onSuccess: () => {
+                    // Reset form
                     setPatient(initialPatient);
                     setNotes('');
                     setSelectedTests([]);
                     setPayment(initialPayment);
+                    setDuplicateTests([]);
                 },
             }
         );
@@ -176,14 +183,6 @@ export default function TransactionsIndex({
                     Add patients, select tests, manage payments, and print queue receipts.
                 </p>
             </div>
-
-            {flash?.success && (
-                <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                    {flash.success}
-                </div>
-            )}
-
-
 
             <StatsCards stats={stats} />
 
@@ -235,6 +234,7 @@ export default function TransactionsIndex({
                             totals={{
                                 gross: totalAmount,
                                 discount: discountAmount,
+                                philhealthCoverage: philhealthCoverage,
                                 net: netTotal,
                                 tendered: amountTendered,
                                 change: changeDue,
@@ -243,6 +243,9 @@ export default function TransactionsIndex({
                             discountOptions={discountOptions}
                             selectedDiscount={selectedDiscount}
                             onSelectDiscount={setSelectedDiscount}
+                            philHealthOptions={philHealthOptions}
+                            selectedPhilHealth={selectedPhilHealth}
+                            onSelectPhilHealth={setSelectedPhilHealth}
                             errors={errors}
                         />
                     </form>

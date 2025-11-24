@@ -7,6 +7,7 @@ use App\Models\Patient;
 use App\Models\Transaction;
 use App\Models\TransactionEvent;
 use App\Models\TransactionTest;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,13 @@ use Inertia\Response;
 
 class CashierTransactionController extends Controller
 {
+    protected $auditLogger;
+
+    public function __construct(AuditLogger $auditLogger)
+    {
+        $this->auditLogger = $auditLogger;
+    }
+
     public function index(Request $request): Response
     {
         $transactions = $this->paginatedTransactions($request);
@@ -51,6 +59,7 @@ class CashierTransactionController extends Controller
             'transactions' => $transactions,
             'stats' => $stats,
             'discountOptions' => $this->availableDiscounts(),
+            'philHealthOptions' => $this->availablePhilHealthPlans(),
             'nextQueueNumber' => $nextQueueNumber,
             'filters' => [
                 'search' => $request->input('search'),
@@ -88,6 +97,14 @@ class CashierTransactionController extends Controller
     {
         $transactions = $this->paginatedTransactions($request, 50);
 
+        $this->auditLogger->log(
+            'view',
+            'cashier_activities',
+            'Viewed transaction history',
+            ['page' => 'transaction_history'],
+            'info'
+        );
+
         return Inertia::render('Cashier/Transactions/History', [
             'transactions' => $transactions,
             'filters' => [
@@ -117,6 +134,22 @@ class CashierTransactionController extends Controller
             'discount.name' => ['nullable', 'string', 'max:255'],
             'discount.rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'notes' => ['nullable', 'string'],
+        ], [
+            'patient.first_name.required_without' => 'First name is required for new patients.',
+            'patient.last_name.required_without' => 'Last name is required for new patients.',
+            'patient.email.email' => 'Please enter a valid email address.',
+            'patient.age.integer' => 'Age must be a number.',
+            'patient.age.min' => 'Age must be at least 0.',
+            'patient.age.max' => 'Age cannot exceed 120.',
+            'tests.required' => 'Please select at least one lab test.',
+            'tests.min' => 'Please select at least one lab test.',
+            'tests.*.id.exists' => 'One or more selected tests are invalid.',
+            'payment.method.required' => 'Payment method is required.',
+            'payment.amount_tendered.numeric' => 'Amount tendered must be a valid number.',
+            'payment.amount_tendered.min' => 'Amount tendered cannot be negative.',
+            'discount.rate.numeric' => 'Discount rate must be a number.',
+            'discount.rate.min' => 'Discount rate cannot be negative.',
+            'discount.rate.max' => 'Discount rate cannot exceed 100%.',
         ]);
 
         $user = $request->user();
@@ -215,6 +248,20 @@ class CashierTransactionController extends Controller
                     ],
                     'tests' => $labTests->pluck('name')->values()->all(),
                 ],
+            ]);
+
+            // Log to audit system
+            app(AuditLogger::class)->logTransactionCreated([
+                'id' => $transaction->id,
+                'transaction_number' => $transaction->transaction_number,
+                'patient_name' => $transaction->patient_full_name,
+                'tests' => $labTests->pluck('name')->toArray(),
+                'total_amount' => $totalAmount,
+                'discount_amount' => $discountAmount,
+                'discount_name' => $discountName,
+                'net_total' => $netTotal,
+                'payment_method' => $validated['payment']['method'],
+                'payment_status' => $paymentStatus,
             ]);
 
             return $transaction;
@@ -338,8 +385,23 @@ class CashierTransactionController extends Controller
     protected function generateSequence(string $prefix): string
     {
         $today = now()->format('Ymd');
-        $sequence = (int) cache()->increment("sequence:{$prefix}:{$today}");
-        cache()->put("sequence:{$prefix}:{$today}", $sequence, now()->addDay());
+        $cacheKey = "sequence:{$prefix}:{$today}";
+
+        // Use database to ensure unique sequence numbers
+        $column = $prefix === 'TXN' ? 'transaction_number' : 'receipt_number';
+        $latestNumber = Transaction::whereDate('created_at', now()->toDateString())
+            ->where($column, 'like', "{$prefix}-{$today}-%")
+            ->max($column);
+
+        if ($latestNumber) {
+            // Extract the sequence number from the latest transaction
+            $sequence = (int) substr($latestNumber, -4) + 1;
+        } else {
+            $sequence = 1;
+        }
+
+        // Store in cache as backup
+        cache()->put($cacheKey, $sequence, now()->addDay());
 
         return sprintf('%s-%s-%04d', $prefix, $today, $sequence);
     }
@@ -369,32 +431,34 @@ class CashierTransactionController extends Controller
 
     protected function availableDiscounts(): array
     {
-        return [
-            [
-                'id' => 'none',
-                'name' => 'No Discount',
-                'rate' => 0,
-                'description' => 'Default pricing without discount',
-            ],
-            [
-                'id' => 'senior',
-                'name' => 'Senior Citizen (20%)',
-                'rate' => 20,
-                'description' => 'Base discount for senior citizens',
-            ],
-            [
-                'id' => 'pwd',
-                'name' => 'PWD (20%)',
-                'rate' => 20,
-                'description' => 'Base discount for PWD patients',
-            ],
-            [
-                'id' => 'employee',
-                'name' => 'Employee Discount (15%)',
-                'rate' => 15,
-                'description' => 'Discount for partner employees',
-            ],
-        ];
+        return \App\Models\Discount::active()
+            ->orderBy('name')
+            ->get()
+            ->map(function ($discount) {
+                return [
+                    'id' => $discount->id,
+                    'name' => $discount->name,
+                    'rate' => $discount->rate,
+                    'description' => $discount->description,
+                ];
+            })
+            ->toArray();
+    }
+
+    protected function availablePhilHealthPlans(): array
+    {
+        return \App\Models\PhilHealthPlan::active()
+            ->orderBy('name')
+            ->get()
+            ->map(function ($plan) {
+                return [
+                    'id' => $plan->id,
+                    'name' => $plan->name,
+                    'coverage_rate' => $plan->coverage_rate,
+                    'description' => $plan->description,
+                ];
+            })
+            ->toArray();
     }
 
     protected function resolveDiscountSelection(?array $input): array

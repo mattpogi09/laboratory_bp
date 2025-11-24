@@ -1,92 +1,50 @@
 import { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import EmptyState from '@/Components/EmptyState';
-import { Search, Edit, Plus, TestTube } from 'lucide-react';
+import Pagination from '@/Components/Pagination';
+import { Search, Edit, Plus, TestTube, Power, PowerOff, Filter } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import EditServiceModal from './EditServiceModal';
 import CreateServiceModal from './CreateServiceModal';
+import ToggleServiceModal from './ToggleServiceModal';
 
-export default function ServicesIndex({ auth }) {
-    const [searchQuery, setSearchQuery] = useState('');
+export default function ServicesIndex({ auth, tests = { data: [], links: [] }, categories, categoryStats = {}, filters = {} }) {
+    const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [selectedCategory, setSelectedCategory] = useState(filters.category || 'all');
     const [selectedService, setSelectedService] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showToggleModal, setShowToggleModal] = useState(false);
 
-    const services = [
-        {
-            id: 1,
-            name: 'Complete Blood Count',
-            category: 'Hematology',
-            price: 250.00,
-            description: 'Full blood panel analysis'
-        },
-        {
-            id: 2,
-            name: 'Routine Urinalysis',
-            category: 'Urine Microscopy',
-            price: 150.00,
-            description: 'Full blood panel analysis'
-        },
-        {
-            id: 3,
-            name: 'Serum with Pregnancy test',
-            category: 'Serology/Immunology',
-            price: 200.00,
-            description: 'Full blood panel analysis'
-        },
-        {
-            id: 4,
-            name: 'Positive with IM',
-            category: 'Blood Chemistry',
-            price: 100.00,
-            description: 'Full blood panel analysis'
-        },
-        {
-            id: 5,
-            name: 'Cholesterol',
-            category: 'Blood Chemistry',
-            price: 250.00,
-            description: 'Full blood panel analysis'
-        },
-        {
-            id: 6,
-            name: 'Chestxray',
-            category: 'Others',
-            price: 250.00,
-            description: 'Full blood panel analysis'
-        },
-        {
-            id: 7,
-            name: 'Pelvic',
-            category: 'Procedure Ultrasound',
-            price: 500.00,
-            description: 'Full blood panel analysis'
-        },
-        {
-            id: 8,
-            name: 'Both Breast',
-            category: 'Procedure Ultrasound',
-            price: 1200.00,
-            description: 'Full blood panel analysis'
-        }
-    ];
+    const testsData = tests.data || [];
 
-    const filteredServices = services.filter(service => 
-        service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        service.category.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const handleSearch = (e) => {
+        const value = e.target.value;
+        setSearchQuery(value);
+        router.get(route('services.index'), 
+            { search: value, category: selectedCategory !== 'all' ? selectedCategory : undefined },
+            { preserveScroll: true, replace: true }
+        );
+    };
 
-    const getCategoryColor = (category) => {
-        const colors = {
-            'Hematology': 'text-blue-400',
-            'Urine Microscopy': 'text-blue-400',
-            'Serology/Immunology': 'text-blue-400',
-            'Blood Chemistry': 'text-blue-400',
-            'Others': 'text-blue-400',
-            'Procedure Ultrasound': 'text-blue-400'
-        };
-        return colors[category] || 'text-gray-400';
+    const handleCategoryChange = (e) => {
+        const value = e.target.value;
+        setSelectedCategory(value);
+        router.get(route('services.index'), 
+            { search: searchQuery || undefined, category: value !== 'all' ? value : undefined },
+            { preserveScroll: true, replace: true }
+        );
+    };
+
+    const handleEdit = (service) => {
+        setSelectedService(service);
+        setShowEditModal(true);
+    };
+
+    const handleToggleClick = (service) => {
+        setSelectedService(service);
+        setShowToggleModal(true);
     };
 
     return (
@@ -98,6 +56,24 @@ export default function ServicesIndex({ auth }) {
                 <p className="text-gray-400">Manage laboratory tests and services</p>
             </div>
 
+            {/* Category Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mb-6">
+                {categories.map((category) => (
+                    <div 
+                        key={category}
+                        className="p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
+                    >
+                        <div className="flex flex-col gap-2">
+                            <p className="text-[10px] uppercase tracking-wide text-gray-500 font-medium">Category</p>
+                            <h3 className="text-xs font-semibold text-gray-900 line-clamp-2 min-h-[32px]">{category}</h3>
+                            <div className="text-2xl font-bold text-blue-600">
+                                {categoryStats[category] || 0}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
             {/* Search and Actions */}
             <div className="mb-6 flex gap-4">
                 <div className="relative flex-1">
@@ -105,10 +81,25 @@ export default function ServicesIndex({ auth }) {
                     <input
                         type="text"
                         placeholder="Search tests by name or category..."
-                        className="h-10 w-full rounded-lg border border-gray-900 bg-white/5 pl-10 pr-4 text-gray-900 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        className="h-10 w-full rounded-lg border border-gray-900 bg-white/5 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={handleSearch}
                     />
+                </div>
+                <div className="relative">
+                    <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                    <select
+                        value={selectedCategory}
+                        onChange={handleCategoryChange}
+                        className="h-10 w-48 rounded-lg border border-gray-900 bg-white pl-10 pr-4 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 appearance-none cursor-pointer"
+                    >
+                        <option value="all">All Categories</option>
+                        {categories.map((category) => (
+                            <option key={category} value={category}>
+                                {category}
+                            </option>
+                        ))}
+                    </select>
                 </div>
                 <Button 
                     onClick={() => setShowCreateModal(true)}
@@ -120,7 +111,7 @@ export default function ServicesIndex({ auth }) {
             </div>
 
             {/* Services Table */}
-            {filteredServices.length > 0 ? (
+            {testsData.length > 0 ? (
             <div className="rounded-lg bg-white shadow-md overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -134,7 +125,7 @@ export default function ServicesIndex({ auth }) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/10">
-                            {filteredServices.map((service) => (
+                            {testsData.map((service) => (
                                 <tr 
                                     key={service.id}
                                     className="hover:bg-white/5 transition-colors"
@@ -147,26 +138,47 @@ export default function ServicesIndex({ auth }) {
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className="text-sm font-medium text-emerald-600">
-                                            ₱{service.price.toFixed(2)}
+                                            ₱{parseFloat(service.price).toFixed(2)}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-600">{service.description}</td>
                                     <td className="px-4 py-3">
-                                        <button
-                                            onClick={() => {
-                                                setSelectedService(service);
-                                                setShowEditModal(true);
-                                            }}
-                                            className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
-                                        >
-                                            <Edit className="h-4 w-4" />
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => handleEdit(service)}
+                                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                            >
+                                                <Edit className="h-4 w-4" />
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => handleToggleClick(service)}
+                                                className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded transition-colors ${
+                                                    service.is_active 
+                                                        ? 'text-red-600 hover:bg-red-50' 
+                                                        : 'text-green-600 hover:bg-green-50'
+                                                }`}
+                                            >
+                                                {service.is_active ? (
+                                                    <>
+                                                        <PowerOff className="h-4 w-4" />
+                                                        Deactivate
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Power className="h-4 w-4" />
+                                                        Activate
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
+                <Pagination links={tests.links} />
             </div>
             ) : (
                 <div className="rounded-lg bg-white shadow-md">
@@ -182,17 +194,29 @@ export default function ServicesIndex({ auth }) {
             <CreateServiceModal
                 show={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
+                categories={categories}
             />
             
             {selectedService && (
-                <EditServiceModal
-                    service={selectedService}
-                    show={showEditModal}
-                    onClose={() => {
-                        setShowEditModal(false);
-                        setSelectedService(null);
-                    }}
-                />
+                <>
+                    <EditServiceModal
+                        service={selectedService}
+                        show={showEditModal}
+                        onClose={() => {
+                            setShowEditModal(false);
+                            setSelectedService(null);
+                        }}
+                        categories={categories}
+                    />
+                    <ToggleServiceModal
+                        service={selectedService}
+                        show={showToggleModal}
+                        onClose={() => {
+                            setShowToggleModal(false);
+                            setSelectedService(null);
+                        }}
+                    />
+                </>
             )}
         </DashboardLayout>
     );

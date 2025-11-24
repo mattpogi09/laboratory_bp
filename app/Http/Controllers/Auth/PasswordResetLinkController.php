@@ -31,6 +31,9 @@ class PasswordResetLinkController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
+        ], [
+            'email.required' => 'Email is required.',
+            'email.email' => 'Please provide a valid email address.',
         ]);
 
         // We will send the password reset link to this user. Once we have attempted

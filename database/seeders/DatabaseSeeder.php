@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             'username' => 'admin',
             'email' => 'admin@bpdiagnostic.com',
             'role' => 'admin',
+            'is_active' => true,
             'password' => bcrypt('password123'),
         ]);
 
@@ -33,6 +34,7 @@ class DatabaseSeeder extends Seeder
             'username' => 'labstaff',
             'email' => 'staff@bpdiagnostic.com',
             'role' => 'lab_staff',
+            'is_active' => true,
             'password' => bcrypt('password123'),
         ]);
 
@@ -42,6 +44,7 @@ class DatabaseSeeder extends Seeder
             'username' => 'cashier',
             'email' => 'cashier@bpdiagnostic.com',
             'role' => 'cashier',
+            'is_active' => true,
             'password' => bcrypt('password123'),
         ]);
     }

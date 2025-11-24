@@ -47,6 +47,9 @@ class ProfileController extends Controller
     {
         $request->validate([
             'password' => ['required', 'current_password'],
+        ], [
+            'password.required' => 'Password is required to delete your account.',
+            'password.current_password' => 'The provided password is incorrect.',
         ]);
 
         $user = $request->user();

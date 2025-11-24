@@ -1,74 +1,68 @@
 import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Edit, ShieldQuestionMark, Plus, Users } from 'lucide-react';
+import EmptyState from '@/Components/EmptyState';
+import { Search, Edit, Plus, Users, Power, PowerOff } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import EditUserModal from './EditUserModal';
-import DeactivateUserModal from './DeactivateUserModal';
 import CreateUserModal from './CreateUserModal';
+import ToggleUserModal from './DeactivateUserModal';
 
-export default function UsersIndex({ auth }) {
+export default function UsersIndex({ auth, users }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [showDeactivateModal, setShowDeactivateModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showToggleModal, setShowToggleModal] = useState(false);
 
-    const users = [
-        {
-            id: 1,
-            name: 'Aldriane Jay Umiten',
-            username: 'Admin',
-            role: 'Admin',
-            created: '2024-11-15'
-        },
-        {
-            id: 2,
-            name: 'KuyaDats (Lab)',
-            username: 'KuyaDats (Staff)',
-            role: 'Lab Staff',
-            created: '2024-11-15'
-        },
-        {
-            id: 3,
-            name: 'Matt Ballos',
-            username: 'KuyaCashier',
-            role: 'Cashier',
-            created: '2024-11-15'
-        },
-        {
-            id: 4,
-            name: 'Aldrian Sahol',
-            username: 'AldranStaff',
-            role: 'Lab Staff',
-            created: '2024-11-15'
-        },
-        {
-            id: 5,
-            name: 'Jonathan Guartizo',
-            username: 'JunCashier',
-            role: 'Cashier',
-            created: '2024-11-15'
-        }
-    ];
-
-    const filteredUsers = users.filter(user => 
+    const filteredUsers = users?.filter(user => 
         user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
         user.role.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    ) || [];
+
+    const handleEdit = (user) => {
+        setSelectedUser(user);
+        setShowEditModal(true);
+    };
+
+    const handleToggleClick = (user) => {
+        setSelectedUser(user);
+        setShowToggleModal(true);
+    };
 
     const getRoleBadgeColor = (role) => {
         switch (role) {
-            case 'Admin':
+            case 'admin':
                 return 'bg-red-500/10 text-red-400';
-            case 'Lab Staff':
+            case 'lab_staff':
                 return 'bg-blue-500/10 text-blue-400';
-            case 'Cashier':
+            case 'cashier':
                 return 'bg-emerald-500/10 text-emerald-400';
             default:
                 return 'bg-gray-500/10 text-gray-400';
         }
+    };
+
+    const formatRole = (role) => {
+        switch (role) {
+            case 'admin':
+                return 'Admin';
+            case 'lab_staff':
+                return 'Lab Staff';
+            case 'cashier':
+                return 'Cashier';
+            default:
+                return role;
+        }
+    };
+
+    const formatDate = (dateString) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     };
 
     return (
@@ -110,7 +104,9 @@ export default function UsersIndex({ auth }) {
                             <tr className="border-b border-white/10 bg-white/5">
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Username</th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Role</th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Created</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
                             </tr>
@@ -121,34 +117,55 @@ export default function UsersIndex({ auth }) {
                                     key={user.id}
                                     className="hover:bg-white/5 transition-colors"
                                 >
-                                    <td className="px-4 py-3 text-sm text-gray-900">{user.name}</td>
+                                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{user.name}</td>
                                     <td className="px-4 py-3 text-sm text-gray-900">{user.username}</td>
+                                    <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
                                     <td className="px-4 py-3">
                                         <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
-                                            {user.role}
+                                            {formatRole(user.role)}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-gray-900">{user.created}</td>
                                     <td className="px-4 py-3">
-                                        <div className="flex gap-2">
+                                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                                            user.is_active 
+                                                ? 'bg-green-500/10 text-green-400' 
+                                                : 'bg-gray-500/10 text-gray-400'
+                                        }`}>
+                                            {user.is_active ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-gray-600">{formatDate(user.created_at)}</td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2">
                                             <button
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setShowEditModal(true);
-                                                }}
-                                                className="p-1.5 text-blue-400 hover:bg-blue-500/10 rounded transition-colors"
+                                                onClick={() => handleEdit(user)}
+                                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
                                             >
                                                 <Edit className="h-4 w-4" />
+                                                Edit
                                             </button>
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedUser(user);
-                                                    setShowDeactivateModal(true);
-                                                }}
-                                                className="p-1.5 text-amber-400 hover:bg-amber-500/10 rounded transition-colors"
-                                            >
-                                                <ShieldQuestionMark  className="h-4 w-4" />
-                                            </button>
+                                            {user.id !== auth.user.id && (
+                                                <button
+                                                    onClick={() => handleToggleClick(user)}
+                                                    className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded transition-colors ${
+                                                        user.is_active 
+                                                            ? 'text-red-600 hover:bg-red-50' 
+                                                            : 'text-green-600 hover:bg-green-50'
+                                                    }`}
+                                                >
+                                                    {user.is_active ? (
+                                                        <>
+                                                            <PowerOff className="h-4 w-4" />
+                                                            Deactivate
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Power className="h-4 w-4" />
+                                                            Activate
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -183,11 +200,11 @@ export default function UsersIndex({ auth }) {
                             setSelectedUser(null);
                         }}
                     />
-                    <DeactivateUserModal
+                    <ToggleUserModal
                         user={selectedUser}
-                        show={showDeactivateModal}
+                        show={showToggleModal}
                         onClose={() => {
-                            setShowDeactivateModal(false);
+                            setShowToggleModal(false);
                             setSelectedUser(null);
                         }}
                     />

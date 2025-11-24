@@ -12,7 +12,6 @@ export default function StockOutModal({ items = [], show, onClose }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route('inventory.stock-out'), {
-            preserveScroll: true,
             onSuccess: () => {
                 reset();
                 onClose();

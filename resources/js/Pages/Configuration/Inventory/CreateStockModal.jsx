@@ -36,7 +36,6 @@ export default function CreateStockModal({ show, onClose }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route('inventory.store'), {
-            preserveScroll: true,
             onSuccess: () => {
                 reset();
                 onClose();

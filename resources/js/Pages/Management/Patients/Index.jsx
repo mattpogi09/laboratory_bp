@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import EmptyState from '@/Components/EmptyState';
+import Pagination from '@/Components/Pagination';
 import { Search, Eye, Edit, Plus, UserCheck } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import PatientDetailsModal from './PatientDetailsModal';
 import EditPatientModal from './EditPatientModal';
 import CreatePatientModal from './CreatePatientModal';
 
-export default function PatientsIndex({ auth, patients: initialPatients = [] }) {
+export default function PatientsIndex({ auth, patients = { data: [], links: [] } }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -17,7 +18,9 @@ export default function PatientsIndex({ auth, patients: initialPatients = [] }) 
 
     const userRole = auth.user.role;
 
-    const filteredPatients = initialPatients.filter(patient => 
+    const patientsData = patients.data || [];
+
+    const filteredPatients = patientsData.filter(patient => 
         patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         patient.patient_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
         patient.contact.includes(searchQuery)
@@ -39,7 +42,7 @@ export default function PatientsIndex({ auth, patients: initialPatients = [] }) 
 
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-gray-900">Patient Management</h1>
-                <p className="text-gray-600">{initialPatients.length} total patients</p>
+                <p className="text-gray-600">{patients.total || 0} total patients</p>
             </div>
 
             {/* Search and Actions */}
@@ -67,6 +70,7 @@ export default function PatientsIndex({ auth, patients: initialPatients = [] }) 
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Name</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Age/Gender</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Contact</th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Address</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Last Visit</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Total Tests</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
@@ -89,6 +93,7 @@ export default function PatientsIndex({ auth, patients: initialPatients = [] }) 
                                         {patient.age} / {patient.gender}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-900">{patient.contact}</td>
+                                    <td className="px-4 py-3 text-sm text-gray-600">{patient.address || 'N/A'}</td>
                                     <td className="px-4 py-3 text-sm text-gray-900">{patient.last_visit}</td>
                                     <td className="px-4 py-3">
                                         <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-400">
@@ -116,6 +121,7 @@ export default function PatientsIndex({ auth, patients: initialPatients = [] }) 
                         </tbody>
                     </table>
                 </div>
+                <Pagination links={patients.links} />
             </div>
             ) : (
                 <div className="rounded-lg bg-white shadow-md">

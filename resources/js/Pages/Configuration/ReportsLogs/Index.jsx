@@ -9,10 +9,10 @@ export default function ReportsLogsIndex({
     filters = {},
     financial = {},
     labReport = {},
-    inventoryLogs = [],
-    auditLogs = [],
+    inventoryLogs = {},
+    auditLogs = {},
 }) {
-    const [activeTab, setActiveTab] = useState('financial');
+    const [activeTab, setActiveTab] = useState(filters.tab || 'financial');
     const [dateFrom, setDateFrom] = useState(filters.from || '');
     const [dateTo, setDateTo] = useState(filters.to || '');
 
@@ -20,6 +20,8 @@ export default function ReportsLogsIndex({
     const financialRows = financial.rows || [];
     const labStats = labReport.stats || { total: 0, pending: 0, processing: 0, completed: 0, released: 0 };
     const labRows = labReport.rows || [];
+    const inventoryData = inventoryLogs.data || [];
+    const auditData = auditLogs.data || [];
 
     const submitFilters = () => {
         router.get(
@@ -126,8 +128,15 @@ export default function ReportsLogsIndex({
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {inventoryLogs.map((log, index) => (
-                                    <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                {inventoryData.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="9" className="px-4 py-6 text-center text-gray-500">
+                                            No inventory transactions for this date range.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    inventoryData.map((log, index) => (
+                                        <tr key={index} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-4 py-3 text-sm text-gray-900">{log.date}</td>
                                         <td className="px-4 py-3 text-sm text-gray-900">{log.transactionCode || '-'}</td>
                                         <td className="px-4 py-3 text-sm text-gray-900">{log.item}</td>
@@ -138,17 +147,18 @@ export default function ReportsLogsIndex({
                                                 {log.type}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900">{log.quantity}</td>
-                                        <td className="px-4 py-3 text-right text-sm text-gray-600">
+                                        <td className="px-4 py-3 text-sm text-center text-gray-900">{log.quantity}</td>
+                                        <td className="px-4 py-3 text-center text-sm text-gray-600">
                                             {log.previousStock !== null ? log.previousStock : '-'}
                                         </td>
-                                        <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">
+                                        <td className="px-4 py-3 text-center text-sm font-medium text-gray-900">
                                             {log.newStock !== null ? log.newStock : '-'}
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-900">{log.performedBy}</td>
                                         <td className="px-4 py-3 text-sm text-gray-700">{log.reason}</td>
                                     </tr>
-                                ))}
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -168,18 +178,30 @@ export default function ReportsLogsIndex({
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {auditLogs.map((log, index) => (
-                                    <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                {auditData.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="4" className="px-4 py-6 text-center text-gray-500">
+                                            No audit logs for this date range.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    auditData.map((log, index) => (
+                                        <tr key={index} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-4 py-3 text-sm text-gray-900">{log.timestamp}</td>
                                         <td className="px-4 py-3 text-sm text-gray-900">{log.user}</td>
                                         <td className="px-4 py-3">
-                                            <span className={`text-sm font-medium ${severityColor(log.severity)}`}>
+                                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                                                log.severity === 'critical' ? 'bg-red-100 text-red-700' :
+                                                log.severity === 'warning' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-blue-100 text-blue-700'
+                                            }`}>
                                                 {log.action}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-sm text-gray-700">{log.details}</td>
                                     </tr>
-                                ))}
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>

@@ -21,6 +21,7 @@ class TransactionTest extends Model
         'performed_by',
         'started_at',
         'completed_at',
+        'released_at',
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class TransactionTest extends Model
         'result_values' => 'array',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'released_at' => 'datetime',
     ];
 
     public function transaction()

@@ -14,6 +14,11 @@ class InventoryItem extends Model
         'minimum_stock',
         'unit',
         'status',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
     ];
 
     protected $appends = ['stock_color', 'status_badge'];

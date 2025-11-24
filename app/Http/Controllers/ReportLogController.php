@@ -2,20 +2,42 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\InventoryItem;
 use App\Models\InventoryTransaction;
 use App\Models\Transaction;
 use App\Models\TransactionTest;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ReportLogController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, AuditLogger $auditLogger): Response
     {
-        $dateFrom = $request->input('from');
-        $dateTo = $request->input('to');
+        // Validate inputs to prevent SQL injection and malformed data
+        $validated = $request->validate([
+            'from' => 'nullable|date',
+            'to' => 'nullable|date|after_or_equal:from',
+            'tab' => 'nullable|string|in:financial,lab,inventory,audit',
+        ]);
+
+        $dateFrom = $validated['from'] ?? null;
+        $dateTo = $validated['to'] ?? null;
+        $activeTab = $validated['tab'] ?? 'financial';
+
+        // Log report generation
+        if ($dateFrom || $dateTo) {
+            $reportType = match ($activeTab) {
+                'financial' => 'Financial Report',
+                'lab' => 'Lab Report',
+                'inventory' => 'Inventory Report',
+                'audit' => 'Audit Log Report',
+                default => 'General Report',
+            };
+            $auditLogger->logReportGenerated($reportType, $dateFrom, $dateTo);
+        }
 
         $transactionsQuery = Transaction::with('tests')
             ->latest();
@@ -33,8 +55,8 @@ class ReportLogController extends Controller
             $labTestsQuery->whereDate('created_at', '<=', $dateTo);
         }
 
-        $transactions = $transactionsQuery->take(100)->get();
-        $labTests = $labTestsQuery->take(100)->get();
+        $transactions = $transactionsQuery->paginate(50, ['*'], 'financial_page');
+        $labTests = $labTestsQuery->paginate(50, ['*'], 'lab_page');
 
         $financialRows = $transactions->map(function (Transaction $transaction) {
             return [
@@ -52,17 +74,35 @@ class ReportLogController extends Controller
         });
 
         $financialTotals = [
-            'revenue' => $transactions->sum('net_total'),
-            'discounts' => $transactions->sum('discount_amount'),
-            'transactions' => $transactions->count(),
+            'revenue' => Transaction::when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+                ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+                ->sum('net_total'),
+            'discounts' => Transaction::when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+                ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+                ->sum('discount_amount'),
+            'transactions' => Transaction::when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+                ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+                ->count(),
         ];
 
         $labStats = [
-            'total' => $labTests->count(),
-            'pending' => $labTests->where('status', 'pending')->count(),
-            'processing' => $labTests->where('status', 'processing')->count(),
-            'completed' => $labTests->where('status', 'completed')->count(),
-            'released' => $labTests->where('status', 'released')->count(),
+            'total' => $labTests->total(),
+            'pending' => TransactionTest::where('status', 'pending')
+                ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+                ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+                ->count(),
+            'processing' => TransactionTest::where('status', 'processing')
+                ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+                ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+                ->count(),
+            'completed' => TransactionTest::where('status', 'completed')
+                ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+                ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+                ->count(),
+            'released' => TransactionTest::where('status', 'released')
+                ->when($dateFrom, fn($q) => $q->whereDate('created_at', '>=', $dateFrom))
+                ->when($dateTo, fn($q) => $q->whereDate('created_at', '<=', $dateTo))
+                ->count(),
         ];
 
         $labRows = $labTests->map(function (TransactionTest $test) {
@@ -81,21 +121,34 @@ class ReportLogController extends Controller
             'filters' => [
                 'from' => $dateFrom,
                 'to' => $dateTo,
+                'tab' => $activeTab,
             ],
             'financial' => [
                 'rows' => $financialRows,
                 'totals' => $financialTotals,
+                'pagination' => [
+                    'current_page' => $transactions->currentPage(),
+                    'last_page' => $transactions->lastPage(),
+                    'per_page' => $transactions->perPage(),
+                    'total' => $transactions->total(),
+                ],
             ],
             'labReport' => [
                 'stats' => $labStats,
                 'rows' => $labRows,
+                'pagination' => [
+                    'current_page' => $labTests->currentPage(),
+                    'last_page' => $labTests->lastPage(),
+                    'per_page' => $labTests->perPage(),
+                    'total' => $labTests->total(),
+                ],
             ],
-            'inventoryLogs' => $this->inventoryLogs($dateFrom, $dateTo),
-            'auditLogs' => $this->auditLogs(),
+            'inventoryLogs' => $this->inventoryLogs($dateFrom, $dateTo, $request),
+            'auditLogs' => $this->auditLogs($request, $dateFrom, $dateTo),
         ]);
     }
 
-    protected function inventoryLogs($dateFrom = null, $dateTo = null): array
+    protected function inventoryLogs($dateFrom = null, $dateTo = null, Request $request): array
     {
         $query = InventoryTransaction::with(['item', 'user'])
             ->latest();
@@ -108,9 +161,10 @@ class ReportLogController extends Controller
             $query->whereDate('created_at', '<=', $dateTo);
         }
 
-        return $query->take(100)
-            ->get()
-            ->map(function ($transaction) {
+        $inventoryLogs = $query->paginate(50, ['*'], 'inventory_page');
+
+        return [
+            'data' => $inventoryLogs->map(function ($transaction) {
                 return [
                     'date' => $transaction->created_at->toDateString(),
                     'transactionCode' => $transaction->transaction_code,
@@ -122,34 +176,101 @@ class ReportLogController extends Controller
                     'reason' => $transaction->reason,
                     'performedBy' => $transaction->user->name,
                 ];
-            })
-            ->toArray();
+            })->toArray(),
+            'pagination' => [
+                'current_page' => $inventoryLogs->currentPage(),
+                'last_page' => $inventoryLogs->lastPage(),
+                'per_page' => $inventoryLogs->perPage(),
+                'total' => $inventoryLogs->total(),
+            ],
+        ];
     }
 
-    protected function auditLogs(): array
+    protected function auditLogs(Request $request, $dateFrom = null, $dateTo = null): array
     {
+        // Validate and sanitize inputs to prevent SQL injection
+        $validated = $request->validate([
+            'audit_search' => 'nullable|string|max:255',
+            'role_filter' => 'nullable|string|in:admin,cashier,lab_staff',
+            'category_filter' => 'nullable|string|max:100',
+            'severity_filter' => 'nullable|string|in:info,warning,critical',
+        ]);
+
+        $search = $validated['audit_search'] ?? null;
+        $roleFilter = $validated['role_filter'] ?? null;
+        $categoryFilter = $validated['category_filter'] ?? null;
+        $severityFilter = $validated['severity_filter'] ?? null;
+
+        $query = AuditLog::query()
+            ->recent() // Only last 60 days
+            ->latest('created_at');
+
+        // Apply filters
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        if ($search) {
+            $query->search($search);
+        }
+
+        if ($roleFilter) {
+            $query->byRole($roleFilter);
+        }
+
+        if ($categoryFilter) {
+            $query->byCategory($categoryFilter);
+        }
+
+        if ($severityFilter) {
+            $query->bySeverity($severityFilter);
+        }
+
+        // Optimized query with index usage
+        $auditLogs = $query->select([
+            'id',
+            'user_name',
+            'user_role',
+            'action_type',
+            'action_category',
+            'description',
+            'severity',
+            'created_at'
+        ])->paginate(50, ['*'], 'audit_page');
+
         return [
-            [
-                'timestamp' => now()->subHours(2)->toDateTimeString(),
-                'user' => 'Admin',
-                'action' => 'Report Viewed',
-                'details' => 'Generated financial report',
-                'severity' => 'info',
+            'data' => $auditLogs->map(function ($log) {
+                // Format action type for display
+                $formattedAction = ucwords(str_replace('_', ' ', $log->action_type));
+
+                return [
+                    'id' => $log->id,
+                    'timestamp' => $log->created_at->format('Y-m-d H:i:s'),
+                    'user' => $log->user_name . ($log->user_role ? " ({$log->user_role})" : ''),
+                    'user_role' => $log->user_role,
+                    'action' => $formattedAction,
+                    'action_category' => $log->action_category,
+                    'details' => $log->description,
+                    'severity' => $log->severity,
+                ];
+            })->toArray(),
+            'pagination' => [
+                'current_page' => $auditLogs->currentPage(),
+                'last_page' => $auditLogs->lastPage(),
+                'per_page' => $auditLogs->perPage(),
+                'total' => $auditLogs->total(),
             ],
-            [
-                'timestamp' => now()->subHours(5)->toDateTimeString(),
-                'user' => 'Jun (Cashier)',
-                'action' => 'Transaction Created',
-                'details' => 'Recorded transaction for Maria Santos',
-                'severity' => 'info',
-            ],
-            [
-                'timestamp' => now()->subDay()->toDateTimeString(),
-                'user' => 'System',
-                'action' => 'Inventory Threshold',
-                'details' => 'Low stock alert: Blood Collection Tubes',
-                'severity' => 'warning',
+            'filters' => [
+                'search' => $search,
+                'role' => $roleFilter,
+                'category' => $categoryFilter,
+                'severity' => $severityFilter,
             ],
         ];
     }
 }
+

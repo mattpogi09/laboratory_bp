@@ -1,30 +1,56 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useForm } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
-import { X } from 'lucide-react';
+import InputError from '@/Components/InputError';
+import { X, Eye, EyeOff } from 'lucide-react';
 
 export default function EditUserModal({ user, show, onClose }) {
-    const [formData, setFormData] = useState({
+    const [showPassword, setShowPassword] = useState(false);
+    const { data, setData, put, processing, errors, reset } = useForm({
+        name: user?.name || '',
         username: user?.username || '',
+        email: user?.email || '',
         role: user?.role || '',
-        newPassword: ''
+        password: ''
     });
+
+    useEffect(() => {
+        if (user) {
+            setData({
+                name: user.name,
+                username: user.username,
+                email: user.email,
+                role: user.role,
+                password: ''
+            });
+        }
+    }, [user]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Update user:', formData);
+        put(route('users.update', user.id), {
+            onSuccess: () => {
+                reset('password');
+                onClose();
+            },
+        });
+    };
+
+    const handleClose = () => {
+        reset();
         onClose();
     };
 
     return (
-        <Modal show={show} onClose={onClose} maxWidth="md">
+        <Modal show={show} onClose={handleClose} maxWidth="md">
             <div className="p-6">
                 <div className="flex items-start justify-between mb-6">
                     <h2 className="text-xl font-semibold text-gray-900">Edit User</h2>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="text-gray-400 hover:text-gray-600 transition-colors"
                     >
                         <X className="h-5 w-5" />
@@ -33,46 +59,88 @@ export default function EditUserModal({ user, show, onClose }) {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
+                        <InputLabel>Name</InputLabel>
+                        <TextInput
+                            value={data.name}
+                            onChange={(e) => setData('name', e.target.value)}
+                            placeholder="Full name"
+                            required
+                        />
+                        <InputError message={errors.name} className="mt-2" />
+                    </div>
+
+                    <div>
                         <InputLabel>Username</InputLabel>
                         <TextInput
-                            value={formData.username}
-                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                            value={data.username}
+                            onChange={(e) => setData('username', e.target.value)}
                             placeholder="Username"
+                            required
                         />
+                        <InputError message={errors.username} className="mt-2" />
+                    </div>
+
+                    <div>
+                        <InputLabel>Email</InputLabel>
+                        <TextInput
+                            type="email"
+                            value={data.email}
+                            onChange={(e) => setData('email', e.target.value)}
+                            placeholder="Email address"
+                            required
+                        />
+                        <InputError message={errors.email} className="mt-2" />
                     </div>
 
                     <div>
                         <InputLabel>Role</InputLabel>
                         <select
-                            value={formData.role}
-                            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                            className="w-full rounded-lg border border-gray-400 bg-white/5 px-4 py-2.5 text-black focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                            value={data.role}
+                            onChange={(e) => setData('role', e.target.value)}
+                            className="w-full rounded-lg border border-gray-400 bg-white px-4 py-2.5 text-black focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                            required
                         >
                             <option value="">Select a role</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Lab Staff">Lab Staff</option>
-                            <option value="Cashier">Cashier</option>
+                            <option value="admin">Admin</option>
+                            <option value="lab_staff">Lab Staff</option>
+                            <option value="cashier">Cashier</option>
                         </select>
+                        <InputError message={errors.role} className="mt-2" />
                     </div>
 
                     <div>
                         <InputLabel>New Password (Leave blank to keep current)</InputLabel>
-                        <TextInput
-                            type="password"
-                            value={formData.newPassword}
-                            onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                            placeholder="Enter new password..."
-                        />
+                        <div className="relative">
+                            <TextInput
+                                type={showPassword ? "text" : "password"}
+                                value={data.password}
+                                onChange={(e) => setData('password', e.target.value)}
+                                placeholder="Enter new password..."
+                                className="pr-10"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            >
+                                {showPassword ? (
+                                    <Eye className="h-5 w-5" />
+                                ) : (
+                                    <EyeOff className="h-5 w-5" />
+                                )}
+                            </button>
+                        </div>
+                        <InputError message={errors.password} className="mt-2" />
                     </div>
 
                     <div className="flex gap-3 pt-4">
-                        <PrimaryButton type="submit" className="flex-1">
-                            Update
+                        <PrimaryButton type="submit" className="flex-1" disabled={processing}>
+                            {processing ? 'Updating...' : 'Update User'}
                         </PrimaryButton>
                         <button
                             type="button"
-                            onClick={onClose}
-                            className="flex-1 px-4 py-2 border-gray-500 shadow-xl bg-white/5 hover:bg-gray-300 text-black rounded-lg border border-white/10 transition-colors"
+                            onClick={handleClose}
+                            className="flex-1 px-4 py-2 bg-white hover:bg-gray-100 text-black rounded-lg border border-gray-300 transition-colors"
                         >
                             Cancel
                         </button>

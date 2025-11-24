@@ -228,27 +228,43 @@ export default function Dashboard({
                     <div className="bg-white rounded-xl shadow-md p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4">Low Stock Items</h2>
                         <div className="space-y-4">
-                            {lowStockItems.map((item, index) => (
-                                <div key={index} className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-700">{item.name}</span>
-                                        <span className="text-gray-900">{item.current}/{item.total}</span>
+                            {lowStockItems.map((item, index) => {
+                                const percentage = item.minimum_stock > 0 
+                                    ? Math.round((item.current_stock / item.minimum_stock) * 100) 
+                                    : 0;
+                                return (
+                                    <div key={index} className="space-y-2">
+                                        <div className="flex justify-between items-end">
+                                            <div>
+                                                <span className="font-medium text-gray-900 block">{item.name}</span>
+                                                <span className="text-sm text-gray-600">Current Stock: {item.current_stock} {item.unit}</span>
+                                            </div>
+                                            <span className="text-sm font-semibold text-gray-700">
+                                                {percentage}%
+                                            </span>
+                                        </div>
+                                        <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                                            <div 
+                                                className={cn(
+                                                    "h-2.5 rounded-full transition-all duration-300",
+                                                    percentage <= 20 ? "bg-red-500" :
+                                                    percentage <= 40 ? "bg-orange-500" :
+                                                    percentage <= 60 ? "bg-yellow-500" :
+                                                    "bg-emerald-500"
+                                                )}
+                                                style={{ width: `${Math.min(percentage, 100)}%` }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="h-2 bg-gray-200 rounded-full">
-                                        <div 
-                                            className="h-2 bg-orange-500 rounded-full" 
-                                            style={{ width: `${(item.current/item.total) * 100}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 )}
 
                 {/* Pending Tasks */}
                 <div className="bg-white rounded-xl shadow-md p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Tasks</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Lab Tasks</h2>
                     <div className="space-y-4">
                         {pendingTasks && pendingTasks.length > 0 ? (
                             pendingTasks.map((task, index) => (

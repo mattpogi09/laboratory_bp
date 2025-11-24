@@ -39,7 +39,7 @@ export default function PatientDetailsModal({ patient, show, onClose }) {
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-black">{patient.name}</h3>
-                            <p className="text-sm text-gray-400">Patient ID: {patient.id}</p>
+                            <p className="text-sm text-gray-500">{patient.email || 'No email provided'}</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
@@ -54,6 +54,10 @@ export default function PatientDetailsModal({ patient, show, onClose }) {
                         <div className="col-span-2">
                             <span className="text-black">Email:</span>
                             <span className="text-black ml-2">{patient.email}</span>
+                        </div>
+                        <div className="col-span-2">
+                            <span className="text-black">Address:</span>
+                            <span className="text-black ml-2">{patient.address || 'N/A'}</span>
                         </div>
                     </div>
                 </div>

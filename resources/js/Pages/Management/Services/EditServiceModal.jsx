@@ -1,22 +1,39 @@
-import { useState } from 'react';
+import { useForm, router } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
 import { X } from 'lucide-react';
+import { useEffect } from 'react';
 
-export default function EditServiceModal({ service, show, onClose }) {
-    const [formData, setFormData] = useState({
-        category: service?.category || '',
-        name: service?.name || '',
-        price: service?.price || '',
-        description: service?.description || ''
+export default function EditServiceModal({ service, show, onClose, categories = [] }) {
+    const { data, setData, put, processing, errors, reset } = useForm({
+        category: '',
+        name: '',
+        price: '',
+        description: ''
     });
+
+    useEffect(() => {
+        if (service) {
+            setData({
+                category: service.category || '',
+                name: service.name || '',
+                price: service.price || '',
+                description: service.description || ''
+            });
+        }
+    }, [service]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Update service:', formData);
-        onClose();
+        put(route('services.update', service.id), {
+            onSuccess: () => {
+                reset();
+                onClose();
+                router.reload({ only: ['tests'] });
+            }
+        });
     };
 
     return (
@@ -34,56 +51,62 @@ export default function EditServiceModal({ service, show, onClose }) {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <InputLabel>Category</InputLabel>
+                        <InputLabel>Category <span className="text-red-500">*</span></InputLabel>
                         <select
-                            value={formData.category}
-                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                            className="w-full rounded-lg border border-gray-400 bg-white/5 px-4 py-2.5 text-black focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                            value={data.category}
+                            onChange={(e) => setData('category', e.target.value)}
+                            className="w-full rounded-lg border border-gray-400 bg-white px-4 py-2.5 text-black focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+                            required
                         >
-                            <option value="">Type of Test</option>
-                            <option value="Hematology">Hematology</option>
-                            <option value="Urine Microscopy">Urine Microscopy</option>
-                            <option value="Serology/Immunology">Serology/Immunology</option>
-                            <option value="Blood Chemistry">Blood Chemistry</option>
-                            <option value="Procedure Ultrasound">Procedure Ultrasound</option>
-                            <option value="Others">Others</option>
+                            <option value="">Select category</option>
+                            {categories.map((cat) => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
                         </select>
+                        {errors.category && <p className="mt-1 text-sm text-red-600">{errors.category}</p>}
                     </div>
 
                     <div>
-                        <InputLabel>Test Name</InputLabel>
+                        <InputLabel>Test Name <span className="text-red-500">*</span></InputLabel>
                         <TextInput
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            value={data.name}
+                            onChange={(e) => setData('name', e.target.value)}
                             placeholder="Complete Blood Count"
+                            required
                         />
+                        {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                     </div>
 
                     <div>
-                        <InputLabel>Price (₱)</InputLabel>
+                        <InputLabel>Price (₱) <span className="text-red-500">*</span></InputLabel>
                         <TextInput
                             type="number"
-                            value={formData.price}
-                            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                            value={data.price}
+                            onChange={(e) => setData('price', e.target.value)}
                             placeholder="250"
                             step="0.01"
+                            min="0"
+                            required
                         />
+                        {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price}</p>}
                     </div>
 
                     <div>
-                        <InputLabel>Description</InputLabel>
+                        <InputLabel>Description <span className="text-red-500">*</span></InputLabel>
                         <textarea
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            value={data.description}
+                            onChange={(e) => setData('description', e.target.value)}
                             placeholder="Enter service description..."
                             rows={3}
-                            className="w-full rounded-lg border border-gray-400 bg-white/5 px-4 py-2.5 text-black placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors resize-none"
+                            className="w-full rounded-lg border border-gray-400 bg-white px-4 py-2.5 text-black placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors resize-none"
+                            required
                         />
+                        {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
                     </div>
 
                     <div className="flex gap-3 pt-4">
-                        <PrimaryButton type="submit" className="flex-1">
-                            Update
+                        <PrimaryButton type="submit" disabled={processing} className="flex-1">
+                            {processing ? 'Updating...' : 'Update'}
                         </PrimaryButton>
                         <button
                             type="button"

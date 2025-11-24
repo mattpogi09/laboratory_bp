@@ -1,6 +1,8 @@
-import { useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import { Link, usePage } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
+import LogoutModal from '@/Components/LogoutModal';
+import SuccessModal from '@/Components/SuccessModal';
 import {
     LayoutDashboard,
     Users,
@@ -12,14 +14,28 @@ import {
     LogOut,
     Plus,
     History,
-    Beaker
+    Beaker,
+    Send,
+    FileText
 } from 'lucide-react';
 
 export default function DashboardLayout({ children, auth }) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
     
+    const { flash } = usePage().props;
     const user = auth?.user;
     const userRole = user?.role;
+
+    // Handle flash success messages
+    useEffect(() => {
+        if (flash?.success) {
+            setSuccessMessage(flash.success);
+            setShowSuccessModal(true);
+        }
+    }, [flash]);
 
     // Admin navigation
     const adminNavigation = [
@@ -28,8 +44,8 @@ export default function DashboardLayout({ children, auth }) {
             name: 'Management',
             children: [
                 { name: 'Patients', href: route('patients.index'), icon: Users, routeName: 'patients.index' },
-                { name: 'User Management', href: route('users'), icon: UserCog, routeName: 'users' },
-                { name: 'Service Management', href: route('services'), icon: Settings, routeName: 'services' },
+                { name: 'User Management', href: route('users.index'), icon: UserCog, routeName: 'users.index' },
+                { name: 'Service Management', href: route('services.index'), icon: Settings, routeName: 'services.index' },
             ],
         },
         {
@@ -76,6 +92,8 @@ export default function DashboardLayout({ children, auth }) {
             name: 'Laboratory',
             children: [
                 { name: 'Lab Test Queue', href: route('lab-test-queue'), icon: Beaker, routeName: 'lab-test-queue' },
+                { name: 'Patient Results', href: route('lab-test-queue.patient-results'), icon: Send, routeName: 'lab-test-queue.patient-results' },
+                { name: 'Result History', href: route('lab-test-queue.result-history'), icon: FileText, routeName: 'lab-test-queue.result-history' },
             ],
         },
         {
@@ -162,15 +180,13 @@ export default function DashboardLayout({ children, auth }) {
                             <p className="text-xs text-black capitalize">{userRole?.replace('_', ' ') || 'User'}</p>
                         </div>
                     </div>
-                    <Link
-                        href={route('logout')}
-                        method="post"
-                        as="button"
-                        className="mt-2 flex w-full items-center px-3 py-2 text-sm font-medium bg-[#ac3434] text-white rounded-md hover:bg-[#990000]/10 hover:text-[#990000]"
+                    <button
+                        onClick={() => setShowLogoutModal(true)}
+                        className="mt-2 flex w-full items-center px-3 py-2 text-sm font-medium bg-[#ac3434] text-white rounded-md hover:bg-[#990000] transition-colors"
                     >
                         <LogOut className="mr-3 h-5 w-5" />
                         Logout
-                    </Link>
+                    </button>
                 </div>
             </div>
 
@@ -185,6 +201,19 @@ export default function DashboardLayout({ children, auth }) {
                     </div>
                 </main>
             </div>
+
+            {/* Logout Modal */}
+            <LogoutModal
+                show={showLogoutModal}
+                onClose={() => setShowLogoutModal(false)}
+            />
+
+            {/* Success Modal */}
+            <SuccessModal
+                show={showSuccessModal}
+                message={successMessage}
+                onClose={() => setShowSuccessModal(false)}
+            />
         </div>
     );
 }

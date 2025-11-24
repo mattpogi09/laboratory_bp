@@ -18,6 +18,7 @@ return new class extends Migration {
             $table->integer('minimum_stock')->default(0);
             $table->string('unit')->default('pcs');
             $table->enum('status', ['good', 'low_stock', 'out_of_stock'])->default('good');
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

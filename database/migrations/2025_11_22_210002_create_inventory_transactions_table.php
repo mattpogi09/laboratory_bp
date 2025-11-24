@@ -16,6 +16,8 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->enum('type', ['in', 'out']);
             $table->integer('quantity');
+            $table->integer('previous_stock')->nullable();
+            $table->integer('new_stock')->nullable();
             $table->string('transaction_code')->nullable();
             $table->text('reason')->nullable();
             $table->timestamps();

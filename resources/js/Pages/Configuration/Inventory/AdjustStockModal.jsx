@@ -11,7 +11,6 @@ export default function AdjustStockModal({ item, show, onClose }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route('inventory.adjust', item.id), {
-            preserveScroll: true,
             onSuccess: () => {
                 reset();
                 onClose();
