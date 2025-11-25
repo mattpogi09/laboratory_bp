@@ -101,6 +101,14 @@ export default function EnterResults({ auth, test }) {
                             <dt className="text-gray-500">Requested On</dt>
                             <dd className="font-medium text-gray-900">{test.transaction?.created_at}</dd>
                         </div>
+                        {test.cashier_remarks && (
+                            <div className="pt-2 border-t border-gray-200">
+                                <dt className="text-gray-500 font-medium">Cashier Remarks</dt>
+                                <dd className="mt-1 text-sm text-gray-900 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                                    {test.cashier_remarks}
+                                </dd>
+                            </div>
+                        )}
                         <div>
                             <dt className="text-gray-500">Status</dt>
                             <dd>

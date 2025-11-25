@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Send, FileText } from 'lucide-react';
+import { Search, Send, FileText, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SendResultsModal from './SendResultsModal';
+import NotifyPatientModal from './NotifyPatientModal';
 
 export default function PatientResults({ auth, transactions = [] }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [showSendModal, setShowSendModal] = useState(false);
+    const [showNotifyModal, setShowNotifyModal] = useState(false);
 
     const filteredTransactions = transactions.filter(transaction =>
         transaction.transaction_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -32,6 +34,11 @@ export default function PatientResults({ auth, transactions = [] }) {
             setSelectedTransaction(transaction);
             setShowSendModal(true);
         }
+    };
+
+    const handleNotifyPatient = (transaction) => {
+        setSelectedTransaction(transaction);
+        setShowNotifyModal(true);
     };
 
     return (
@@ -129,13 +136,22 @@ export default function PatientResults({ auth, transactions = [] }) {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button
-                                                onClick={() => handleSendResults(transaction)}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-red-600 hover:bg-red-700 rounded transition-colors"
-                                            >
-                                                <Send className="h-4 w-4" />
-                                                Send Results
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleSendResults(transaction)}
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-red-600 hover:bg-red-700 rounded transition-colors"
+                                                >
+                                                    <Send className="h-4 w-4" />
+                                                    Send Results
+                                                </button>
+                                                <button
+                                                    onClick={() => handleNotifyPatient(transaction)}
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors"
+                                                >
+                                                    <Bell className="h-4 w-4" />
+                                                    Notify Patient
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -152,6 +168,18 @@ export default function PatientResults({ auth, transactions = [] }) {
                     transaction={selectedTransaction}
                     onClose={() => {
                         setShowSendModal(false);
+                        setSelectedTransaction(null);
+                    }}
+                />
+            )}
+
+            {/* Notify Patient Modal */}
+            {selectedTransaction && (
+                <NotifyPatientModal
+                    show={showNotifyModal}
+                    transaction={selectedTransaction}
+                    onClose={() => {
+                        setShowNotifyModal(false);
                         setSelectedTransaction(null);
                     }}
                 />

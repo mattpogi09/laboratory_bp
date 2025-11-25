@@ -27,16 +27,37 @@ class DashboardController extends Controller
 
     // Get date range based on period
     $dateRange = $this->getDateRange($period);
+    $previousDateRange = $this->getPreviousDateRange($period);
 
     // Total Revenue
     $totalRevenue = Transaction::whereBetween('created_at', $dateRange)
       ->where('payment_status', 'paid')
       ->sum('net_total');
 
-    // Patients Today
-    $patientsToday = Transaction::whereDate('created_at', today())
+    // Previous period revenue for comparison
+    $previousRevenue = Transaction::whereBetween('created_at', $previousDateRange)
+      ->where('payment_status', 'paid')
+      ->sum('net_total');
+
+    // Calculate revenue trend
+    $revenueTrend = $previousRevenue > 0
+      ? round((($totalRevenue - $previousRevenue) / $previousRevenue) * 100, 1)
+      : ($totalRevenue > 0 ? 100 : 0);
+
+    // Patients Count (based on period)
+    $patientsCount = Transaction::whereBetween('created_at', $dateRange)
       ->distinct('patient_id')
       ->count('patient_id');
+
+    // Previous period patients for comparison
+    $previousPatientsCount = Transaction::whereBetween('created_at', $previousDateRange)
+      ->distinct('patient_id')
+      ->count('patient_id');
+
+    // Calculate patients trend
+    $patientsTrend = $previousPatientsCount > 0
+      ? round((($patientsCount - $previousPatientsCount) / $previousPatientsCount) * 100, 1)
+      : ($patientsCount > 0 ? 100 : 0);
 
     // Pending Tests
     $pendingTests = TransactionTest::where('status', 'pending')
@@ -104,10 +125,58 @@ class DashboardController extends Controller
       ];
     });
 
+    // Top performing tests
+    $topTests = TransactionTest::selectRaw('test_name, COUNT(*) as count, SUM(price) as revenue')
+      ->whereBetween('created_at', $dateRange)
+      ->groupBy('test_name')
+      ->orderByDesc('count')
+      ->take(5)
+      ->get()
+      ->map(function ($test) {
+        return [
+          'name' => $test->test_name,
+          'count' => $test->count,
+          'revenue' => number_format($test->revenue, 2),
+        ];
+      });
+
+    // Critical alerts
+    $alerts = [];
+    $criticalStock = InventoryItem::where('status', 'out_of_stock')->count();
+    if ($criticalStock > 0) {
+      $alerts[] = [
+        'type' => 'critical',
+        'message' => "{$criticalStock} items are out of stock!",
+        'action' => 'Go to Inventory',
+        'route' => 'inventory'
+      ];
+    }
+
+    $lowStock = InventoryItem::where('status', 'low_stock')->count();
+    if ($lowStock > 0) {
+      $alerts[] = [
+        'type' => 'warning',
+        'message' => "{$lowStock} items are running low on stock.",
+        'action' => 'View Items',
+        'route' => 'inventory'
+      ];
+    }
+
+    if ($pendingTests > 10) {
+      $alerts[] = [
+        'type' => 'info',
+        'message' => "{$pendingTests} tests are pending processing.",
+        'action' => 'View Tasks',
+        'route' => 'reports-logs'
+      ];
+    }
+
     return Inertia::render('Dashboard', [
       'stats' => [
         'totalRevenue' => number_format($totalRevenue, 2),
-        'patientsToday' => $patientsToday,
+        'revenueTrend' => $revenueTrend,
+        'patientsCount' => $patientsCount,
+        'patientsTrend' => $patientsTrend,
         'lowStockItems' => count($lowStockItems),
         'pendingTests' => $pendingTests,
       ],
@@ -117,6 +186,8 @@ class DashboardController extends Controller
       'revenueChartData' => $revenueChartData,
       'testStatusData' => $testStatusData,
       'dailyRevenue' => $last7Days,
+      'topTests' => $topTests,
+      'alerts' => $alerts,
     ]);
   }
 
@@ -128,6 +199,17 @@ class DashboardController extends Controller
       'month' => [now()->startOfMonth(), now()->endOfMonth()],
       'year' => [now()->startOfYear(), now()->endOfYear()],
       default => [now()->startOfDay(), now()->endOfDay()],
+    };
+  }
+
+  private function getPreviousDateRange($period)
+  {
+    return match ($period) {
+      'day' => [now()->subDay()->startOfDay(), now()->subDay()->endOfDay()],
+      'week' => [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()],
+      'month' => [now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth()],
+      'year' => [now()->subYear()->startOfYear(), now()->subYear()->endOfYear()],
+      default => [now()->subDay()->startOfDay(), now()->subDay()->endOfDay()],
     };
   }
 

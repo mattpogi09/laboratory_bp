@@ -99,6 +99,7 @@ class LabTestQueueController extends Controller
             'category' => $test->category,
             'status' => $test->status,
             'queue_number' => $test->transaction?->queue_number,
+            'cashier_remarks' => $test->transaction?->notes,
             'created_at' => $test->created_at?->toDateTimeString(),
         ];
 
@@ -229,6 +230,16 @@ class LabTestQueueController extends Controller
                 'documents' => $documentPaths,
             ]);
 
+            // Check if patient has email
+            $patientEmail = $transaction->patient ? $transaction->patient->email : null;
+            if (!$patientEmail) {
+                DB::rollBack();
+                return back()->with('error', 'Patient email not found. Cannot send results.');
+            }
+
+            // Send results email with attachments
+            \Mail::to($patientEmail)->send(new \App\Mail\SendResultsMail($transaction, $documentPaths));
+
             // Update all tests to released status
             $transaction->tests()->update([
                 'status' => 'released',
@@ -276,6 +287,96 @@ class LabTestQueueController extends Controller
             );
 
             return back()->with('error', 'Failed to send results. Please try again.');
+        }
+    }
+
+    /**
+     * Send notification to patient that results are ready for pickup
+     */
+    public function notifyPatient(Transaction $transaction)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Load relationships
+            $transaction->load(['patient', 'tests']);
+
+            // Check if all tests are completed
+            $incompleteTests = $transaction->tests->filter(fn($test) => $test->status !== 'completed');
+
+            if ($incompleteTests->count() > 0) {
+                $this->auditLogger->log(
+                    'failed_notification',
+                    'lab_activities',
+                    'Attempted to notify patient with incomplete results',
+                    [
+                        'transaction_number' => $transaction->transaction_number,
+                        'patient_name' => $transaction->patient ?
+                            $transaction->patient->first_name . ' ' . $transaction->patient->last_name :
+                            $transaction->patient_full_name,
+                        'incomplete_tests' => $incompleteTests->pluck('test_name')->toArray(),
+                    ],
+                    'warning'
+                );
+
+                return back()->with('error', 'Cannot notify patient. Some tests are not completed yet.');
+            }
+
+            // Check if patient has email
+            $patientEmail = $transaction->patient ? $transaction->patient->email : null;
+            if (!$patientEmail) {
+                return back()->with('error', 'Patient email not found. Cannot send notification.');
+            }
+
+            // Send notification email
+            \Mail::to($patientEmail)->send(new \App\Mail\NotifyPatientMail($transaction));
+
+            // Update all tests to released status
+            $transaction->tests()->update([
+                'status' => 'released',
+                'released_at' => now(),
+            ]);
+
+            // Log the action
+            $patientName = $transaction->patient ?
+                $transaction->patient->first_name . ' ' . $transaction->patient->last_name :
+                $transaction->patient_full_name;
+
+            $this->auditLogger->log(
+                'notify_patient',
+                'lab_activities',
+                "Sent pickup notification to patient {$patientName}",
+                [
+                    'transaction_id' => $transaction->id,
+                    'transaction_number' => $transaction->transaction_number,
+                    'patient_email' => $patientEmail,
+                    'tests_count' => $transaction->tests->count(),
+                    'tests' => $transaction->tests->pluck('test_name')->toArray(),
+                ],
+                'info',
+                'Transaction',
+                $transaction->id
+            );
+
+            DB::commit();
+
+            return back()->with('success', "Pickup notification sent to {$patientEmail}");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            $this->auditLogger->log(
+                'error',
+                'lab_activities',
+                'Failed to send patient notification',
+                [
+                    'error' => $e->getMessage(),
+                    'transaction_id' => $transaction->id,
+                ],
+                'error'
+            );
+
+            return back()->with('error', 'Failed to send notification. Please try again.');
         }
     }
 

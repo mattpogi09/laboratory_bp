@@ -20,6 +20,8 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+
+
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -95,6 +97,7 @@ Route::middleware('auth')->group(function () {
     // Patient Results Routes
     Route::get('/lab-test-queue/patient-results', [LabTestQueueController::class, 'patientResults'])->name('lab-test-queue.patient-results');
     Route::post('/lab-test-queue/send-results', [LabTestQueueController::class, 'sendResults'])->name('lab-test-queue.send-results');
+    Route::post('/lab-test-queue/notify-patient/{transaction}', [LabTestQueueController::class, 'notifyPatient'])->name('lab-test-queue.notify-patient');
     Route::get('/lab-test-queue/result-history', [LabTestQueueController::class, 'resultHistory'])->name('lab-test-queue.result-history');
 });
 

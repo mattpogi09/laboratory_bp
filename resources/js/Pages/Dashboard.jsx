@@ -1,35 +1,11 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, Link } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { PhilippinePeso , Users, AlertTriangle, Clock } from 'lucide-react';
+import { PhilippinePeso , Users, AlertTriangle, Clock, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    ArcElement,
-    Title,
-    Tooltip,
-    Legend,
-    Filler
-} from 'chart.js';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
-
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    ArcElement,
-    Title,
-    Tooltip,
-    Legend,
-    Filler
-);
+import LineChartComponent from '@/Components/Charts/LineChartComponent';
+import BarChartComponent from '@/Components/Charts/BarChartComponent';
+import DoughnutChartComponent from '@/Components/Charts/DoughnutChartComponent';
 
 export default function Dashboard({ 
     auth, 
@@ -39,7 +15,9 @@ export default function Dashboard({
     lowStockItems, 
     revenueChartData, 
     testStatusData,
-    dailyRevenue 
+    dailyRevenue,
+    topTests = [],
+    alerts = []
 }) {
     const [selectedPeriod, setSelectedPeriod] = useState(period || 'day');
 
@@ -48,96 +26,7 @@ export default function Dashboard({
         router.get(route('dashboard'), { period: newPeriod }, { preserveState: true });
     };
 
-    const statsCards = [
-        { 
-            title: `Total Revenue ${getPeriodLabel(selectedPeriod)}`, 
-            value: `₱${stats.totalRevenue}`, 
-            icon: PhilippinePeso,
-            color: 'bg-emerald-500'
-        },
-        { 
-            title: 'Patients Today', 
-            value: stats.patientsToday, 
-            icon: Users,
-            color: 'bg-blue-500'
-        },
-        { 
-            title: 'Low Stock Items', 
-            value: stats.lowStockItems, 
-            icon: AlertTriangle,
-            color: 'bg-amber-500'
-        },
-        { 
-            title: 'Pending Tests', 
-            value: stats.pendingTests, 
-            icon: Clock,
-            color: 'bg-purple-500'
-        }
-    ];
-
-    // Revenue Line Chart Data
-    const revenueLineData = {
-        labels: revenueChartData.map(item => item.label),
-        datasets: [
-            {
-                label: 'Revenue',
-                data: revenueChartData.map(item => item.value),
-                borderColor: 'rgb(16, 185, 129)',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                fill: true,
-                tension: 0.4,
-            },
-        ],
-    };
-
-    // Daily Revenue Bar Chart
-    const dailyRevenueData = {
-        labels: dailyRevenue.map(item => item.date),
-        datasets: [
-            {
-                label: 'Daily Revenue',
-                data: dailyRevenue.map(item => item.revenue),
-                backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                borderColor: 'rgb(59, 130, 246)',
-                borderWidth: 1,
-            },
-        ],
-    };
-
-    // Test Status Doughnut Chart
-    const testStatusChartData = {
-        labels: ['Pending', 'Processing', 'Completed', 'Released'],
-        datasets: [
-            {
-                data: [testStatusData.pending, testStatusData.processing, testStatusData.completed, testStatusData.released],
-                backgroundColor: [
-                    'rgba(239, 68, 68, 0.8)',  // red
-                    'rgba(234, 179, 8, 0.8)',   // yellow
-                    'rgba(59, 130, 246, 0.8)',  // blue
-                    'rgba(34, 197, 94, 0.8)',   // green
-                ],
-                borderColor: [
-                    'rgb(239, 68, 68)',
-                    'rgb(234, 179, 8)',
-                    'rgb(59, 130, 246)',
-                    'rgb(34, 197, 94)',
-                ],
-                borderWidth: 1,
-            },
-        ],
-    };
-
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom',
-            },
-        },
-    };
-
-    function getPeriodLabel(period) {
+    const getPeriodLabel = (period) => {
         const labels = {
             day: 'Today',
             week: 'This Week',
@@ -145,7 +34,58 @@ export default function Dashboard({
             year: 'This Year',
         };
         return labels[period] || 'Today';
-    }
+    };
+
+    const statsCards = [
+        { 
+            title: `Total Revenue ${getPeriodLabel(selectedPeriod)}`, 
+            value: `₱${stats.totalRevenue}`, 
+            trend: stats.revenueTrend,
+            icon: PhilippinePeso,
+            color: 'bg-emerald-500',
+            route: 'reports-logs'
+        },
+        { 
+            title: `Patients ${getPeriodLabel(selectedPeriod)}`, 
+            value: stats.patientsCount, 
+            trend: stats.patientsTrend,
+            icon: Users,
+            color: 'bg-blue-500',
+            route: 'patients.index'
+        },
+        { 
+            title: 'Low Stock Items', 
+            value: stats.lowStockItems, 
+            icon: AlertTriangle,
+            color: 'bg-amber-500',
+            route: 'inventory'
+        },
+        { 
+            title: 'Pending Tests', 
+            value: stats.pendingTests, 
+            icon: Clock,
+            color: 'bg-purple-500',
+            route: 'reports-logs'
+        }
+    ];
+
+    // Prepare data for Evil Charts (Recharts format)
+    const revenueLineData = revenueChartData.map(item => ({
+        label: item.label,
+        value: item.value
+    }));
+
+    const dailyRevenueBarData = dailyRevenue.map(item => ({
+        label: item.date,
+        value: item.revenue
+    }));
+
+    const testStatusDoughnutData = [
+        { name: 'Pending', value: testStatusData.pending },
+        { name: 'Processing', value: testStatusData.processing },
+        { name: 'Completed', value: testStatusData.completed },
+        { name: 'Released', value: testStatusData.released },
+    ];
 
     return (
         <DashboardLayout auth={auth}>
@@ -176,22 +116,119 @@ export default function Dashboard({
                 </div>
             </div>
 
+            {/* Alerts Banner */}
+            {alerts && alerts.length > 0 && (
+                <div className="mb-6 space-y-3">
+                    {alerts.map((alert, index) => (
+                        <div
+                            key={index}
+                            className={cn(
+                                "rounded-lg p-4 flex items-center justify-between",
+                                alert.type === 'critical' ? 'bg-red-50 border border-red-200' :
+                                alert.type === 'warning' ? 'bg-amber-50 border border-amber-200' :
+                                'bg-blue-50 border border-blue-200'
+                            )}
+                        >
+                            <div className="flex items-center gap-3">
+                                <AlertTriangle className={cn(
+                                    "h-5 w-5",
+                                    alert.type === 'critical' ? 'text-red-600' :
+                                    alert.type === 'warning' ? 'text-amber-600' :
+                                    'text-blue-600'
+                                )} />
+                                <span className={cn(
+                                    "text-sm font-medium",
+                                    alert.type === 'critical' ? 'text-red-900' :
+                                    alert.type === 'warning' ? 'text-amber-900' :
+                                    'text-blue-900'
+                                )}>{alert.message}</span>
+                            </div>
+                            <Link
+                                href={route(alert.route)}
+                                className={cn(
+                                    "text-sm font-medium hover:underline flex items-center gap-1",
+                                    alert.type === 'critical' ? 'text-red-700' :
+                                    alert.type === 'warning' ? 'text-amber-700' :
+                                    'text-blue-700'
+                                )}
+                            >
+                                {alert.action}
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </div>
+                    ))}
+                </div>
+            )}
+
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {statsCards.map((stat, index) => (
-                    <div key={index} className="bg-white rounded-xl shadow-md p-6">
-                        <div className="flex items-center">
-                            <div className={cn("p-3 rounded-lg", stat.color)}>
-                                <stat.icon className="h-6 w-6 text-white" />
+                    <Link
+                        key={index}
+                        href={route(stat.route)}
+                        className="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer group"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center flex-1">
+                                <div className={cn("p-3 rounded-lg transition-transform duration-300 group-hover:scale-110", stat.color)}>
+                                    <stat.icon className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="ml-4 flex-1">
+                                    <p className="text-sm font-medium text-gray-600 whitespace-nowrap">{stat.title}</p>
+                                    <div className="flex items-baseline gap-2">
+                                        <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+                                        {stat.trend !== undefined && (
+                                            <span className={cn(
+                                                "text-xs font-medium flex items-center gap-0.5",
+                                                stat.trend > 0 ? 'text-green-600' : 
+                                                stat.trend < 0 ? 'text-red-600' : 'text-gray-500'
+                                            )}>
+                                                {stat.trend > 0 ? (
+                                                    <><TrendingUp className="h-3 w-3" /> {stat.trend}%</>
+                                                ) : stat.trend < 0 ? (
+                                                    <><TrendingDown className="h-3 w-3" /> {Math.abs(stat.trend)}%</>
+                                                ) : (
+                                                    '0%'
+                                                )}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="ml-4">
-                                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-                            </div>
+                            <ArrowRight className="h-5 w-5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
-                    </div>
+                    </Link>
                 ))}
             </div>
+
+            {/* Top Performing Tests */}
+            {topTests && topTests.length > 0 && (
+                <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Performing Tests</h2>
+                    <div className="space-y-3">
+                        {topTests.map((test, index) => (
+                            <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                                <div className="flex items-center gap-3">
+                                    <span className={cn(
+                                        "flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold",
+                                        index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                                        index === 1 ? 'bg-gray-100 text-gray-700' :
+                                        index === 2 ? 'bg-orange-100 text-orange-700' :
+                                        'bg-blue-50 text-blue-600'
+                                    )}>
+                                        #{index + 1}
+                                    </span>
+                                    <div>
+                                        <p className="font-medium text-gray-900">{test.name}</p>
+                                        <p className="text-xs text-gray-500">{test.count} tests ordered</p>
+                                    </div>
+                                </div>
+                                <span className="text-sm font-semibold text-emerald-600">₱{test.revenue}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -201,7 +238,12 @@ export default function Dashboard({
                         Revenue Trend - {getPeriodLabel(selectedPeriod)}
                     </h2>
                     <div style={{ height: '300px' }}>
-                        <Line data={revenueLineData} options={chartOptions} />
+                        <LineChartComponent 
+                            data={revenueLineData} 
+                            dataKey="value" 
+                            nameKey="label" 
+                            color="#10b981" 
+                        />
                     </div>
                 </div>
 
@@ -209,7 +251,7 @@ export default function Dashboard({
                 <div className="bg-white rounded-xl shadow-md p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Test Status Distribution</h2>
                     <div style={{ height: '300px' }}>
-                        <Doughnut data={testStatusChartData} options={chartOptions} />
+                        <DoughnutChartComponent data={testStatusDoughnutData} />
                     </div>
                 </div>
             </div>
@@ -218,7 +260,12 @@ export default function Dashboard({
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Last 7 Days Revenue</h2>
                 <div style={{ height: '300px' }}>
-                    <Bar data={dailyRevenueData} options={chartOptions} />
+                    <BarChartComponent 
+                        data={dailyRevenueBarData} 
+                        dataKey="value" 
+                        nameKey="label" 
+                        color="#3b82f6" 
+                    />
                 </div>
             </div>
 
@@ -226,7 +273,16 @@ export default function Dashboard({
                 {/* Low Stock Items */}
                 {lowStockItems && lowStockItems.length > 0 && (
                     <div className="bg-white rounded-xl shadow-md p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4">Low Stock Items</h2>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-semibold text-gray-900">Low Stock Items</h2>
+                            <Link
+                                href={route('inventory')}
+                                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 transition-colors"
+                            >
+                                View All
+                                <ArrowRight className="h-4 w-4" />
+                            </Link>
+                        </div>
                         <div className="space-y-4">
                             {lowStockItems.map((item, index) => {
                                 const percentage = item.minimum_stock > 0 
@@ -264,7 +320,16 @@ export default function Dashboard({
 
                 {/* Pending Tasks */}
                 <div className="bg-white rounded-xl shadow-md p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Lab Tasks</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-gray-900">Pending Lab Tasks</h2>
+                        <Link
+                            href={route('reports-logs')}
+                            className="text-sm text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1 transition-colors"
+                        >
+                            View All
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                    </div>
                     <div className="space-y-4">
                         {pendingTasks && pendingTasks.length > 0 ? (
                             pendingTasks.map((task, index) => (

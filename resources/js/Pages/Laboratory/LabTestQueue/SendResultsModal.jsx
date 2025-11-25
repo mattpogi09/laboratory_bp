@@ -7,6 +7,7 @@ export default function SendResultsModal({ show, transaction, onClose }) {
     const [documents, setDocuments] = useState([]);
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [showError, setShowError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
     const [incompleteTests, setIncompleteTests] = useState([]);
 
     if (!show || !transaction) return null;
@@ -50,8 +51,11 @@ export default function SendResultsModal({ show, transaction, onClose }) {
                 onClose();
                 // Success notification will be shown by backend
             },
-            onError: () => {
+            onError: (errors) => {
                 setShowConfirmation(false);
+                // Show error modal with the error message
+                setErrorMessage(errors?.error || 'Failed to send results. Please try again.');
+                setShowError(true);
             }
         });
     };
@@ -407,8 +411,8 @@ export default function SendResultsModal({ show, transaction, onClose }) {
                 </div>
             )}
 
-            {/* Error Modal */}
-            {showError && (
+            {/* Error Modal for Incomplete Tests */}
+            {showError && incompleteTests.length > 0 && (
                 <div className="fixed inset-0 z-[60] overflow-y-auto">
                     <div className="flex min-h-screen items-center justify-center p-4">
                         <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowError(false)} />
@@ -447,6 +451,43 @@ export default function SendResultsModal({ show, transaction, onClose }) {
                                     className="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
                                 >
                                     Understood
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* General Error Modal (for email/sending failures) */}
+            {showError && incompleteTests.length === 0 && errorMessage && (
+                <div className="fixed inset-0 z-[60] overflow-y-auto">
+                    <div className="flex min-h-screen items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowError(false)} />
+                        
+                        <div className="relative w-full max-w-md bg-white rounded-xl shadow-xl p-6">
+                            <div className="text-center">
+                                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                                    <AlertTriangle className="h-6 w-6 text-red-600" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                    Failed to Send Results
+                                </h3>
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                                    <p className="text-sm text-red-800">
+                                        {errorMessage}
+                                    </p>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-6">
+                                    Please try again or contact support if the problem persists.
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        setShowError(false);
+                                        setErrorMessage('');
+                                    }}
+                                    className="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
+                                >
+                                    Close
                                 </button>
                             </div>
                         </div>

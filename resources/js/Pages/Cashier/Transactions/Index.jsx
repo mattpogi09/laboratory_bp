@@ -43,18 +43,12 @@ export default function TransactionsIndex({
     const [payment, setPayment] = useState(initialPayment);
     const [search, setSearch] = useState(filters.search || '');
     const [selectedDiscount, setSelectedDiscount] = useState(
-        discountOptions[0] || { id: 'none', name: 'No Discount', rate: 0 }
+        { id: 'none', name: 'No Discount', rate: 0 }
     );
     const [selectedPhilHealth, setSelectedPhilHealth] = useState(
         { id: 'none', name: 'No PhilHealth', coverage_rate: 0 }
     );
     const [duplicateTests, setDuplicateTests] = useState([]);
-
-    useEffect(() => {
-        if (discountOptions.length) {
-            setSelectedDiscount(discountOptions[0]);
-        }
-    }, [discountOptions]);
 
     // Check for duplicate tests when patient or selected tests change
     useEffect(() => {

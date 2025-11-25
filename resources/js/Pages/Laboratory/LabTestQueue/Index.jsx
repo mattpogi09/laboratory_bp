@@ -117,6 +117,7 @@ export default function LabTestQueueIndex({ auth, stats = {}, tests = {} }) {
                                 <th className="px-6 py-3">Transaction</th>
                                 <th className="px-6 py-3">Patient</th>
                                 <th className="px-6 py-3">Test</th>
+                                <th className="px-6 py-3">Cashier Remarks</th>
                                 <th className="px-6 py-3">Status</th>
                                 <th className="px-6 py-3">Actions</th>
                             </tr>
@@ -124,7 +125,7 @@ export default function LabTestQueueIndex({ auth, stats = {}, tests = {} }) {
                         <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
                             {dataForTab.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
                                         No tests found in this queue.
                                     </td>
                                 </tr>
@@ -142,6 +143,15 @@ export default function LabTestQueueIndex({ auth, stats = {}, tests = {} }) {
                                         <td className="px-6 py-3">
                                             <div className="font-medium text-gray-900">{test.test_name}</div>
                                             <div className="text-xs text-gray-500">{test.category}</div>
+                                        </td>
+                                        <td className="px-6 py-3">
+                                            {test.cashier_remarks ? (
+                                                <div className="text-sm text-gray-700 max-w-xs truncate" title={test.cashier_remarks}>
+                                                    {test.cashier_remarks}
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">—</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-3">
                                             <span
