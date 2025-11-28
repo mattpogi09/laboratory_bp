@@ -4,6 +4,9 @@ import './bootstrap';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
+import AppWrapper from './Components/AppWrapper';
+import { setupInertiaNavigationListener } from './Components/InertiaNavigationListener';
+import loadingManager from './Components/LoadingManager';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -16,10 +19,12 @@ createInertiaApp({
         ),
     setup({ el, App, props }) {
         const root = createRoot(el);
-
-        root.render(<App {...props} />);
+        root.render(<AppWrapper App={App} props={props} />);
     },
     progress: {
-        color: '#4B5563',
+        show: false,
+        color: 'transparent',
     },
 });
+
+setupInertiaNavigationListener(loadingManager);

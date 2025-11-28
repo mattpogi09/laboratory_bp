@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LabTest;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class LabTestController extends Controller
@@ -33,16 +34,20 @@ class LabTestController extends Controller
       ->paginate(10)
       ->withQueryString();
 
-    // Get unique categories for dropdown
-    $categories = LabTest::select('category')
-      ->distinct()
-      ->orderBy('category')
-      ->pluck('category');
+    // Cache categories for 1 hour (rarely changes)
+    $categories = Cache::remember('lab_test_categories', 3600, function () {
+      return LabTest::select('category')
+        ->distinct()
+        ->orderBy('category')
+        ->pluck('category');
+    });
 
-    // Get category stats (count per category)
-    $categoryStats = LabTest::selectRaw('category, COUNT(*) as count')
-      ->groupBy('category')
-      ->pluck('count', 'category');
+    // Cache category stats for 10 minutes
+    $categoryStats = Cache::remember('lab_test_category_stats', 600, function () {
+      return LabTest::selectRaw('category, COUNT(*) as count')
+        ->groupBy('category')
+        ->pluck('count', 'category');
+    });
 
     return Inertia::render('Management/Services/Index', [
       'tests' => $tests,
@@ -95,6 +100,10 @@ class LabTestController extends Controller
       'description' => $validated['description'],
     ]);
 
+    // Clear cache after creating lab test
+    Cache::forget('lab_test_categories');
+    Cache::forget('lab_test_category_stats');
+
     return back()->with('success', 'Service added successfully');
   }
 
@@ -137,6 +146,10 @@ class LabTestController extends Controller
 
     $auditLogger->logServiceUpdated($id, $oldData, $validated);
 
+    // Clear cache after updating lab test
+    Cache::forget('lab_test_categories');
+    Cache::forget('lab_test_category_stats');
+
     return back()->with('success', 'Service updated successfully');
   }
 
@@ -151,6 +164,11 @@ class LabTestController extends Controller
     $test->save();
 
     $auditLogger->logServiceToggled($test->id, $test->name, $test->is_active);
+
+    // Clear cache after toggling lab test
+    Cache::forget('lab_test_category_stats');
+
+    return back()->with('success', 'Service status updated successfully');
 
     return back()->with('success', $test->is_active ? 'Service activated' : 'Service deactivated');
   }

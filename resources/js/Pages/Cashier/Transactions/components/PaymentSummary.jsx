@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { History } from 'lucide-react';
 import TextField from './TextField';
 
-export default function PaymentSummary({
+function PaymentSummary({
     payment,
     onPaymentChange,
     notes,
@@ -175,6 +176,8 @@ export default function PaymentSummary({
         </section>
     );
 }
+
+export default memo(PaymentSummary);
 
 function SummaryRow({ label, value, valueClass }) {
     return (

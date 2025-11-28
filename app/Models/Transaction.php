@@ -4,6 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Yajra\Address\Entities\Region;
+use Yajra\Address\Entities\Province;
+use Yajra\Address\Entities\City;
+use Yajra\Address\Entities\Barangay;
 
 class Transaction extends Model
 {
@@ -20,12 +24,19 @@ class Transaction extends Model
         'patient_age',
         'patient_gender',
         'patient_contact',
-        'patient_address',
+        'region_id',
+        'province_id',
+        'city_id',
+        'barangay_code',
+        'patient_street',
         'payment_status',
         'payment_method',
         'discount_name',
         'discount_rate',
         'discount_amount',
+        'philhealth_name',
+        'philhealth_coverage',
+        'philhealth_amount',
         'net_total',
         'total_amount',
         'amount_tendered',
@@ -42,6 +53,8 @@ class Transaction extends Model
         'total_amount' => 'decimal:2',
         'discount_rate' => 'decimal:2',
         'discount_amount' => 'decimal:2',
+        'philhealth_coverage' => 'decimal:2',
+        'philhealth_amount' => 'decimal:2',
         'net_total' => 'decimal:2',
         'amount_tendered' => 'decimal:2',
         'change_due' => 'decimal:2',
@@ -52,6 +65,7 @@ class Transaction extends Model
 
     protected $appends = [
         'patient_full_name',
+        'patient_formatted_address',
     ];
 
     public function patient()
@@ -72,6 +86,27 @@ class Transaction extends Model
     public function events()
     {
         return $this->hasMany(TransactionEvent::class)->latest();
+    }
+
+    // Address relationships using PSGC codes (strings)
+    public function region()
+    {
+        return $this->belongsTo(Region::class, 'region_id', 'region_id');
+    }
+
+    public function province()
+    {
+        return $this->belongsTo(Province::class, 'province_id', 'province_id');
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class, 'city_id', 'city_id');
+    }
+
+    public function barangay()
+    {
+        return $this->belongsTo(Barangay::class, 'barangay_code', 'code');
     }
 
     public function scopeToday($query)
@@ -106,5 +141,18 @@ class Transaction extends Model
             $this->patient_middle_name,
             $this->patient_last_name,
         ])->filter()->join(' '));
+    }
+
+    public function getPatientFormattedAddressAttribute(): string
+    {
+        $parts = array_filter([
+            $this->patient_street,
+            $this->barangay?->name,
+            $this->city?->name,
+            $this->province?->name,
+            $this->region?->name,
+        ]);
+
+        return implode(', ', $parts);
     }
 }

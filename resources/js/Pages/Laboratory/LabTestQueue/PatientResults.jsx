@@ -1,22 +1,63 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Send, FileText, Bell } from 'lucide-react';
+import { Search, Send, FileText, Bell, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SendResultsModal from './SendResultsModal';
 import NotifyPatientModal from './NotifyPatientModal';
+import LoadingOverlay from '@/Components/LoadingOverlay';
 
-export default function PatientResults({ auth, transactions = [] }) {
-    const [searchQuery, setSearchQuery] = useState('');
+export default function PatientResults({ auth, transactions, filters = {} }) {
+    const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [showSendModal, setShowSendModal] = useState(false);
     const [showNotifyModal, setShowNotifyModal] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+    const [sortBy, setSortBy] = useState(filters.sort_by || 'created_at');
+    const [sortOrder, setSortOrder] = useState(filters.sort_order || 'desc');
 
-    const filteredTransactions = transactions.filter(transaction =>
-        transaction.transaction_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        transaction.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        transaction.patient_email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Debounced search - wait 300ms after user stops typing
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchQuery !== filters.search) {
+                setIsSearching(true);
+                router.get(
+                    route('lab-test-queue.patient-results'),
+                    { 
+                        search: searchQuery,
+                        sort_by: sortBy,
+                        sort_order: sortOrder,
+                    },
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                        onFinish: () => setIsSearching(false),
+                    }
+                );
+            }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const handleSort = (column) => {
+        const newSortOrder = sortBy === column && sortOrder === 'asc' ? 'desc' : 'asc';
+        setSortBy(column);
+        setSortOrder(newSortOrder);
+        
+        router.get(
+            route('lab-test-queue.patient-results'),
+            {
+                search: searchQuery,
+                sort_by: column,
+                sort_order: newSortOrder,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            }
+        );
+    };
 
     const handleSendResults = (transaction) => {
         // Check if all tests are completed
@@ -45,6 +86,8 @@ export default function PatientResults({ auth, transactions = [] }) {
         <DashboardLayout auth={auth}>
             <Head title="Patient Results" />
 
+            {isSearching && <LoadingOverlay message="Searching..." />}
+
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-gray-900">Patient Results</h1>
                 <p className="text-gray-600">Send completed test results to patients</p>
@@ -70,11 +113,23 @@ export default function PatientResults({ auth, transactions = [] }) {
                     <table className="w-full">
                         <thead>
                             <tr className="border-b border-gray-200 bg-gray-50">
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Transaction Code
+                                <th 
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    onClick={() => handleSort('transaction_number')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Transaction Code
+                                        <ArrowUpDown className="h-3 w-3" />
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Full Name
+                                <th 
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    onClick={() => handleSort('patient_name')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Full Name
+                                        <ArrowUpDown className="h-3 w-3" />
+                                    </div>
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Tests
@@ -82,8 +137,14 @@ export default function PatientResults({ auth, transactions = [] }) {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Email
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Date
+                                <th 
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    onClick={() => handleSort('created_at')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Date
+                                        <ArrowUpDown className="h-3 w-3" />
+                                    </div>
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
@@ -97,19 +158,19 @@ export default function PatientResults({ auth, transactions = [] }) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
-                            {filteredTransactions.length === 0 ? (
+                            {transactions.data?.length === 0 ? (
                                 <tr>
                                     <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                                         {searchQuery ? 'No results found for your search.' : 'No patients with completed tests.'}
                                     </td>
                                 </tr>
                             ) : (
-                                filteredTransactions.map((transaction) => (
+                                transactions.data?.map((transaction) => (
                                     <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="font-medium text-gray-900">
+                                            <div className="text-sm font-medium text-gray-900">
                                                 {transaction.transaction_number}
-                                            </span>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-sm text-gray-900">{transaction.patient_name}</span>
@@ -159,6 +220,58 @@ export default function PatientResults({ auth, transactions = [] }) {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination */}
+                {transactions.last_page > 1 && (
+                    <div className="flex items-center justify-between border-t border-gray-200 bg-white px-6 py-3">
+                        <div className="flex flex-1 justify-between sm:hidden">
+                            <button
+                                onClick={() => router.get(transactions.prev_page_url)}
+                                disabled={!transactions.prev_page_url}
+                                className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Previous
+                            </button>
+                            <button
+                                onClick={() => router.get(transactions.next_page_url)}
+                                disabled={!transactions.next_page_url}
+                                className="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Next
+                            </button>
+                        </div>
+                        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-sm text-gray-700">
+                                    Showing <span className="font-medium">{transactions.from}</span> to{' '}
+                                    <span className="font-medium">{transactions.to}</span> of{' '}
+                                    <span className="font-medium">{transactions.total}</span> results
+                                </p>
+                            </div>
+                            <div>
+                                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                                    <button
+                                        onClick={() => router.get(transactions.prev_page_url)}
+                                        disabled={!transactions.prev_page_url}
+                                        className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <ChevronLeft className="h-5 w-5" />
+                                    </button>
+                                    <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300">
+                                        {transactions.current_page} / {transactions.last_page}
+                                    </span>
+                                    <button
+                                        onClick={() => router.get(transactions.next_page_url)}
+                                        disabled={!transactions.next_page_url}
+                                        className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <ChevronRight className="h-5 w-5" />
+                                    </button>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Send Results Modal */}

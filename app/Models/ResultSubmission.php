@@ -13,6 +13,7 @@ class ResultSubmission extends Model
     'transaction_id',
     'sent_by',
     'sent_at',
+    'submission_type',
     'documents',
   ];
 

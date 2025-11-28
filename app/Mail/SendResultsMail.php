@@ -54,54 +54,86 @@ class SendResultsMail extends Mailable
     $attachments = [];
 
     try {
-      // Generate encrypted PDF with test results
+      // Get patient's last name for password
       $patient = $this->transaction->patient;
       $patientLastName = $patient
         ? strtoupper($patient->last_name)
         : strtoupper(explode(' ', $this->transaction->patient_full_name)[1] ?? 'PATIENT');
-
-      // Generate PDF (without embedded images to avoid encoding issues)
-      $pdf = Pdf::loadView('pdf.test-results', [
-        'transaction' => $this->transaction,
-        'documentPaths' => [] // Don't embed images in PDF to avoid errors
-      ]);
-
-      // Set PDF options
-      $pdf->setPaper('a4', 'portrait');
-
-      // Set encryption (password protection)
-      $pdf->getDomPDF()->getCanvas()->get_cpdf()->setEncryption(
-        $patientLastName,  // User password (patient's surname)
-        $patientLastName,  // Owner password (same)
-        ['print', 'copy']  // Permissions
-      );
-
-      // Save temporarily and attach
-      $pdfPath = storage_path('app/temp/results_' . $this->transaction->transaction_number . '.pdf');
 
       // Create temp directory if it doesn't exist
       if (!file_exists(storage_path('app/temp'))) {
         mkdir(storage_path('app/temp'), 0755, true);
       }
 
-      $pdf->save($pdfPath);
+      // ============================================
+      // PDF 1: Test Results (values and remarks)
+      // ============================================
+      $resultsPdf = Pdf::loadView('pdf.test-results', [
+        'transaction' => $this->transaction,
+        'documentPaths' => [] // No images embedded
+      ]);
 
-      $attachments[] = Attachment::fromPath($pdfPath)
+      $resultsPdf->setPaper('a4', 'portrait');
+
+      // Encrypt with patient's surname
+      $resultsPdf->getDomPDF()->getCanvas()->get_cpdf()->setEncryption(
+        $patientLastName,  // User password
+        $patientLastName,  // Owner password
+        ['print', 'copy']  // Permissions
+      );
+
+      $resultsPdfPath = storage_path('app/temp/results_' . $this->transaction->transaction_number . '.pdf');
+      $resultsPdf->save($resultsPdfPath);
+
+      $attachments[] = Attachment::fromPath($resultsPdfPath)
         ->as('Lab_Results_' . $this->transaction->transaction_number . '.pdf')
         ->withMime('application/pdf');
 
-      // Attach uploaded images separately as additional attachments
-      foreach ($this->documentPaths as $document) {
-        $attachments[] = Attachment::fromStorageDisk('public', $document['path'])
-          ->as($document['name']);
+      // ============================================
+      // PDF 2: Result Images (uploaded documents)
+      // ============================================
+      if (!empty($this->documentPaths)) {
+        \Log::info('Generating images PDF', [
+          'document_count' => count($this->documentPaths),
+          'documents' => $this->documentPaths
+        ]);
+
+        $imagesPdf = Pdf::loadView('pdf.result-images', [
+          'transaction' => $this->transaction,
+          'documentPaths' => $this->documentPaths
+        ]);
+
+        $imagesPdf->setPaper('a4', 'portrait');
+
+        // Encrypt with patient's surname
+        $imagesPdf->getDomPDF()->getCanvas()->get_cpdf()->setEncryption(
+          $patientLastName,  // User password
+          $patientLastName,  // Owner password
+          ['print', 'copy']  // Permissions
+        );
+
+        $imagesPdfPath = storage_path('app/temp/images_' . $this->transaction->transaction_number . '.pdf');
+        $imagesPdf->save($imagesPdfPath);
+
+        \Log::info('Images PDF generated successfully', [
+          'path' => $imagesPdfPath,
+          'file_exists' => file_exists($imagesPdfPath),
+          'file_size' => file_exists($imagesPdfPath) ? filesize($imagesPdfPath) : 0
+        ]);
+
+        $attachments[] = Attachment::fromPath($imagesPdfPath)
+          ->as('Lab_Result_Images_' . $this->transaction->transaction_number . '.pdf')
+          ->withMime('application/pdf');
       }
+
     } catch (\Exception $e) {
       \Log::error('Failed to generate PDF for results email', [
         'transaction_id' => $this->transaction->id,
-        'error' => $e->getMessage()
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
       ]);
 
-      // If PDF generation fails, at least attach the uploaded documents
+      // If PDF generation fails, attach uploaded documents as fallback
       foreach ($this->documentPaths as $document) {
         try {
           $attachments[] = Attachment::fromStorageDisk('public', $document['path'])

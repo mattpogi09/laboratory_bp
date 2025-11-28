@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import LoadingOverlay from '@/Components/LoadingOverlay';
 import { AlertCircle, Clock, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function LabTestQueueIndex({ auth, stats = {}, tests = {} }) {
     const [activeTab, setActiveTab] = useState('pending');
+    const [isLoading, setIsLoading] = useState(false);
 
     const tabConfig = {
         pending: {
@@ -70,6 +72,7 @@ export default function LabTestQueueIndex({ auth, stats = {}, tests = {} }) {
     return (
         <DashboardLayout auth={auth}>
             <Head title="Lab Test Management" />
+            <LoadingOverlay show={isLoading} message="Loading..." />
 
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-gray-900">Lab Test Management</h1>

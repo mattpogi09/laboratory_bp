@@ -49,11 +49,11 @@ export default function PatientDetailsModal({ patient, show, onClose }) {
                         </div>
                         <div>
                             <span className="text-black">Contact:</span>
-                            <span className="text-black ml-2">{patient.contact}</span>
+                            <span className="text-black ml-2">{patient.contact_number}</span>
                         </div>
                         <div className="col-span-2">
                             <span className="text-black">Email:</span>
-                            <span className="text-black ml-2">{patient.email}</span>
+                            <span className="text-black ml-2">{patient.email || 'N/A'}</span>
                         </div>
                         <div className="col-span-2">
                             <span className="text-black">Address:</span>

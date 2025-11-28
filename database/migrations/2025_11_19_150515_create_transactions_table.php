@@ -31,6 +31,9 @@ return new class extends Migration {
             $table->string('discount_name')->nullable();
             $table->decimal('discount_rate', 5, 2)->default(0);
             $table->decimal('discount_amount', 12, 2)->default(0);
+            $table->string('philhealth_name')->nullable();
+            $table->decimal('philhealth_coverage', 5, 2)->default(0);
+            $table->decimal('philhealth_amount', 12, 2)->default(0);
             $table->decimal('net_total', 12, 2)->default(0);
             $table->decimal('amount_tendered', 12, 2)->default(0);
             $table->decimal('change_due', 12, 2)->default(0);

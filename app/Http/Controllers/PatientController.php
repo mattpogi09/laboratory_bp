@@ -12,11 +12,25 @@ class PatientController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $patientsQuery = Patient::with(['transactions.tests'])->latest();
+        $search = $request->input('search');
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortOrder = $request->input('sort_order', 'desc');
+        $perPage = $request->input('per_page', 20);
 
-        $patients = $patientsQuery->paginate(10)->through(function ($patient) {
+        $patientsQuery = Patient::with(['transactions.tests', 'region', 'province', 'city', 'barangay'])
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw("CONCAT(first_name, ' ', last_name) ILIKE ?", ["%{$search}%"])
+                        ->orWhereRaw("'P' || EXTRACT(YEAR FROM created_at) || '-' || LPAD(CAST(id AS TEXT), 3, '0') ILIKE ?", ["%{$search}%"])
+                        ->orWhere('email', 'ILIKE', "%{$search}%")
+                        ->orWhere('contact_number', 'ILIKE', "%{$search}%");
+                });
+            })
+            ->orderBy($sortBy, $sortOrder);
+
+        $patients = $patientsQuery->paginate($perPage)->through(function ($patient) {
             // Get all tests from all transactions
             $tests = $patient->transactions->flatMap(function ($transaction) {
                 return $transaction->tests->map(function ($test) use ($transaction) {
@@ -39,8 +53,13 @@ class PatientController extends Controller
                 'email' => $patient->email,
                 'age' => $patient->age,
                 'gender' => $patient->gender,
-                'contact' => $patient->contact_number,
-                'address' => $patient->address,
+                'contact_number' => $patient->contact_number,
+                'address' => $patient->formatted_address,
+                'region_id' => $patient->region_id,
+                'province_id' => $patient->province_id,
+                'city_id' => $patient->city_id,
+                'barangay_code' => $patient->barangay_code,
+                'street' => $patient->street,
                 'birth_date' => $patient->birth_date,
                 'last_visit' => optional($patient->transactions()->latest()->first())->created_at?->format('Y-m-d') ?? 'N/A',
                 'total_tests' => $patient->transactions()->withCount('tests')->get()->sum('tests_count'),
@@ -50,6 +69,11 @@ class PatientController extends Controller
 
         return Inertia::render('Management/Patients/Index', [
             'patients' => $patients,
+            'filters' => [
+                'search' => $search,
+                'sort_by' => $sortBy,
+                'sort_order' => $sortOrder,
+            ],
         ]);
     }
 
@@ -61,11 +85,16 @@ class PatientController extends Controller
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'age' => 'required|integer|min:0|max:150',
             'gender' => 'required|in:Male,Female',
-            'contact_number' => 'required|string|max:20',
-            'address' => 'nullable|string|max:500',
+            'contact_number' => ['required', 'regex:/^09[0-9]{9}$/'],
+            'region_id' => 'required|exists:regions,region_id',
+            'province_id' => 'required|exists:provinces,province_id',
+            'city_id' => 'required|exists:cities,city_id',
+            'barangay_code' => 'required|exists:barangays,code',
+            'street' => 'required|string|max:255',
             'birth_date' => 'nullable|date',
         ], [
             'first_name.required' => 'First name is required.',
@@ -78,6 +107,12 @@ class PatientController extends Controller
             'gender.required' => 'Gender is required.',
             'gender.in' => 'Please select a valid gender.',
             'contact_number.required' => 'Contact number is required.',
+            'contact_number.regex' => 'Phone number must be in format 09XXXXXXXXX (11 digits starting with 09).',
+            'region_id.required' => 'Region is required.',
+            'province_id.required' => 'Province is required.',
+            'city_id.required' => 'City/Municipality is required.',
+            'barangay_code.required' => 'Barangay is required.',
+            'street.required' => 'Street address is required.',
             'birth_date.date' => 'Please enter a valid birth date.',
         ]);
 
@@ -91,7 +126,7 @@ class PatientController extends Controller
             'age' => $patient->age,
             'gender' => $patient->gender,
             'contact_number' => $patient->contact_number,
-            'address' => $patient->address,
+            'address' => $patient->formatted_address,
             'email' => $patient->email,
         ]);
 
@@ -105,12 +140,17 @@ class PatientController extends Controller
     {
         $rules = [
             'email' => 'nullable|email|max:255',
-            'contact_number' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
+            'contact_number' => ['nullable', 'regex:/^09[0-9]{9}$/'],
+            'region_id' => 'nullable|exists:regions,region_id',
+            'province_id' => 'nullable|exists:provinces,province_id',
+            'city_id' => 'nullable|exists:cities,city_id',
+            'barangay_code' => 'nullable|exists:barangays,code',
+            'street' => 'nullable|string|max:255',
         ];
 
         $messages = [
             'email.email' => 'Please enter a valid email address.',
+            'contact_number.regex' => 'Phone number must be in format 09XXXXXXXXX (11 digits starting with 09).',
             'first_name.required' => 'First name is required.',
             'last_name.required' => 'Last name is required.',
             'age.required' => 'Age is required.',
@@ -127,6 +167,7 @@ class PatientController extends Controller
             $rules = array_merge($rules, [
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
+                'middle_name' => 'nullable|string|max:255',
                 'age' => 'required|integer|min:0|max:150',
                 'gender' => 'required|in:Male,Female',
                 'birth_date' => 'nullable|date',
@@ -135,7 +176,7 @@ class PatientController extends Controller
 
         $validated = $request->validate($rules, $messages);
 
-        $oldData = $patient->only(['first_name', 'last_name', 'middle_name', 'age', 'gender', 'contact_number', 'address', 'email']);
+        $oldData = $patient->only(['first_name', 'last_name', 'middle_name', 'age', 'gender', 'contact_number', 'region_id', 'province_id', 'city_id', 'barangay_code', 'street', 'email']);
 
         $patient->update($validated);
 
@@ -175,7 +216,7 @@ class PatientController extends Controller
             return response()->json([]);
         }
 
-        $patients = Patient::query()
+        $patients = Patient::with(['region', 'province', 'city', 'barangay'])
             ->where(function ($q) use ($query) {
                 $q->where('first_name', 'ILIKE', "%{$query}%")
                     ->orWhere('last_name', 'ILIKE', "%{$query}%")
@@ -198,7 +239,12 @@ class PatientController extends Controller
                     'age' => $patient->age,
                     'gender' => $patient->gender,
                     'contact_number' => $patient->contact_number,
-                    'address' => $patient->address,
+                    'address' => $patient->formatted_address,
+                    'region_id' => $patient->region_id,
+                    'province_id' => $patient->province_id,
+                    'city_id' => $patient->city_id,
+                    'barangay_code' => $patient->barangay_code,
+                    'street' => $patient->street,
                 ];
             });
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { X, Bell, Mail, User, FileText, AlertTriangle } from 'lucide-react';
 import Modal from '@/Components/Modal';
+import LoadingOverlay from '@/Components/LoadingOverlay';
 
 export default function NotifyPatientModal({ show, transaction, onClose }) {
     const [processing, setProcessing] = useState(false);
@@ -35,6 +36,7 @@ export default function NotifyPatientModal({ show, transaction, onClose }) {
 
     return (
         <Modal show={show} onClose={onClose} maxWidth="2xl">
+            <LoadingOverlay show={processing} message="Sending notification email..." />
             <div className="p-6">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-6">

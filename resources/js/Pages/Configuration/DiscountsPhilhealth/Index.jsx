@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Edit, Plus, Percent, Shield, Power, PowerOff } from 'lucide-react';
+import LoadingOverlay from '@/Components/LoadingOverlay';
+import { Search, Edit, Plus, Percent, Shield, Power, PowerOff, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 import EmptyState from '@/Components/EmptyState';
 import EditDiscountModal from './EditDiscountModal';
@@ -9,9 +10,10 @@ import CreateDiscountModal from './CreateDiscountModal';
 import EditPhilHealthModal from './EditPhilHealthModal';
 import CreatePhilHealthModal from './CreatePhilHealthModal';
 
-export default function DiscountsPhilhealthIndex({ auth, discounts, philHealthPlans }) {
+export default function DiscountsPhilhealthIndex({ auth, discounts, philHealthPlans, filters = {} }) {
     const [activeTab, setActiveTab] = useState('discounts');
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [isSearching, setIsSearching] = useState(false);
     const [selectedDiscount, setSelectedDiscount] = useState(null);
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
@@ -19,8 +21,43 @@ export default function DiscountsPhilhealthIndex({ auth, discounts, philHealthPl
     const [showPlanModal, setShowPlanModal] = useState(false);
     const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
 
-    const discountsList = discounts?.data || [];
-    const philHealthPlansList = philHealthPlans?.data || [];
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Debounced search with 300ms delay
+    useEffect(() => {
+        // Skip if this is the initial mount or search hasn't changed
+        if (searchQuery === (filters.search || '')) return;
+        
+        setIsSearching(true);
+        const timer = setTimeout(() => {
+            const params = { filter: activeTab };
+            if (searchQuery) params.search = searchQuery;
+            
+            router.get(
+                route('discounts-philhealth.index'),
+                params,
+                { 
+                    preserveState: true,
+                    preserveScroll: true,
+                    onFinish: () => setIsSearching(false)
+                }
+            );
+        }, 300);
+
+        return () => {
+            clearTimeout(timer);
+            setIsSearching(false);
+        };
+    }, [searchQuery]);
+
+    const handleSort = (column) => {
+        const newOrder = filters.sort_by === column && filters.sort_order === 'asc' ? 'desc' : 'asc';
+        router.get(
+            route('discounts.index'),
+            { search: searchQuery, sort_by: column, sort_order: newOrder },
+            { preserveState: true, preserveScroll: true }
+        );
+    };
 
     const handleToggleDiscount = async (discount) => {
         if (confirm(`Are you sure you want to ${discount.is_active ? 'deactivate' : 'activate'} this discount?`)) {
@@ -34,6 +71,7 @@ export default function DiscountsPhilhealthIndex({ auth, discounts, philHealthPl
         }
     };
 
+
     const handleTogglePlan = async (plan) => {
         if (confirm(`Are you sure you want to ${plan.is_active ? 'deactivate' : 'activate'} this PhilHealth plan?`)) {
             router.post(route('philhealth-plans.toggle', plan.id), {}, {
@@ -46,19 +84,10 @@ export default function DiscountsPhilhealthIndex({ auth, discounts, philHealthPl
         }
     };
 
-    const filteredDiscounts = discountsList.filter(discount =>
-        discount.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        discount.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    const filteredPlans = philHealthPlansList.filter(plan =>
-        plan.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        plan.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
     return (
         <DashboardLayout auth={auth}>
-            <Head title="Discounts & PhilHealth Management" />
+            <Head title="Discounts & PhilHealth Plans" />
+            <LoadingOverlay show={isLoading} message="Loading..." />
 
             {/* Header */}
             <div className="mb-8">
@@ -101,7 +130,8 @@ export default function DiscountsPhilhealthIndex({ auth, discounts, philHealthPl
             </div>
 
             {/* Search and Actions */}
-            <div className="mb-6 flex gap-4">
+            <div className="mb-6 flex gap-4 relative">
+                {isSearching && <LoadingOverlay message="Searching..." />}
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                     <input
@@ -123,21 +153,29 @@ export default function DiscountsPhilhealthIndex({ auth, discounts, philHealthPl
 
             {/* Content */}
             {activeTab === 'discounts' ? (
-                filteredDiscounts.length > 0 ? (
-                    <div className="rounded-lg bg-white shadow-md overflow-hidden">
+                discounts?.data?.length > 0 ? (
+                    <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-gray-200 bg-gray-50">
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rate</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors" onClick={() => handleSort('name')}>
+                                                Name ↕
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors" onClick={() => handleSort('rate')}>
+                                                Rate ↕
+                                            </div>
+                                        </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
-                                    {filteredDiscounts.map((discount) => (
+                                    {discounts.data.map((discount) => (
                                         <tr key={discount.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 {discount.name}
@@ -166,17 +204,17 @@ export default function DiscountsPhilhealthIndex({ auth, discounts, philHealthPl
                                                             setSelectedDiscount(discount);
                                                             setShowDiscountModal(true);
                                                         }}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                                                     >
                                                         <Edit className="h-4 w-4" />
                                                         Edit
                                                     </button>
                                                     <button
                                                         onClick={() => handleToggleDiscount(discount)}
-                                                        className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded transition-colors ${
+                                                        className={`inline-flex items-center gap-1 text-sm font-medium transition-colors ${
                                                             discount.is_active
-                                                                ? 'text-red-600 hover:bg-red-50'
-                                                                : 'text-green-600 hover:bg-green-50'
+                                                                ? 'text-red-600 hover:text-red-800'
+                                                                : 'text-green-600 hover:text-green-800'
                                                         }`}
                                                     >
                                                         {discount.is_active ? (
@@ -209,21 +247,29 @@ export default function DiscountsPhilhealthIndex({ auth, discounts, philHealthPl
                     </div>
                 )
             ) : (
-                filteredPlans.length > 0 ? (
-                    <div className="rounded-lg bg-white shadow-md overflow-hidden">
+                philHealthPlans?.data?.length > 0 ? (
+                    <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
                                     <tr className="border-b border-gray-200 bg-gray-50">
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan Name</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coverage Rate</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors" onClick={() => handleSort('name')}>
+                                                Plan Name ↕
+                                            </div>
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <div className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors" onClick={() => handleSort('coverage_rate')}>
+                                                Coverage Rate ↕
+                                            </div>
+                                        </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200 bg-white">
-                                    {filteredPlans.map((plan) => (
+                                    {philHealthPlans.data.map((plan) => (
                                         <tr key={plan.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                 {plan.name}
@@ -252,17 +298,17 @@ export default function DiscountsPhilhealthIndex({ auth, discounts, philHealthPl
                                                             setSelectedPlan(plan);
                                                             setShowPlanModal(true);
                                                         }}
-                                                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                                                     >
                                                         <Edit className="h-4 w-4" />
                                                         Edit
                                                     </button>
                                                     <button
                                                         onClick={() => handleTogglePlan(plan)}
-                                                        className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded transition-colors ${
+                                                        className={`inline-flex items-center gap-1 text-sm font-medium transition-colors ${
                                                             plan.is_active
-                                                                ? 'text-red-600 hover:bg-red-50'
-                                                                : 'text-green-600 hover:bg-green-50'
+                                                                ? 'text-red-600 hover:text-red-800'
+                                                                : 'text-green-600 hover:text-green-800'
                                                         }`}
                                                     >
                                                         {plan.is_active ? (

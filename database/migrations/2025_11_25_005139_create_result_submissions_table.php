@@ -14,9 +14,12 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('transaction_id')->constrained('transactions')->onDelete('cascade');
             $table->foreignId('sent_by')->constrained('users')->onDelete('cascade');
+            $table->string('submission_type')->default('full_results'); // 'full_results' or 'notification'
             $table->timestamp('sent_at');
             $table->json('documents')->nullable();
             $table->timestamps();
+
+            $table->index(['submission_type', 'sent_at']);
         });
     }
 

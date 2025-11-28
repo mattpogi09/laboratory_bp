@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Head, router, usePage } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import StatsCards from './components/StatsCards';
@@ -8,6 +8,8 @@ import PaymentSummary from './components/PaymentSummary';
 import SelectedTestsCard from './components/SelectedTestsCard';
 import QueuePreview from './components/QueuePreview';
 import TransactionsTable from './components/TransactionsTable';
+import LoadingOverlay from '@/Components/LoadingOverlay';
+import ErrorModal from '@/Components/ErrorModal';
 import axios from 'axios';
 
 const initialPatient = {
@@ -18,7 +20,11 @@ const initialPatient = {
     age: '',
     gender: '',
     contact: '',
-    address: '',
+    region_id: '',
+    province_id: '',
+    city_id: '',
+    barangay_code: '',
+    street: '',
 };
 
 const initialPayment = {
@@ -49,10 +55,20 @@ export default function TransactionsIndex({
         { id: 'none', name: 'No PhilHealth', coverage_rate: 0 }
     );
     const [duplicateTests, setDuplicateTests] = useState([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [validationErrors, setValidationErrors] = useState({});
 
-    // Check for duplicate tests when patient or selected tests change
+    // Check for duplicate tests when patient or selected tests change (debounced)
     useEffect(() => {
-        if (patient.id && selectedTests.length > 0) {
+        if (!patient.id || selectedTests.length === 0) {
+            setDuplicateTests([]);
+            return;
+        }
+
+        // Debounce the API call - wait 500ms after user stops making changes
+        const timer = setTimeout(() => {
             axios.post(route('cashier.transactions.check-duplicates'), {
                 patient_id: patient.id,
                 test_ids: selectedTests,
@@ -63,9 +79,9 @@ export default function TransactionsIndex({
             .catch(() => {
                 setDuplicateTests([]);
             });
-        } else {
-            setDuplicateTests([]);
-        }
+        }, 500);
+
+        return () => clearTimeout(timer);
     }, [patient.id, selectedTests]);
 
     const catalogById = useMemo(() => {
@@ -78,42 +94,91 @@ export default function TransactionsIndex({
         return flat;
     }, [labTests]);
 
-    const selectedTestDetails = selectedTests
-        .map((testId) => catalogById[testId])
-        .filter(Boolean);
+    // Memoize selected test details to avoid recalculating on every render
+    const selectedTestDetails = useMemo(() => {
+        return selectedTests
+            .map((testId) => catalogById[testId])
+            .filter(Boolean);
+    }, [selectedTests, catalogById]);
 
-    const totalAmount = selectedTestDetails.reduce((sum, test) => sum + Number(test.price || 0), 0);
-    const discountRate = selectedDiscount?.rate ?? 0;
-    const discountAmount = Number((totalAmount * discountRate) / 100);
-    const philhealthCoverageRate = selectedPhilHealth?.coverage_rate ?? 0;
-    const philhealthCoverage = Number(((totalAmount - discountAmount) * philhealthCoverageRate) / 100);
-    const netTotal = Math.max(totalAmount - discountAmount - philhealthCoverage, 0);
-    const amountTendered = Number(payment.amount_tendered || netTotal);
-    const changeDue = amountTendered > netTotal ? amountTendered - netTotal : 0;
-    const balanceDue = netTotal > amountTendered ? netTotal - amountTendered : 0;
+    // Memoize all payment calculations to avoid recalculating on every render
+    const paymentCalculations = useMemo(() => {
+        const totalAmount = selectedTestDetails.reduce((sum, test) => sum + Number(test.price || 0), 0);
+        const discountRate = selectedDiscount?.rate ?? 0;
+        const discountAmount = Number((totalAmount * discountRate) / 100);
+        const philhealthCoverageRate = selectedPhilHealth?.coverage_rate ?? 0;
+        const philhealthCoverage = Number(((totalAmount - discountAmount) * philhealthCoverageRate) / 100);
+        const netTotal = Math.max(totalAmount - discountAmount - philhealthCoverage, 0);
+        const amountTendered = Number(payment.amount_tendered || netTotal);
+        const changeDue = amountTendered > netTotal ? amountTendered - netTotal : 0;
+        const balanceDue = netTotal > amountTendered ? netTotal - amountTendered : 0;
 
-    const toggleTest = (testId) => {
+        return {
+            totalAmount,
+            discountAmount,
+            philhealthCoverage,
+            netTotal,
+            amountTendered,
+            changeDue,
+            balanceDue,
+        };
+    }, [selectedTestDetails, selectedDiscount, selectedPhilHealth, payment.amount_tendered]);
+
+    const { totalAmount, discountAmount, philhealthCoverage, netTotal, amountTendered, changeDue, balanceDue } = paymentCalculations;
+
+    // Memoize event handlers to prevent unnecessary re-renders of child components
+    const toggleTest = useCallback((testId) => {
         setSelectedTests((prev) =>
             prev.includes(testId) ? prev.filter((id) => id !== testId) : [...prev, testId]
         );
-    };
+    }, []);
 
-    const handlePatientChange = (field, value) => {
+    const handlePatientChange = useCallback((field, value) => {
         setPatient((prev) => ({
             ...prev,
             [field]: value,
         }));
-    };
+    }, []);
 
-    const handlePaymentChange = (field, value) => {
+    const handlePaymentChange = useCallback((field, value) => {
         setPayment((prev) => ({
             ...prev,
             [field]: value,
         }));
-    };
+    }, []);
+
+    // Memoize callback handlers for PaymentSummary
+    const handleNotesChange = useCallback((value) => {
+        setNotes(value);
+    }, []);
+
+    const handleDiscountChange = useCallback((discount) => {
+        setSelectedDiscount(discount);
+    }, []);
+
+    const handlePhilHealthChange = useCallback((philhealth) => {
+        setSelectedPhilHealth(philhealth);
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        // Validate before submitting
+        if (selectedTests.length === 0) {
+            setErrorMessage('Please select at least one lab test.');
+            setValidationErrors({});
+            setShowErrorModal(true);
+            return;
+        }
+
+        if (!patient.first_name || !patient.last_name) {
+            setErrorMessage('Patient first name and last name are required.');
+            setValidationErrors({});
+            setShowErrorModal(true);
+            return;
+        }
+
+        setIsSubmitting(true);
         router.post(
             route('cashier.transactions.store'),
             {
@@ -121,11 +186,18 @@ export default function TransactionsIndex({
                 tests: selectedTests.map((id) => ({ id })),
                 payment,
                 notes,
-                discount: selectedDiscount
+                discount: selectedDiscount && selectedDiscount.id !== 'none'
                     ? {
-                        id: selectedDiscount.id,
+                        id: String(selectedDiscount.id),
                         name: selectedDiscount.name,
                         rate: selectedDiscount.rate,
+                    }
+                    : null,
+                philhealth: selectedPhilHealth?.id !== 'none'
+                    ? {
+                        id: String(selectedPhilHealth.id),
+                        name: selectedPhilHealth.name,
+                        coverage: selectedPhilHealth.coverage_rate,
                     }
                     : null,
             },
@@ -137,6 +209,25 @@ export default function TransactionsIndex({
                     setSelectedTests([]);
                     setPayment(initialPayment);
                     setDuplicateTests([]);
+                    setSelectedDiscount({ id: 'none', name: 'No Discount', rate: 0 });
+                    setSelectedPhilHealth({ id: 'none', name: 'No PhilHealth', coverage_rate: 0 });
+                    setIsSubmitting(false);
+                    setValidationErrors({});
+                },
+                onError: (errors) => {
+                    setIsSubmitting(false);
+                    
+                    console.error('Transaction submission error:', errors);
+                    
+                    // Check if there's a general error message
+                    if (errors.message) {
+                        setErrorMessage(errors.message);
+                        setValidationErrors({});
+                    } else {
+                        setErrorMessage('There was an error processing your transaction. Please check the form and try again.');
+                        setValidationErrors(errors);
+                    }
+                    setShowErrorModal(true);
                 },
             }
         );
@@ -150,7 +241,10 @@ export default function TransactionsIndex({
         );
     };
 
-    const patientFullName = [patient.first_name, patient.middle_name, patient.last_name].filter(Boolean).join(' ');
+    // Memoize patient full name to avoid recalculating on every render
+    const patientFullName = useMemo(() => {
+        return [patient.first_name, patient.middle_name, patient.last_name].filter(Boolean).join(' ');
+    }, [patient.first_name, patient.middle_name, patient.last_name]);
 
     const getStatusBadgeClass = (status) => {
         switch (status?.toLowerCase()) {
@@ -170,6 +264,7 @@ export default function TransactionsIndex({
     return (
         <DashboardLayout auth={auth}>
             <Head title="Cashier Transactions" />
+            <LoadingOverlay show={isSubmitting} message="Processing transaction..." />
 
             <div className="mb-6 space-y-2">
                 <h1 className="text-2xl font-semibold text-gray-900">Cashier Transactions</h1>
@@ -224,7 +319,7 @@ export default function TransactionsIndex({
                             payment={payment}
                             onPaymentChange={handlePaymentChange}
                             notes={notes}
-                            onNotesChange={setNotes}
+                            onNotesChange={handleNotesChange}
                             totals={{
                                 gross: totalAmount,
                                 discount: discountAmount,
@@ -236,10 +331,10 @@ export default function TransactionsIndex({
                             }}
                             discountOptions={discountOptions}
                             selectedDiscount={selectedDiscount}
-                            onSelectDiscount={setSelectedDiscount}
+                            onSelectDiscount={handleDiscountChange}
                             philHealthOptions={philHealthOptions}
                             selectedPhilHealth={selectedPhilHealth}
-                            onSelectPhilHealth={setSelectedPhilHealth}
+                            onSelectPhilHealth={handlePhilHealthChange}
                             errors={errors}
                         />
                     </form>
@@ -255,6 +350,14 @@ export default function TransactionsIndex({
                     />
                 </div>
             </div>
+
+            <ErrorModal
+                show={showErrorModal}
+                onClose={() => setShowErrorModal(false)}
+                title="Transaction Error"
+                message={errorMessage}
+                errors={validationErrors}
+            />
         </DashboardLayout>
     );
 }

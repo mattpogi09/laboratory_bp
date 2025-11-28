@@ -16,36 +16,31 @@ export default function UsersIndex({ auth, users, filters = {} }) {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showToggleModal, setShowToggleModal] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
     const [sortBy, setSortBy] = useState(filters.sort_by || 'created_at');
     const [sortOrder, setSortOrder] = useState(filters.sort_order || 'desc');
 
     // Debounced search - wait 300ms after user stops typing
     useEffect(() => {
-        // Skip if search hasn't changed from initial value
-        if (searchQuery === (filters.search || '')) return;
-        
         const timer = setTimeout(() => {
-            setIsSearching(true);
-            const params = { search: searchQuery || undefined };
-            if (sortBy) params.sort_by = sortBy;
-            if (sortOrder) params.sort_order = sortOrder;
-            
-            router.get(
-                route('users.index'),
-                params,
-                {
-                    preserveState: true,
-                    preserveScroll: true,
-                    onFinish: () => setIsSearching(false),
-                }
-            );
+            if (searchQuery !== filters.search) {
+                setIsSearching(true);
+                router.get(
+                    route('users.index'),
+                    { 
+                        search: searchQuery,
+                        sort_by: sortBy,
+                        sort_order: sortOrder,
+                    },
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                        onFinish: () => setIsSearching(false),
+                    }
+                );
+            }
         }, 300);
 
-        return () => {
-            clearTimeout(timer);
-            setIsSearching(false);
-        };
+        return () => clearTimeout(timer);
     }, [searchQuery]);
 
     const handleSort = (column) => {
@@ -53,17 +48,16 @@ export default function UsersIndex({ auth, users, filters = {} }) {
         setSortBy(column);
         setSortOrder(newSortOrder);
         
-        setIsLoading(true);
-        const params = { sort_by: column, sort_order: newSortOrder };
-        if (searchQuery) params.search = searchQuery;
-        
         router.get(
             route('users.index'),
-            params,
+            {
+                search: searchQuery,
+                sort_by: column,
+                sort_order: newSortOrder,
+            },
             {
                 preserveState: true,
                 preserveScroll: true,
-                onFinish: () => setIsLoading(false)
             }
         );
     };
@@ -115,7 +109,6 @@ export default function UsersIndex({ auth, users, filters = {} }) {
     return (
         <DashboardLayout auth={auth}>
             <Head title="User Management" />
-            <LoadingOverlay show={isLoading} message="Loading..." />
 
             {isSearching && <LoadingOverlay message="Searching..." />}
 
@@ -202,7 +195,7 @@ export default function UsersIndex({ auth, users, filters = {} }) {
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2">
                                             <button
-                                                onClick={() => handleEdit(user)}
+                                                onClick={() => handleEditUser(user)}
                                                 className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                                             >
                                                 <Edit className="h-4 w-4" />
@@ -210,11 +203,103 @@ export default function UsersIndex({ auth, users, filters = {} }) {
                                             </button>
                                             {user.username !== 'admin' && (
                                                 <button
-                                                    onClick={() => handleToggleClick(user)}
+                                                    onClick={() => handleToggleUser(user)}
                                                     className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
                                                 >
                                                     <PowerOff className="h-4 w-4" />
                                                     Deactivate
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Name
+                                        <ArrowUpDown className="h-3 w-3" />
+                                    </div>
+                                </th>
+                                <th 
+                                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100"
+                                    onClick={() => handleSort('username')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Username
+                                        <ArrowUpDown className="h-3 w-3" />
+                                    </div>
+                                </th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Email</th>
+                                <th 
+                                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100"
+                                    onClick={() => handleSort('role')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Role
+                                        <ArrowUpDown className="h-3 w-3" />
+                                    </div>
+                                </th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Created</th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/10">
+                            {users.data.map((user) => (
+                                <tr 
+                                    key={user.id}
+                                    className="hover:bg-white/5 transition-colors"
+                                >
+                                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{user.name}</td>
+                                    <td className="px-4 py-3 text-sm text-gray-900">{user.username}</td>
+                                    <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
+                                    <td className="px-4 py-3">
+                                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
+                                            {formatRole(user.role)}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                                            user.is_active 
+                                                ? 'bg-green-500/10 text-green-400' 
+                                                : 'bg-gray-500/10 text-gray-400'
+                                        }`}>
+                                            {user.is_active ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-gray-600">{formatDate(user.created_at)}</td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => handleEdit(user)}
+                                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                            >
+                                                <Edit className="h-4 w-4" />
+                                                Edit
+                                            </button>
+                                            {user.id !== auth.user.id && (
+                                                <button
+                                                    onClick={() => handleToggleClick(user)}
+                                                    className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded transition-colors ${
+                                                        user.is_active 
+                                                            ? 'text-red-600 hover:bg-red-50' 
+                                                            : 'text-green-600 hover:bg-green-50'
+                                                    }`}
+                                                >
+                                                    {user.is_active ? (
+                                                        <>
+                                                            <PowerOff className="h-4 w-4" />
+                                                            Deactivate
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Power className="h-4 w-4" />
+                                                            Activate
+                                                        </>
+                                                    )}
                                                 </button>
                                             )}
                                         </div>

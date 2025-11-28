@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import EmptyState from '@/Components/EmptyState';
+import LoadingOverlay from '@/Components/LoadingOverlay';
 import Pagination from '@/Components/Pagination';
 import { Search, Edit, Plus, TestTube, Power, PowerOff, Filter } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
@@ -12,6 +13,8 @@ import ToggleServiceModal from './ToggleServiceModal';
 export default function ServicesIndex({ auth, tests = { data: [], links: [] }, categories, categoryStats = {}, filters = {} }) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
     const [selectedCategory, setSelectedCategory] = useState(filters.category || 'all');
+    const [isSearching, setIsSearching] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [selectedService, setSelectedService] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -19,22 +22,46 @@ export default function ServicesIndex({ auth, tests = { data: [], links: [] }, c
 
     const testsData = tests.data || [];
 
+    // Debounced search
+    useEffect(() => {
+        if (searchQuery === (filters.search || '')) return;
+        
+        setIsSearching(true);
+        const timer = setTimeout(() => {
+            const params = { search: searchQuery || undefined };
+            if (selectedCategory !== 'all') params.category = selectedCategory;
+            
+            router.get(route('services.index'), params, {
+                preserveScroll: true,
+                preserveState: true,
+                onFinish: () => setIsSearching(false)
+            });
+        }, 300);
+
+        return () => {
+            clearTimeout(timer);
+            setIsSearching(false);
+        };
+    }, [searchQuery]);
+
     const handleSearch = (e) => {
-        const value = e.target.value;
-        setSearchQuery(value);
-        router.get(route('services.index'), 
-            { search: value, category: selectedCategory !== 'all' ? selectedCategory : undefined },
-            { preserveScroll: true, replace: true }
-        );
+        setSearchQuery(e.target.value);
     };
 
     const handleCategoryChange = (e) => {
         const value = e.target.value;
         setSelectedCategory(value);
-        router.get(route('services.index'), 
-            { search: searchQuery || undefined, category: value !== 'all' ? value : undefined },
-            { preserveScroll: true, replace: true }
-        );
+        
+        setIsLoading(true);
+        const params = {};
+        if (searchQuery) params.search = searchQuery;
+        if (value !== 'all') params.category = value;
+        
+        router.get(route('services.index'), params, {
+            preserveScroll: true,
+            preserveState: true,
+            onFinish: () => setIsLoading(false)
+        });
     };
 
     const handleEdit = (service) => {
@@ -50,6 +77,7 @@ export default function ServicesIndex({ auth, tests = { data: [], links: [] }, c
     return (
         <DashboardLayout auth={auth}>
             <Head title="Service Management" />
+            <LoadingOverlay show={isLoading || isSearching} message={isSearching ? "Searching..." : "Loading..."} />
 
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-gray-900">Service Management</h1>
@@ -112,27 +140,28 @@ export default function ServicesIndex({ auth, tests = { data: [], links: [] }, c
 
             {/* Services Table */}
             {testsData.length > 0 ? (
-            <div className="rounded-lg bg-white shadow-md overflow-hidden">
+            <div className="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
-                            <tr className="border-b border-white/10 bg-white/5">
+                            <tr className="border-b border-gray-200 bg-gray-50">
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Test Name</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Category</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Price</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Description</th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/10">
+                        <tbody className="divide-y divide-gray-200">
                             {testsData.map((service) => (
                                 <tr 
                                     key={service.id}
-                                    className="hover:bg-white/5 transition-colors"
+                                    className="hover:bg-gray-50 transition-colors"
                                 >
                                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{service.name}</td>
                                     <td className="px-4 py-3">
-                                        <span className="text-sm text-blue-600">
+                                        <span className="text-sm text-gray-600">
                                             {service.category}
                                         </span>
                                     </td>
@@ -143,20 +172,27 @@ export default function ServicesIndex({ auth, tests = { data: [], links: [] }, c
                                     </td>
                                     <td className="px-4 py-3 text-sm text-gray-600">{service.description}</td>
                                     <td className="px-4 py-3">
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                            service.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                        }`}>
+                                            {service.is_active ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3">
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={() => handleEdit(service)}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                                             >
                                                 <Edit className="h-4 w-4" />
                                                 Edit
                                             </button>
                                             <button
                                                 onClick={() => handleToggleClick(service)}
-                                                className={`inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded transition-colors ${
+                                                className={`inline-flex items-center gap-1 text-sm font-medium transition-colors ${
                                                     service.is_active 
-                                                        ? 'text-red-600 hover:bg-red-50' 
-                                                        : 'text-green-600 hover:bg-green-50'
+                                                        ? 'text-red-600 hover:text-red-800' 
+                                                        : 'text-green-600 hover:text-green-800'
                                                 }`}
                                             >
                                                 {service.is_active ? (

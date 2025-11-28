@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import { Trash2 } from 'lucide-react';
 
-export default function SelectedTestsCard({ tests = [], onRemove }) {
+function SelectedTestsCard({ tests = [], onRemove }) {
     return (
         <section className="rounded-xl bg-white p-6 shadow">
             <header className="mb-4">
@@ -42,4 +43,6 @@ export default function SelectedTestsCard({ tests = [], onRemove }) {
         </section>
     );
 }
+
+export default memo(SelectedTestsCard);
 

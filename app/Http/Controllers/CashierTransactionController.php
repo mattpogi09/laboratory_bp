@@ -123,8 +123,12 @@ class CashierTransactionController extends Controller
             'patient.email' => ['nullable', 'email', 'max:255'],
             'patient.age' => ['nullable', 'integer', 'min:0', 'max:120'],
             'patient.gender' => ['nullable', 'string', 'max:30'],
-            'patient.contact' => ['nullable', 'string', 'max:50'],
-            'patient.address' => ['nullable', 'string', 'max:255'],
+            'patient.contact' => ['required', 'regex:/^09[0-9]{9}$/'],
+            'patient.region_id' => ['required', 'exists:regions,region_id'],
+            'patient.province_id' => ['required', 'exists:provinces,province_id'],
+            'patient.city_id' => ['required', 'exists:cities,city_id'],
+            'patient.barangay_code' => ['required', 'exists:barangays,code'],
+            'patient.street' => ['required', 'string', 'max:255'],
             'tests' => ['required', 'array', 'min:1'],
             'tests.*.id' => ['required', 'exists:lab_tests,id'],
             'payment.method' => ['required', 'string', 'max:50'],
@@ -133,6 +137,10 @@ class CashierTransactionController extends Controller
             'discount.id' => ['nullable', 'string', 'max:100'],
             'discount.name' => ['nullable', 'string', 'max:255'],
             'discount.rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'philhealth' => ['nullable', 'array'],
+            'philhealth.id' => ['nullable', 'string', 'max:100'],
+            'philhealth.name' => ['nullable', 'string', 'max:255'],
+            'philhealth.coverage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'notes' => ['nullable', 'string'],
         ], [
             'patient.first_name.required_without' => 'First name is required for new patients.',
@@ -141,6 +149,13 @@ class CashierTransactionController extends Controller
             'patient.age.integer' => 'Age must be a number.',
             'patient.age.min' => 'Age must be at least 0.',
             'patient.age.max' => 'Age cannot exceed 120.',
+            'patient.contact.required' => 'Phone number is required.',
+            'patient.contact.regex' => 'Phone number must be in format 09XXXXXXXXX (11 digits starting with 09).',
+            'patient.region_id.required' => 'Region is required.',
+            'patient.province_id.required' => 'Province is required.',
+            'patient.city_id.required' => 'City/Municipality is required.',
+            'patient.barangay_code.required' => 'Barangay is required.',
+            'patient.street.required' => 'Street address is required.',
             'tests.required' => 'Please select at least one lab test.',
             'tests.min' => 'Please select at least one lab test.',
             'tests.*.id.exists' => 'One or more selected tests are invalid.',
@@ -150,6 +165,9 @@ class CashierTransactionController extends Controller
             'discount.rate.numeric' => 'Discount rate must be a number.',
             'discount.rate.min' => 'Discount rate cannot be negative.',
             'discount.rate.max' => 'Discount rate cannot exceed 100%.',
+            'philhealth.coverage.numeric' => 'PhilHealth coverage must be a number.',
+            'philhealth.coverage.min' => 'PhilHealth coverage cannot be negative.',
+            'philhealth.coverage.max' => 'PhilHealth coverage cannot exceed 100%.',
         ]);
 
         $user = $request->user();
@@ -186,7 +204,16 @@ class CashierTransactionController extends Controller
             $discountRate = $discountSelection['rate'] ?? 0;
             $discountName = $discountSelection['name'] ?? null;
             $discountAmount = round($totalAmount * ($discountRate / 100), 2);
-            $netTotal = max($totalAmount - $discountAmount, 0);
+
+            $philhealthSelection = $this->resolvePhilHealthSelection($validated['philhealth'] ?? null);
+            $philhealthCoverage = $philhealthSelection['coverage'] ?? 0;
+            $philhealthName = $philhealthSelection['name'] ?? null;
+
+            // Calculate PhilHealth amount after discount
+            $afterDiscount = $totalAmount - $discountAmount;
+            $philhealthAmount = round($afterDiscount * ($philhealthCoverage / 100), 2);
+
+            $netTotal = max($totalAmount - $discountAmount - $philhealthAmount, 0);
             $amountTendered = $validated['payment']['amount_tendered'] ?? $netTotal;
             $changeDue = max($amountTendered - $netTotal, 0);
             $balanceDue = max($netTotal - $amountTendered, 0);
@@ -205,12 +232,19 @@ class CashierTransactionController extends Controller
                 'patient_age' => $patientData['age'] ?? null,
                 'patient_gender' => $patientData['gender'] ?? null,
                 'patient_contact' => $patientData['contact'] ?? $patient->contact_number,
-                'patient_address' => $patientData['address'] ?? $patient->address,
+                'region_id' => $patientData['region_id'] ?? $patient->region_id,
+                'province_id' => $patientData['province_id'] ?? $patient->province_id,
+                'city_id' => $patientData['city_id'] ?? $patient->city_id,
+                'barangay_code' => $patientData['barangay_code'] ?? $patient->barangay_code,
+                'patient_street' => $patientData['street'] ?? $patient->street,
                 'payment_status' => $paymentStatus,
                 'payment_method' => $validated['payment']['method'],
                 'discount_name' => $discountName,
                 'discount_rate' => $discountRate,
                 'discount_amount' => $discountAmount,
+                'philhealth_name' => $philhealthName,
+                'philhealth_coverage' => $philhealthCoverage,
+                'philhealth_amount' => $philhealthAmount,
                 'net_total' => $netTotal,
                 'total_amount' => $totalAmount,
                 'amount_tendered' => $amountTendered,
@@ -274,7 +308,7 @@ class CashierTransactionController extends Controller
 
     public function show(Transaction $transaction): Response
     {
-        $transaction->load(['tests', 'events.user', 'cashier']);
+        $transaction->load(['tests', 'events.user', 'cashier', 'region', 'province', 'city', 'barangay']);
 
         return Inertia::render('Cashier/Transactions/Show', [
             'transaction' => $this->transformTransaction($transaction, includeDetails: true),
@@ -315,7 +349,12 @@ class CashierTransactionController extends Controller
                 'age' => $transaction->patient_age,
                 'gender' => $transaction->patient_gender,
                 'contact' => $transaction->patient_contact,
-                'address' => $transaction->patient_address,
+                'address' => $transaction->patient_formatted_address,
+                'region' => $transaction->region?->name,
+                'province' => $transaction->province?->name,
+                'city' => $transaction->city?->name,
+                'barangay' => $transaction->barangay?->name,
+                'street' => $transaction->patient_street,
             ];
 
             $base['payment'] = [
@@ -377,7 +416,11 @@ class CashierTransactionController extends Controller
             'age' => $patientData['age'] ?? null,
             'gender' => $patientData['gender'] ?? null,
             'contact_number' => $patientData['contact'] ?? null,
-            'address' => $patientData['address'] ?? null,
+            'region_id' => $patientData['region_id'] ?? null,
+            'province_id' => $patientData['province_id'] ?? null,
+            'city_id' => $patientData['city_id'] ?? null,
+            'barangay_code' => $patientData['barangay_code'] ?? null,
+            'street' => $patientData['street'] ?? null,
             'birth_date' => $patientData['birth_date'] ?? null,
         ]);
     }
@@ -410,7 +453,7 @@ class CashierTransactionController extends Controller
     {
         $search = $request->input('search');
 
-        return Transaction::with(['tests', 'cashier'])
+        return Transaction::with(['tests', 'cashier', 'region', 'province', 'city', 'barangay'])
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($subQuery) use ($search) {
                     $subQuery
@@ -425,7 +468,11 @@ class CashierTransactionController extends Controller
             ->latest()
             ->take($limit)
             ->get()
-            ->map(fn(Transaction $transaction) => $this->transformTransaction($transaction))
+            ->map(function (Transaction $transaction) {
+                // Force reload from database to get latest lab_status
+                $transaction->refresh();
+                return $this->transformTransaction($transaction);
+            })
             ->values();
     }
 
@@ -479,4 +526,24 @@ class CashierTransactionController extends Controller
             'rate' => (float) ($input['rate'] ?? 0),
         ];
     }
+
+    protected function resolvePhilHealthSelection(?array $input): array
+    {
+        if (empty($input)) {
+            return ['coverage' => 0, 'name' => null];
+        }
+
+        $match = collect($this->availablePhilHealthPlans())
+            ->firstWhere('id', $input['id'] ?? null);
+
+        if ($match) {
+            return $match;
+        }
+
+        return [
+            'name' => $input['name'] ?? null,
+            'coverage' => (float) ($input['coverage'] ?? 0),
+        ];
+    }
 }
+

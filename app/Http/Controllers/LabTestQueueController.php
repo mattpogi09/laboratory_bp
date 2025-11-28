@@ -126,15 +126,41 @@ class LabTestQueueController extends Controller
     /**
      * Display patient results page - transactions with at least one completed test
      */
-    public function patientResults(): Response
+    public function patientResults(Request $request): Response
     {
+        $search = $request->input('search', '');
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortOrder = $request->input('sort_order', 'desc');
+        $perPage = $request->input('per_page', 20);
+
         // Get transactions where at least one test is completed
-        $transactions = Transaction::with(['patient', 'tests'])
+        $query = Transaction::with(['patient', 'tests'])
             ->whereHas('tests', function ($query) {
                 $query->where('status', 'completed');
-            })
-            ->get()
-            ->map(function ($transaction) {
+            });
+
+        // Apply search filter
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('transaction_number', 'ILIKE', "%{$search}%")
+                    ->orWhere('patient_full_name', 'ILIKE', "%{$search}%")
+                    ->orWhereHas('patient', function ($patientQuery) use ($search) {
+                        $patientQuery->where('first_name', 'ILIKE', "%{$search}%")
+                            ->orWhere('last_name', 'ILIKE', "%{$search}%")
+                            ->orWhere('email', 'ILIKE', "%{$search}%");
+                    });
+            });
+        }
+
+        // Apply sorting
+        if ($sortBy === 'patient_name') {
+            $query->orderBy('patient_full_name', $sortOrder);
+        } else {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        $transactions = $query->paginate($perPage)
+            ->through(function ($transaction) {
                 $patient = $transaction->patient;
                 return [
                     'id' => $transaction->id,
@@ -157,19 +183,23 @@ class LabTestQueueController extends Controller
                         ];
                     }),
                 ];
-            })
-            ->values();
+            });
 
         $this->auditLogger->log(
             'view',
             'lab_activities',
             'Viewed patient results page',
-            ['page' => 'patient_results'],
+            ['page' => 'patient_results', 'search' => $search],
             'info'
         );
 
         return Inertia::render('Laboratory/LabTestQueue/PatientResults', [
             'transactions' => $transactions,
+            'filters' => [
+                'search' => $search,
+                'sort_by' => $sortBy,
+                'sort_order' => $sortOrder,
+            ],
         ]);
     }
 
@@ -227,6 +257,7 @@ class LabTestQueueController extends Controller
                 'transaction_id' => $transaction->id,
                 'sent_by' => auth()->id(),
                 'sent_at' => now(),
+                'submission_type' => 'full_results',
                 'documents' => $documentPaths,
             ]);
 
@@ -246,10 +277,35 @@ class LabTestQueueController extends Controller
                 'released_at' => now(),
             ]);
 
+            // Refresh the transaction to get updated tests
+            $transaction->refresh();
+            
+            // Update transaction lab_status to 'released' since all tests are now released
+            $transaction->refreshLabStatus();
+
             // Log the action
             $patientName = $transaction->patient ?
                 $transaction->patient->first_name . ' ' . $transaction->patient->last_name :
                 $transaction->patient_full_name;
+
+            // Log the status change to released
+            $this->auditLogger->log(
+                'status_change',
+                'lab_activities',
+                "Transaction status changed from 'completed' to 'released' - Results sent to patient {$patientName}",
+                [
+                    'transaction_id' => $transaction->id,
+                    'transaction_number' => $transaction->transaction_number,
+                    'previous_status' => 'completed',
+                    'new_status' => 'released',
+                    'patient_name' => $patientName,
+                    'patient_email' => $transaction->patient?->email,
+                    'tests_released' => $transaction->tests->pluck('test_name')->toArray(),
+                ],
+                'info',
+                'Transaction',
+                $transaction->id
+            );
 
             $this->auditLogger->log(
                 'send_results',
@@ -331,6 +387,15 @@ class LabTestQueueController extends Controller
             // Send notification email
             \Mail::to($patientEmail)->send(new \App\Mail\NotifyPatientMail($transaction));
 
+            // Create ResultSubmission record for history tracking
+            ResultSubmission::create([
+                'transaction_id' => $transaction->id,
+                'sent_by' => auth()->id(),
+                'sent_at' => now(),
+                'submission_type' => 'notification', // Simple notification without PDF
+                'documents' => [], // No documents for simple notification
+            ]);
+
             // Update all tests to released status
             $transaction->tests()->update([
                 'status' => 'released',
@@ -383,12 +448,43 @@ class LabTestQueueController extends Controller
     /**
      * Display result history - all sent results
      */
-    public function resultHistory(): Response
+    public function resultHistory(Request $request): Response
     {
-        $sentResults = ResultSubmission::with(['transaction.patient', 'transaction.tests', 'sentBy'])
-            ->latest('sent_at')
-            ->get()
-            ->map(function ($submission) {
+        $search = $request->input('search', '');
+        $sortBy = $request->input('sort_by', 'sent_at');
+        $sortOrder = $request->input('sort_order', 'desc');
+        $perPage = $request->input('per_page', 20);
+        $submissionType = $request->input('submission_type', 'all'); // all, full_results, notification
+
+        $query = ResultSubmission::with(['transaction.patient', 'transaction.tests', 'sentBy']);
+
+        // Apply search filter
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('transaction', function ($transQuery) use ($search) {
+                    $transQuery->where('transaction_number', 'ILIKE', "%{$search}%")
+                        ->orWhere('patient_full_name', 'ILIKE', "%{$search}%")
+                        ->orWhereHas('patient', function ($patientQuery) use ($search) {
+                            $patientQuery->where('first_name', 'ILIKE', "%{$search}%")
+                                ->orWhere('last_name', 'ILIKE', "%{$search}%")
+                                ->orWhere('email', 'ILIKE', "%{$search}%");
+                        });
+                })->orWhereHas('sentBy', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'ILIKE', "%{$search}%");
+                });
+            });
+        }
+
+        // Filter by submission type
+        if ($submissionType !== 'all') {
+            $query->where('submission_type', $submissionType);
+        }
+
+        // Apply sorting
+        $query->orderBy($sortBy, $sortOrder);
+
+        $sentResults = $query->paginate($perPage)
+            ->through(function ($submission) {
                 $transaction = $submission->transaction;
                 $patient = $transaction->patient;
 
@@ -403,6 +499,7 @@ class LabTestQueueController extends Controller
                     'patient_address' => $patient?->address ?? 'No address',
                     'sent_at' => $submission->sent_at->format('M d, Y g:i A'),
                     'sent_by_name' => $submission->sentBy?->name ?? 'Unknown',
+                    'submission_type' => $submission->submission_type,
                     'tests' => $transaction->tests->map(function ($test) {
                         return [
                             'test_name' => $test->test_name,
@@ -425,12 +522,18 @@ class LabTestQueueController extends Controller
             'view',
             'lab_activities',
             'Viewed result history',
-            ['page' => 'result_history'],
+            ['page' => 'result_history', 'search' => $search],
             'info'
         );
 
         return Inertia::render('Laboratory/LabTestQueue/ResultHistory', [
             'sentResults' => $sentResults,
+            'filters' => [
+                'search' => $search,
+                'sort_by' => $sortBy,
+                'sort_order' => $sortOrder,
+                'submission_type' => $submissionType,
+            ],
         ]);
     }
 }

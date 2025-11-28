@@ -3,6 +3,8 @@ import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
+import AddressSelect from '@/Components/AddressSelect';
+import PhoneInput from '@/Components/PhoneInput';
 import { X } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
 
@@ -12,11 +14,16 @@ export default function CreatePatientModal({ show, onClose }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: '',
         last_name: '',
+        middle_name: '',
         email: '',
         age: '',
         gender: '',
         contact_number: '',
-        address: '',
+        region_id: '',
+        province_id: '',
+        city_id: '',
+        barangay_code: '',
+        street: '',
         birth_date: ''
     });
 
@@ -76,6 +83,16 @@ export default function CreatePatientModal({ show, onClose }) {
                                 required
                             />
                             {errors.last_name && <p className="text-red-600 text-sm mt-1">{errors.last_name}</p>}
+                        </div>
+                        
+                        <div className="col-span-2">
+                            <InputLabel>Middle Name</InputLabel>
+                            <TextInput
+                                value={data.middle_name}
+                                onChange={(e) => setData('middle_name', e.target.value)}
+                                placeholder="Enter middle name..."
+                            />
+                            {errors.middle_name && <p className="text-red-600 text-sm mt-1">{errors.middle_name}</p>}
                         </div>
                     </div>
 
@@ -147,28 +164,40 @@ export default function CreatePatientModal({ show, onClose }) {
                         </div>
 
                         <div>
-                            <InputLabel>Contact Number *</InputLabel>
-                            <TextInput
-                                type="tel"
+                            <PhoneInput
                                 value={data.contact_number}
-                                onChange={(e) => setData('contact_number', e.target.value)}
-                                placeholder="e.g., 0917-123-4567"
+                                onChange={(value) => setData('contact_number', value)}
+                                error={errors.contact_number}
                                 required
                             />
-                            {errors.contact_number && <p className="text-red-600 text-sm mt-1">{errors.contact_number}</p>}
                         </div>
                     </div>
 
                     <div>
-                        <InputLabel>Address</InputLabel>
-                        <textarea
-                            value={data.address}
-                            onChange={(e) => setData('address', e.target.value)}
-                            placeholder="Enter complete address..."
-                            rows="3"
-                            className="w-full rounded-lg border border-gray-400 bg-white px-4 py-2.5 text-black focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors resize-none"
+                        <AddressSelect
+                            value={{
+                                region_id: data.region_id,
+                                province_id: data.province_id,
+                                city_id: data.city_id,
+                                barangay_id: data.barangay_id,
+                                street: data.street
+                            }}
+                            onChange={(address) => {
+                                setData('region_id', address.region_id);
+                                setData('province_id', address.province_id);
+                                setData('city_id', address.city_id);
+                                setData('barangay_id', address.barangay_id);
+                                setData('street', address.street);
+                            }}
+                            errors={{
+                                region_id: errors.region_id,
+                                province_id: errors.province_id,
+                                city_id: errors.city_id,
+                                barangay_id: errors.barangay_id,
+                                street: errors.street
+                            }}
+                            required
                         />
-                        {errors.address && <p className="text-red-600 text-sm mt-1">{errors.address}</p>}
                     </div>
 
                     <div className="flex gap-3 pt-4">

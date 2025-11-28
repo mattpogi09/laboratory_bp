@@ -11,17 +11,42 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-  public function index()
+  public function index(Request $request)
   {
     // Check if user is admin
     if (auth()->user()->role !== 'admin') {
       abort(403, 'Unauthorized action.');
     }
 
-    $users = User::orderBy('created_at', 'desc')->get();
+    $search = $request->input('search', '');
+    $sortBy = $request->input('sort_by', 'created_at');
+    $sortOrder = $request->input('sort_order', 'desc');
+    $perPage = $request->input('per_page', 20);
+
+    $query = User::query();
+
+    // Apply search filter
+    if ($search) {
+      $query->where(function ($q) use ($search) {
+        $q->where('name', 'ILIKE', "%{$search}%")
+          ->orWhere('username', 'ILIKE', "%{$search}%")
+          ->orWhere('email', 'ILIKE', "%{$search}%")
+          ->orWhere('role', 'ILIKE', "%{$search}%");
+      });
+    }
+
+    // Apply sorting
+    $query->orderBy($sortBy, $sortOrder);
+
+    $users = $query->paginate($perPage);
 
     return Inertia::render('Management/Users/Index', [
       'users' => $users,
+      'filters' => [
+        'search' => $search,
+        'sort_by' => $sortBy,
+        'sort_order' => $sortOrder,
+      ],
     ]);
   }
 

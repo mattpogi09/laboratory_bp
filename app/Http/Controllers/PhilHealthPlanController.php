@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PhilHealthPlan;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class PhilHealthPlanController extends Controller
 {
@@ -14,14 +15,17 @@ class PhilHealthPlanController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $search = $request->input('search', '');
+        $search = $request->input('search');
+        $sortBy = $request->input('sort_by', 'name');
+        $sortOrder = $request->input('sort_order', 'asc');
+        $perPage = $request->input('per_page', 20);
 
         $plans = PhilHealthPlan::when($search, function ($query, $search) {
             $query->where('name', 'ILIKE', "%{$search}%")
                 ->orWhere('description', 'ILIKE', "%{$search}%");
         })
-            ->orderBy('name')
-            ->paginate(10);
+            ->orderBy($sortBy, $sortOrder)
+            ->paginate($perPage);
 
         return response()->json($plans);
     }
@@ -45,6 +49,9 @@ class PhilHealthPlanController extends Controller
         ]);
 
         $plan = PhilHealthPlan::create($validated);
+
+        // Clear PhilHealth plans cache
+        Cache::forget('active_philhealth_plans');
 
         $auditLogger->logPhilHealthPlanCreated([
             'id' => $plan->id,
@@ -79,6 +86,9 @@ class PhilHealthPlanController extends Controller
 
         $plan->update($validated);
 
+        // Clear PhilHealth plans cache
+        Cache::forget('active_philhealth_plans');
+
         $auditLogger->logPhilHealthPlanUpdated($plan->id, $oldData, $plan->toArray());
 
         return back()->with('success', 'PhilHealth plan updated successfully');
@@ -95,6 +105,9 @@ class PhilHealthPlanController extends Controller
         $plan->update([
             'is_active' => !$plan->is_active
         ]);
+
+        // Clear PhilHealth plans cache
+        Cache::forget('active_philhealth_plans');
 
         $auditLogger->logPhilHealthPlanToggled($plan->id, $plan->name, $plan->is_active);
 

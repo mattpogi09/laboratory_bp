@@ -1,17 +1,19 @@
-import { useState } from 'react';
-import { Head } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import { Head, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import Pagination from '@/Components/Pagination';
-import { Search, Edit, Plus, Package, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Power } from 'lucide-react';
+import LoadingOverlay from '@/Components/LoadingOverlay';
+import { Search, Edit, Plus, Package, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Power, ArrowUpDown } from 'lucide-react';
 import CreateStockModal from './CreateStockModal';
 import AddStockModal from './AddStockModal';
 import StockOutModal from './StockOutModal';
 import AdjustStockModal from './AdjustStockModal';
 import ToggleItemModal from './ToggleItemModal';
 
-export default function InventoryIndex({ auth, items = { data: [], links: [] }, transactions = { data: [], links: [] }, stats, lowStockAlerts }) {
+export default function InventoryIndex({ auth, items = { data: [], links: [] }, transactions = { data: [], links: [] }, stats, lowStockAlerts, filters = {} }) {
     const [activeTab, setActiveTab] = useState('stock');
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [isSearching, setIsSearching] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showAddStockModal, setShowAddStockModal] = useState(false);
@@ -19,23 +21,64 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
     const [showAdjustModal, setShowAdjustModal] = useState(false);
     const [showToggleModal, setShowToggleModal] = useState(false);
 
-    const itemsData = items.data || [];
-    const transactionsData = transactions.data || [];
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Debounced search with 300ms delay
+    useEffect(() => {
+        // Skip if this is the initial mount or search hasn't changed
+        if (searchQuery === (filters.search || '')) return;
+        
+        setIsSearching(true);
+        const timer = setTimeout(() => {
+            const params = { search: searchQuery || undefined };
+            if (filters.sort_by) params.sort_by = filters.sort_by;
+            if (filters.sort_order) params.sort_order = filters.sort_order;
+            
+            router.get(
+                route('inventory.index'),
+                params,
+                { 
+                    preserveState: true,
+                    preserveScroll: true,
+                    onFinish: () => setIsSearching(false)
+                }
+            );
+        }, 300);
+
+        return () => {
+            clearTimeout(timer);
+            setIsSearching(false);
+        };
+    }, [searchQuery]);
+
+    const handleSort = (column) => {
+        const newOrder = filters.sort_by === column && filters.sort_order === 'asc' ? 'desc' : 'asc';
+        
+        setIsLoading(true);
+        const params = { sort_by: column, sort_order: newOrder };
+        if (searchQuery) params.search = searchQuery;
+        
+        router.get(
+            route('inventory'),
+            params,
+            { 
+                preserveState: true, 
+                preserveScroll: true,
+                onFinish: () => setIsLoading(false)
+            }
+        );
+    };
 
     const handleAdjustStock = (item) => {
         setSelectedItem(item);
         setShowAdjustModal(true);
     };
 
+
     const handleToggleClick = (item) => {
         setSelectedItem(item);
         setShowToggleModal(true);
     };
-
-    const filteredItems = itemsData?.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchQuery.toLowerCase())
-    ) || [];
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -66,6 +109,7 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
     return (
         <DashboardLayout auth={auth}>
             <Head title="Inventory Management" />
+            <LoadingOverlay show={isLoading} message="Loading..." />
 
             <div className="py-8">
                 <div className="mx-auto px-4 sm:px-6 lg:px-8">
@@ -190,7 +234,8 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
                 {activeTab === 'stock' && (
                     <>
                         {/* Search */}
-                        <div className="mb-6">
+                        <div className="mb-6 relative">
+                            {isSearching && <LoadingOverlay message="Searching..." />}
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                                 <input
@@ -204,7 +249,7 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
                         </div>
 
                         {/* Stock Table */}
-                        {filteredItems.length === 0 ? (
+                        {items.data?.length === 0 ? (
                             <div className="text-center py-12">
                                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">No items found</h3>
@@ -214,13 +259,25 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
                             </div>
                         ) : (
                             <>
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
                                 <table className="w-full">
                                     <thead>
-                                        <tr className="border-b border-gray-200">
-                                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Item Name</th>
-                                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Category</th>
-                                            <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Current Stock</th>
+                                        <tr className="border-b border-gray-200 bg-gray-50">
+                                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                                                <div className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors" onClick={() => handleSort('name')}>
+                                                    Item Name ↕
+                                                </div>
+                                            </th>
+                                            <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                                                <div className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors" onClick={() => handleSort('category')}>
+                                                    Category ↕
+                                                </div>
+                                            </th>
+                                            <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">
+                                                <div className="flex items-center gap-1 justify-end cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors" onClick={() => handleSort('current_stock')}>
+                                                    Current Stock ↕
+                                                </div>
+                                            </th>
                                             <th className="text-right py-3 px-4 text-sm font-medium text-gray-700">Minimum Stock</th>
                                             <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Stock Status</th>
                                             {auth.user.role === 'admin' && (
@@ -231,9 +288,9 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
                                             )}
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        {filteredItems.map((item) => (
-                                            <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                    <tbody className="divide-y divide-gray-200">
+                                        {items.data.map((item) => (
+                                            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                                 <td className="py-4 px-4">
                                                     <div className="font-medium text-gray-900">{item.name}</div>
                                                 </td>
@@ -254,10 +311,10 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
                                                 {auth.user.role === 'admin' && (
                                                     <>
                                                         <td className="py-4 px-4">
-                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                                                 item.is_active 
-                                                                    ? 'bg-green-100 text-green-800 border-green-300' 
-                                                                    : 'bg-gray-100 text-gray-800 border-gray-300'
+                                                                    ? 'bg-green-100 text-green-800' 
+                                                                    : 'bg-gray-100 text-gray-800'
                                                             }`}>
                                                                 {item.is_active ? 'Active' : 'Inactive'}
                                                             </span>
@@ -266,17 +323,17 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
                                                             <div className="flex items-center justify-center gap-2">
                                                                 <button
                                                                     onClick={() => handleAdjustStock(item)}
-                                                                    className="inline-flex items-center gap-1 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                                                                 >
                                                                     <Edit className="h-4 w-4" />
                                                                     Adjust
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleToggleClick(item)}
-                                                                    className={`inline-flex items-center gap-1 px-3 py-1 text-sm rounded-lg transition-colors ${
+                                                                    className={`inline-flex items-center gap-1 text-sm font-medium transition-colors ${
                                                                         item.is_active 
-                                                                            ? 'text-yellow-600 hover:bg-yellow-50' 
-                                                                            : 'text-green-600 hover:bg-green-50'
+                                                                            ? 'text-red-600 hover:text-red-800' 
+                                                                            : 'text-green-600 hover:text-green-800'
                                                                     }`}
                                                                 >
                                                                     <Power className="h-4 w-4" />
@@ -298,8 +355,8 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
                 )}
 
                 {activeTab === 'transactions' && (
-                    <div className="overflow-x-auto">
-                        {transactionsData && transactionsData.length === 0 ? (
+                    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+                        {transactions.data && transactions.data.length === 0 ? (
                             <div className="text-center py-12">
                                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
@@ -309,7 +366,7 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
                             <>
                             <table className="w-full">
                                 <thead>
-                                    <tr className="border-b border-gray-200">
+                                    <tr className="border-b border-gray-200 bg-gray-50">
                                         <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Date</th>
                                         <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Item</th>
                                         <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Type</th>
@@ -321,9 +378,9 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
                                         <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">Reason</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    {transactionsData?.map((transaction) => (
-                                        <tr key={transaction.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                <tbody className="divide-y divide-gray-200">
+                                    {transactions.data?.map((transaction) => (
+                                        <tr key={transaction.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="py-4 px-4 text-gray-600">
                                                 {new Date(transaction.created_at).toLocaleDateString('en-US', {
                                                     year: 'numeric',
@@ -337,8 +394,8 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
                                             <td className="py-4 px-4">
                                                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                                     transaction.type === 'in' 
-                                                        ? 'bg-green-100 text-green-800 border border-green-300'
-                                                        : 'bg-red-100 text-red-800 border border-red-300'
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
                                                 }`}>
                                                     {transaction.type === 'in' ? (
                                                         <>
@@ -385,8 +442,8 @@ export default function InventoryIndex({ auth, items = { data: [], links: [] }, 
 
             {/* Modals */}
             <CreateStockModal show={showCreateModal} onClose={() => setShowCreateModal(false)} />
-            <AddStockModal items={itemsData} show={showAddStockModal} onClose={() => setShowAddStockModal(false)} />
-            <StockOutModal items={itemsData} show={showStockOutModal} onClose={() => setShowStockOutModal(false)} />
+            <AddStockModal items={items.data} show={showAddStockModal} onClose={() => setShowAddStockModal(false)} />
+            <StockOutModal items={items.data} show={showStockOutModal} onClose={() => setShowStockOutModal(false)} />
             <AdjustStockModal item={selectedItem} show={showAdjustModal} onClose={() => setShowAdjustModal(false)} />
             <ToggleItemModal item={selectedItem} show={showToggleModal} onClose={() => setShowToggleModal(false)} />
         </DashboardLayout>

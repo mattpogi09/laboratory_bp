@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\CashierTransactionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DiscountController;
@@ -29,40 +30,58 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Management Routes
-    Route::resource('patients', PatientController::class)->only(['index', 'store', 'update', 'destroy']);
-    Route::get('/api/patients/search', [PatientController::class, 'search'])->name('patients.search');
+    // Address API Routes
+    Route::prefix('api/address')->name('address.')->group(function () {
+        Route::get('/regions', [AddressController::class, 'getRegions'])->name('regions');
+        Route::get('/provinces/{regionId}', [AddressController::class, 'getProvinces'])->name('provinces');
+        Route::get('/cities/{provinceId}', [AddressController::class, 'getCities'])->name('cities');
+        Route::get('/barangays/{cityId}', [AddressController::class, 'getBarangays'])->name('barangays');
+        Route::get('/details', [AddressController::class, 'getAddressDetails'])->name('details');
+    });
 
-    Route::prefix('users')->name('users.')->group(function () {
+    // Management Routes
+    // Patient routes with rate limiting (20 operations per minute)
+    Route::middleware('throttle:20,1')->group(function () {
+        Route::resource('patients', PatientController::class)->only(['index', 'store', 'update', 'destroy']);
+    });
+
+    // Search endpoint with higher limit (60 searches per minute)
+    Route::middleware('throttle:60,1')->get('/api/patients/search', [PatientController::class, 'search'])->name('patients.search');
+
+    // User management with rate limiting (15 per minute)
+    Route::middleware('throttle:15,1')->prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::post('/', [UserController::class, 'store'])->name('store');
         Route::put('/{id}', [UserController::class, 'update'])->name('update');
         Route::post('/{id}/toggle', [UserController::class, 'toggleActive'])->name('toggle');
     });
 
-    Route::prefix('services')->name('services.')->group(function () {
-        Route::get('/', [LabTestController::class, 'index'])->name('index');
-        Route::post('/', [LabTestController::class, 'store'])->name('store');
-        Route::put('/{id}', [LabTestController::class, 'update'])->name('update');
-        Route::post('/{id}/toggle', [LabTestController::class, 'toggleActive'])->name('toggle');
+    // Configuration routes with rate limiting (20 per minute)
+    Route::middleware('throttle:20,1')->group(function () {
+        Route::prefix('services')->name('services.')->group(function () {
+            Route::get('/', [LabTestController::class, 'index'])->name('index');
+            Route::post('/', [LabTestController::class, 'store'])->name('store');
+            Route::put('/{id}', [LabTestController::class, 'update'])->name('update');
+            Route::post('/{id}/toggle', [LabTestController::class, 'toggleActive'])->name('toggle');
+        });
+
+        Route::prefix('discounts')->name('discounts.')->group(function () {
+            Route::get('/', [DiscountController::class, 'index'])->name('index');
+            Route::post('/', [DiscountController::class, 'store'])->name('store');
+            Route::put('/{id}', [DiscountController::class, 'update'])->name('update');
+            Route::post('/{id}/toggle', [DiscountController::class, 'toggleActive'])->name('toggle');
+        });
+
+        Route::prefix('philhealth-plans')->name('philhealth-plans.')->group(function () {
+            Route::get('/', [PhilHealthPlanController::class, 'index'])->name('index');
+            Route::post('/', [PhilHealthPlanController::class, 'store'])->name('store');
+            Route::put('/{id}', [PhilHealthPlanController::class, 'update'])->name('update');
+            Route::post('/{id}/toggle', [PhilHealthPlanController::class, 'toggleActive'])->name('toggle');
+        });
     });
 
-    Route::prefix('discounts')->name('discounts.')->group(function () {
-        Route::get('/', [DiscountController::class, 'index'])->name('index');
-        Route::post('/', [DiscountController::class, 'store'])->name('store');
-        Route::put('/{id}', [DiscountController::class, 'update'])->name('update');
-        Route::post('/{id}/toggle', [DiscountController::class, 'toggleActive'])->name('toggle');
-    });
-
-    Route::prefix('philhealth-plans')->name('philhealth-plans.')->group(function () {
-        Route::get('/', [PhilHealthPlanController::class, 'index'])->name('index');
-        Route::post('/', [PhilHealthPlanController::class, 'store'])->name('store');
-        Route::put('/{id}', [PhilHealthPlanController::class, 'update'])->name('update');
-        Route::post('/{id}/toggle', [PhilHealthPlanController::class, 'toggleActive'])->name('toggle');
-    });
-
-    // Configuration Routes
-    Route::middleware('auth')->prefix('inventory')->group(function () {
+    // Inventory Routes with rate limiting (25 per minute)
+    Route::middleware('throttle:25,1')->prefix('inventory')->group(function () {
         Route::get('/', [InventoryController::class, 'index'])->name('inventory');
         Route::post('/', [InventoryController::class, 'store'])->name('inventory.store');
         Route::post('/stock-in', [InventoryController::class, 'stockIn'])->name('inventory.stock-in');
@@ -82,23 +101,34 @@ Route::middleware('auth')->group(function () {
 
     // Cashier Routes
     Route::prefix('cashier')->name('cashier.')->group(function () {
+        // Read operations - relaxed limit
         Route::get('/transactions', [CashierTransactionController::class, 'index'])->name('transactions.index');
         Route::get('/transactions/history', [CashierTransactionController::class, 'history'])->name('transactions.history');
-        Route::post('/transactions', [CashierTransactionController::class, 'store'])->name('transactions.store');
         Route::get('/transactions/{transaction}', [CashierTransactionController::class, 'show'])->name('transactions.show');
-        Route::post('/transactions/check-duplicates', [CashierTransactionController::class, 'checkDuplicateTests'])->name('transactions.check-duplicates');
+
+        // Write operations - moderate limit (30 per minute)
+        Route::middleware('throttle:30,1')->group(function () {
+            Route::post('/transactions', [CashierTransactionController::class, 'store'])->name('transactions.store');
+            Route::post('/transactions/check-duplicates', [CashierTransactionController::class, 'checkDuplicateTests'])->name('transactions.check-duplicates');
+        });
     });
 
     // Laboratory Routes
     Route::get('/lab-test-queue', [LabTestQueueController::class, 'index'])->name('lab-test-queue');
     Route::get('/lab-test-queue/enter-results/{transactionTest}', [LabTestQueueController::class, 'enterResults'])->name('lab-test-queue.enter-results');
-    Route::patch('/lab-test-queue/tests/{transactionTest}', [LabResultController::class, 'update'])->name('lab-test-queue.tests.update');
+
+    // Result entry with rate limiting (40 per minute)
+    Route::middleware('throttle:40,1')->patch('/lab-test-queue/tests/{transactionTest}', [LabResultController::class, 'update'])->name('lab-test-queue.tests.update');
 
     // Patient Results Routes
     Route::get('/lab-test-queue/patient-results', [LabTestQueueController::class, 'patientResults'])->name('lab-test-queue.patient-results');
-    Route::post('/lab-test-queue/send-results', [LabTestQueueController::class, 'sendResults'])->name('lab-test-queue.send-results');
-    Route::post('/lab-test-queue/notify-patient/{transaction}', [LabTestQueueController::class, 'notifyPatient'])->name('lab-test-queue.notify-patient');
     Route::get('/lab-test-queue/result-history', [LabTestQueueController::class, 'resultHistory'])->name('lab-test-queue.result-history');
+
+    // Email sending routes - strict rate limiting (10 per minute) to prevent spam
+    Route::middleware('throttle:10,1')->group(function () {
+        Route::post('/lab-test-queue/send-results', [LabTestQueueController::class, 'sendResults'])->name('lab-test-queue.send-results');
+        Route::post('/lab-test-queue/notify-patient/{transaction}', [LabTestQueueController::class, 'notifyPatient'])->name('lab-test-queue.notify-patient');
+    });
 });
 
 require __DIR__ . '/auth.php';

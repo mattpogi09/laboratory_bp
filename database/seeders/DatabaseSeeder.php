@@ -15,8 +15,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Seed Philippines address data (regions, provinces, cities, barangays)
+        $this->call(\Yajra\Address\Seeders\AddressSeeder::class);
+        
         $this->call(LabTestSeeder::class);
         $this->call(InventorySeeder::class);
+        $this->call(DiscountSeeder::class);
+        $this->call(PhilHealthPlanSeeder::class);
 
         // Create Admin User
         User::factory()->create([

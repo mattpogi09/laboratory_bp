@@ -23,6 +23,7 @@ return new class extends Migration {
             $table->foreignId('performed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
+            $table->timestamp('released_at')->nullable();
             $table->timestamps();
 
             $table->index(['status', 'category']);

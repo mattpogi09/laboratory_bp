@@ -139,15 +139,30 @@
 
     <div class="attachment-notice"
       style="background-color: #fef3c7; padding: 15px; margin: 20px 0; border-left: 4px solid #f59e0b; border-radius: 4px;">
-      <p style="margin: 0;"><strong>📎 Attachments:</strong></p>
-      <p style="margin: 5px 0 0 0;"><strong>1. Encrypted PDF Report</strong> - Your complete test results with detailed
-        values and normal ranges (password-protected)</p>
-      <p style="margin: 5px 0 0 0; color: #dc2626;"><strong>Password:</strong> Your surname (last name) in uppercase</p>
+      <p style="margin: 0;"><strong>📎 Attachments
+          ({{ count($documentPaths) > 0 ? '2 PDF files' : '1 PDF file' }}):</strong></p>
+
+      <p style="margin: 10px 0 5px 0;"><strong>1. Lab_Results_{{ $transaction->transaction_number }}.pdf</strong></p>
+      <p style="margin: 0 0 0 20px; font-size: 13px; color: #666;">
+        ✓ Contains your test results with values and normal ranges<br>
+        ✓ Password-protected for your privacy
+      </p>
+
       @if(count($documentPaths) > 0)
-        <p style="margin: 5px 0 0 0;"><strong>2. Result Images</strong> - Additional test result images/documents</p>
+        <p style="margin: 10px 0 5px 0;"><strong>2. Lab_Result_Images_{{ $transaction->transaction_number }}.pdf</strong>
+        </p>
+        <p style="margin: 0 0 0 20px; font-size: 13px; color: #666;">
+          ✓ Contains {{ count($documentPaths) }} uploaded result image(s)<br>
+          ✓ Hard copy results captured by lab staff<br>
+          ✓ Password-protected for your privacy
+        </p>
       @endif
-      <p style="margin: 5px 0 0 0; font-size: 12px; color: #6b7280;">Download all attachments to view your complete
-        results.</p>
+
+      <div style="margin-top: 12px; padding: 10px; background-color: #dc2626; color: white; border-radius: 4px;">
+        <strong>🔒 PDF Password:</strong> Your surname (last name) in UPPERCASE<br>
+        <span style="font-size: 11px; opacity: 0.9;">Example: If your name is "Juan Dela Cruz", the password is
+          "DELACRUZ"</span>
+      </div>
     </div>
 
     <div class="transaction-code">

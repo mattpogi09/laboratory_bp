@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function TestCatalog({ labTests = {}, selectedTests = [], onToggle, errors = {} }) {
+function TestCatalog({ labTests = {}, selectedTests = [], onToggle, errors = {} }) {
     return (
         <section className="rounded-xl bg-white p-6 shadow space-y-4">
             <header className="flex items-center gap-2">
@@ -62,4 +63,6 @@ export default function TestCatalog({ labTests = {}, selectedTests = [], onToggl
         </section>
     );
 }
+
+export default memo(TestCatalog);
 

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Discount;
+use App\Models\PhilHealthPlan;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 
 class DiscountController extends Controller
@@ -15,17 +17,26 @@ class DiscountController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $search = $request->input('search', '');
+        $search = $request->input('search');
+        $sortBy = $request->input('sort_by', 'name');
+        $sortOrder = $request->input('sort_order', 'asc');
+        $perPage = $request->input('per_page', 20);
 
         $discounts = Discount::when($search, function ($query, $search) {
             $query->where('name', 'ILIKE', "%{$search}%")
                 ->orWhere('description', 'ILIKE', "%{$search}%");
         })
-            ->orderBy('name')
-            ->paginate(10);
+            ->orderBy($sortBy, $sortOrder)
+            ->paginate($perPage);
 
-        return Inertia::render('Configuration/Discounts/Index', [
+        return Inertia::render('Configuration/DiscountsPhilhealth/Index', [
             'discounts' => $discounts,
+            'philHealthPlans' => PhilHealthPlan::orderBy('name')->paginate(20),
+            'filters' => [
+                'search' => $search,
+                'sort_by' => $sortBy,
+                'sort_order' => $sortOrder,
+            ],
         ]);
     }
 
@@ -48,6 +59,9 @@ class DiscountController extends Controller
         ]);
 
         $discount = Discount::create($validated);
+
+        // Clear discounts cache
+        Cache::forget('active_discounts');
 
         $auditLogger->logDiscountCreated([
             'id' => $discount->id,
@@ -82,6 +96,9 @@ class DiscountController extends Controller
 
         $discount->update($validated);
 
+        // Clear discounts cache
+        Cache::forget('active_discounts');
+
         $auditLogger->logDiscountUpdated($discount->id, $oldData, $discount->toArray());
 
         return back()->with('success', 'Discount updated successfully');
@@ -98,6 +115,9 @@ class DiscountController extends Controller
         $discount->update([
             'is_active' => !$discount->is_active
         ]);
+
+        // Clear discounts cache
+        Cache::forget('active_discounts');
 
         $auditLogger->logDiscountToggled($discount->id, $discount->name, $discount->is_active);
 

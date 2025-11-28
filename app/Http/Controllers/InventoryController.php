@@ -18,7 +18,10 @@ class InventoryController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $search = $request->input('search', '');
+        $search = $request->input('search');
+        $sortBy = $request->input('sort_by', 'name');
+        $sortOrder = $request->input('sort_order', 'asc');
+        $perPage = $request->input('per_page', 20);
 
         $items = InventoryItem::when($search, function ($query, $search) {
             $query->where('name', 'ILIKE', "%{$search}%")
@@ -28,8 +31,8 @@ class InventoryController extends Controller
             ->when($request->user()->role === 'lab_staff', function ($query) {
                 $query->where('is_active', true);
             })
-            ->orderBy('name')
-            ->paginate(10, ['*'], 'items_page');
+            ->orderBy($sortBy, $sortOrder)
+            ->paginate($perPage, ['*'], 'items_page');
 
         $transactions = InventoryTransaction::with(['item', 'user'])
             ->latest()
@@ -65,6 +68,11 @@ class InventoryController extends Controller
             'transactions' => $transactions,
             'stats' => $stats,
             'lowStockAlerts' => $lowStockAlerts,
+            'filters' => [
+                'search' => $search,
+                'sort_by' => $sortBy,
+                'sort_order' => $sortOrder,
+            ],
         ]);
     }
 

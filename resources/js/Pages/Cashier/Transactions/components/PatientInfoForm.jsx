@@ -1,5 +1,7 @@
 import { UserPlus, Search, X, CheckCircle2 } from 'lucide-react';
 import TextField from './TextField';
+import AddressSelect from '@/Components/AddressSelect';
+import PhoneInput from '@/Components/PhoneInput';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -52,7 +54,12 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
         onChange('age', patientData.age || '');
         onChange('gender', patientData.gender || '');
         onChange('contact', patientData.contact_number || '');
-        onChange('address', patientData.address || '');
+        // Address fields
+        onChange('region_id', patientData.region_id || '');
+        onChange('province_id', patientData.province_id || '');
+        onChange('city_id', patientData.city_id || '');
+        onChange('barangay_code', patientData.barangay_code || '');
+        onChange('street', patientData.street || '');
     };
 
     const clearSelection = () => {
@@ -68,7 +75,12 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
         onChange('age', '');
         onChange('gender', '');
         onChange('contact', '');
-        onChange('address', '');
+        // Clear address fields
+        onChange('region_id', '');
+        onChange('province_id', '');
+        onChange('city_id', '');
+        onChange('barangay_code', '');
+        onChange('street', '');
     };
 
     const handleChange = (field) => (e) => onChange(field, e.target.value);
@@ -247,17 +259,43 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
                         error={errors['patient.gender']}
                     />
                 )}
-                <TextField
-                    label="Contact Number"
+            </div>
+            
+            <div className="mt-4">
+                <PhoneInput
                     value={patient.contact}
-                    onChange={handleChange('contact')}
+                    onChange={(value, isValid) => onChange('contact', value)}
+                    error={errors['patient.contact']}
+                    disabled={isExistingPatient}
+                    required
                 />
             </div>
+            
             <div className="mt-4">
-                <TextField
-                    label="Address"
-                    value={patient.address}
-                    onChange={handleChange('address')}
+                <AddressSelect
+                    value={{
+                        region_id: patient.region_id,
+                        province_id: patient.province_id,
+                        city_id: patient.city_id,
+                        barangay_code: patient.barangay_code,
+                        street: patient.street
+                    }}
+                    onChange={(address) => {
+                        onChange('region_id', address.region_id);
+                        onChange('province_id', address.province_id);
+                        onChange('city_id', address.city_id);
+                        onChange('barangay_code', address.barangay_code);
+                        onChange('street', address.street);
+                    }}
+                    errors={{
+                        region_id: errors['patient.region_id'],
+                        province_id: errors['patient.province_id'],
+                        city_id: errors['patient.city_id'],
+                        barangay_code: errors['patient.barangay_code'],
+                        street: errors['patient.street']
+                    }}
+                    disabled={isExistingPatient}
+                    required
                 />
             </div>
         </section>

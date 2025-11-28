@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { X, User, Mail, Calendar, MapPin, FileText, Upload, AlertTriangle, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import LoadingOverlay from '@/Components/LoadingOverlay';
 
 export default function SendResultsModal({ show, transaction, onClose }) {
     const [documents, setDocuments] = useState([]);
@@ -9,6 +10,7 @@ export default function SendResultsModal({ show, transaction, onClose }) {
     const [showError, setShowError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [incompleteTests, setIncompleteTests] = useState([]);
+    const [processing, setProcessing] = useState(false);
 
     if (!show || !transaction) return null;
 
@@ -46,12 +48,15 @@ export default function SendResultsModal({ show, transaction, onClose }) {
             formData.append(`documents[${index}]`, file);
         });
 
+        setProcessing(true);
         router.post(route('lab-test-queue.send-results'), formData, {
             onSuccess: () => {
+                setProcessing(false);
                 onClose();
                 // Success notification will be shown by backend
             },
             onError: (errors) => {
+                setProcessing(false);
                 setShowConfirmation(false);
                 // Show error modal with the error message
                 setErrorMessage(errors?.error || 'Failed to send results. Please try again.');
@@ -80,6 +85,7 @@ export default function SendResultsModal({ show, transaction, onClose }) {
 
     return (
         <>
+            <LoadingOverlay show={processing} message="Generating PDFs and sending email..." />
             {/* Error Modal for Incomplete Tests */}
             {hasIncompleteTests && (
                 <div className="fixed inset-0 z-50 overflow-y-auto">

@@ -210,55 +210,6 @@
     </div>
   @endforeach
 
-  @if(isset($documentPaths) && count($documentPaths) > 0)
-    <div style="margin-top: 30px; page-break-before: always;">
-      <div
-        style="background-color: #dc2626; color: white; padding: 10px; font-size: 14px; font-weight: bold; margin-bottom: 15px;">
-        📎 ATTACHED RESULT IMAGES
-      </div>
-
-      @foreach($documentPaths as $document)
-        <div style="margin-bottom: 20px; page-break-inside: avoid;">
-          <p style="font-weight: bold; margin-bottom: 10px; color: #dc2626;">{{ $document['name'] }}</p>
-          @php
-            $imagePath = storage_path('app/public/' . $document['path']);
-            $imageData = null;
-            $extension = '';
-            $mimeType = 'image/jpeg';
-
-            if (file_exists($imagePath)) {
-              $imageData = base64_encode(file_get_contents($imagePath));
-              $extension = strtolower(pathinfo($imagePath, PATHINFO_EXTENSION));
-
-              if ($extension === 'png') {
-                $mimeType = 'image/png';
-              } elseif (in_array($extension, ['jpg', 'jpeg'])) {
-                $mimeType = 'image/jpeg';
-              } elseif ($extension === 'pdf') {
-                $mimeType = 'application/pdf';
-              }
-            }
-          @endphp
-          @if($imageData && in_array($extension, ['jpg', 'jpeg', 'png']))
-            <img src="data:{{ $mimeType }};base64,{{ $imageData }}"
-              style="max-width: 100%; height: auto; border: 1px solid #e5e7eb;">
-          @elseif($imageData && $extension === 'pdf')
-            <p style="background-color: #fee2e2; padding: 10px; border-left: 4px solid #dc2626;">
-              📄 PDF Document: {{ $document['name'] }}<br>
-              <span style="font-size: 10px; color: #666;">Size: {{ number_format($document['size'] / 1024, 2) }} KB</span>
-            </p>
-          @else
-            <p style="background-color: #f3f4f6; padding: 10px;">
-              📎 File: {{ $document['name'] }}<br>
-              <span style="font-size: 10px; color: #666;">Size:
-                {{ isset($document['size']) ? number_format($document['size'] / 1024, 2) : '0' }} KB</span>
-            </p>
-          @endif
-        </div>
-      @endforeach
-    </div>
-  @endif
-
   <div class="footer">
     <p><strong>BP Diagnostic Laboratory</strong></p>
     <p>This is a computer-generated report. For any concerns, please contact our laboratory.</p>
@@ -266,6 +217,11 @@
     <p style="margin-top: 10px; color: #dc2626;">
       <strong>CONFIDENTIAL:</strong> This document contains private health information.
     </p>
+    @if(isset($documentPaths) && count($documentPaths) > 0)
+      <p style="margin-top: 10px; color: #666; font-size: 10px;">
+        <strong>Note:</strong> Result images are provided in a separate encrypted PDF attachment.
+      </p>
+    @endif
   </div>
 </body>
 

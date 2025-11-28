@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import LoadingOverlay from '@/Components/LoadingOverlay';
 import { Calendar, DollarSign, Package, Shield, FileText, Download } from 'lucide-react';
 import { Button } from '@/Components/ui/button';
 
@@ -15,6 +16,7 @@ export default function ReportsLogsIndex({
     const [activeTab, setActiveTab] = useState(filters.tab || 'financial');
     const [dateFrom, setDateFrom] = useState(filters.from || '');
     const [dateTo, setDateTo] = useState(filters.to || '');
+    const [isLoading, setIsLoading] = useState(false);
 
     const totals = financial.totals || { revenue: 0, discounts: 0, transactions: 0 };
     const financialRows = financial.rows || [];
@@ -24,16 +26,25 @@ export default function ReportsLogsIndex({
     const auditData = auditLogs.data || [];
 
     const submitFilters = () => {
+        setIsLoading(true);
+        const params = {};
+        if (dateFrom) params.from = dateFrom;
+        if (dateTo) params.to = dateTo;
+        
         router.get(
             route('reports-logs'),
-            { from: dateFrom, to: dateTo },
-            { preserveState: true, replace: true }
+            params,
+            { 
+                preserveState: true, 
+                onFinish: () => setIsLoading(false)
+            }
         );
     };
 
     return (
         <DashboardLayout auth={auth}>
             <Head title="Reports & Logs" />
+            <LoadingOverlay show={isLoading} message="Loading..." />
 
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-gray-900">Reports & Logs</h1>

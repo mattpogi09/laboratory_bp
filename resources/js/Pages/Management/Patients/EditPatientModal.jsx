@@ -3,6 +3,8 @@ import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
+import AddressSelect from '@/Components/AddressSelect';
+import PhoneInput from '@/Components/PhoneInput';
 import { X } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
 
@@ -14,11 +16,16 @@ export default function EditPatientModal({ patient, show, onClose, userRole = 'a
     const { data, setData, put, processing, errors } = useForm({
         first_name: patient?.first_name || '',
         last_name: patient?.last_name || '',
+        middle_name: patient?.middle_name || '',
         email: patient?.email || '',
         age: patient?.age || '',
         gender: patient?.gender || '',
-        contact_number: patient?.contact || '',
-        address: patient?.address || '',
+        contact_number: patient?.contact_number || '',
+        region_id: patient?.region_id || '',
+        province_id: patient?.province_id || '',
+        city_id: patient?.city_id || '',
+        barangay_code: patient?.barangay_code || '',
+        street: patient?.street || '',
         birth_date: patient?.birth_date || '',
     });
 
@@ -150,17 +157,6 @@ export default function EditPatientModal({ patient, show, onClose, userRole = 'a
                             {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
                         </div>
 
-                        {/* Contact Number - Both can edit */}
-                        <div>
-                            <InputLabel>Contact Number</InputLabel>
-                            <TextInput
-                                value={data.contact_number}
-                                onChange={(e) => setData('contact_number', e.target.value)}
-                                placeholder="0917-123-4567"
-                            />
-                            {errors.contact_number && <p className="text-red-600 text-sm mt-1">{errors.contact_number}</p>}
-                        </div>
-
                         {/* Birthdate - Admin only */}
                         {isAdmin && (
                             <div>
@@ -175,17 +171,40 @@ export default function EditPatientModal({ patient, show, onClose, userRole = 'a
                         )}
                     </div>
 
+                    {/* Contact Number - Both can edit */}
+                    <div>
+                        <PhoneInput
+                            value={data.contact_number}
+                            onChange={(value) => setData('contact_number', value)}
+                            error={errors.contact_number}
+                        />
+                    </div>
+
                     {/* Address - Both can edit */}
                     <div>
-                        <InputLabel>Address</InputLabel>
-                        <textarea
-                            value={data.address}
-                            onChange={(e) => setData('address', e.target.value)}
-                            placeholder="Complete address..."
-                            rows="3"
-                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors resize-none"
+                        <AddressSelect
+                            value={{
+                                region_id: data.region_id,
+                                province_id: data.province_id,
+                                city_id: data.city_id,
+                                barangay_id: data.barangay_id,
+                                street: data.street
+                            }}
+                            onChange={(address) => {
+                                setData('region_id', address.region_id);
+                                setData('province_id', address.province_id);
+                                setData('city_id', address.city_id);
+                                setData('barangay_id', address.barangay_id);
+                                setData('street', address.street);
+                            }}
+                            errors={{
+                                region_id: errors.region_id,
+                                province_id: errors.province_id,
+                                city_id: errors.city_id,
+                                barangay_id: errors.barangay_id,
+                                street: errors.street
+                            }}
                         />
-                        {errors.address && <p className="text-red-600 text-sm mt-1">{errors.address}</p>}
                     </div>
 
                     <div className="flex gap-3 pt-4">
