@@ -332,7 +332,7 @@ class CashierTransactionController extends Controller
             'discount_amount' => $transaction->discount_amount,
             'discount_name' => $transaction->discount_name,
             'discount_rate' => $transaction->discount_rate,
-            'created_at' => $transaction->created_at?->toDateTimeString(),
+            'created_at' => $transaction->created_at?->format('Y-m-d h:i:s A'),
             'tests' => $transaction->tests->map(fn(TransactionTest $test) => [
                 'id' => $test->id,
                 'name' => $test->test_name,

@@ -101,9 +101,8 @@ export default function TestResultDetailsModal({ testId, show, onClose }) {
         return (
             <div className="space-y-3">
                 {Object.entries(values).map(([key, value]) => {
-                    // Skip internal/metadata fields
-                    if (key === "result_value" || key === "metadata")
-                        return null;
+                    // Skip metadata fields only
+                    if (key === "metadata") return null;
 
                     const displayKey = key
                         .replace(/_/g, " ")
