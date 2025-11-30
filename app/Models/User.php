@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'role',
         'is_active',
+        'is_super_admin',
         'password',
     ];
 
@@ -46,6 +47,24 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'is_super_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * Check if user is a super admin (protected account)
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->is_super_admin === true;
+    }
+
+    /**
+     * Check if this user can be deleted/deactivated
+     */
+    public function canBeModified(): bool
+    {
+        return !$this->is_super_admin;
     }
 }
