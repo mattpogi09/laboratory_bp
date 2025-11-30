@@ -13,8 +13,15 @@ class AddressController extends Controller
     /**
      * Get all regions
      */
-    public function getRegions()
+    public function getRegions(Request $request)
     {
+        // Log for debugging
+        \Log::info('AddressController::getRegions called', [
+            'user' => $request->user()?->id,
+            'has_auth' => $request->user() !== null,
+            'headers' => $request->headers->all(),
+        ]);
+        
         $regions = Region::orderBy('name')->get(['id', 'name', 'code', 'region_id']);
         
         return response()->json($regions);
