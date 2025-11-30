@@ -258,7 +258,7 @@ export default function DiscountsPhilhealthIndex({ auth, discounts, philHealthPl
                                                 Plan Name ↕
                                             </div>
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-nowrap">
                                             <div className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors" onClick={() => handleSort('coverage_rate')}>
                                                 Coverage Rate ↕
                                             </div>

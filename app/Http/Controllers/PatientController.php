@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Patient;
+use App\Models\TransactionTest;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,6 +21,10 @@ class PatientController extends Controller
         $perPage = $request->input('per_page', 20);
 
         $patientsQuery = Patient::with(['transactions.tests', 'region', 'province', 'city', 'barangay'])
+            // Only show active patients for non-admin users
+            ->when(auth()->user()->role !== 'admin', function ($query) {
+                $query->where('is_active', true);
+            })
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->whereRaw("CONCAT(first_name, ' ', last_name) ILIKE ?", ["%{$search}%"])
@@ -35,6 +40,7 @@ class PatientController extends Controller
             $tests = $patient->transactions->flatMap(function ($transaction) {
                 return $transaction->tests->map(function ($test) use ($transaction) {
                     return [
+                        'id' => $test->id, // Add test ID for fetching details
                         'name' => $test->test_name,
                         'date' => $transaction->created_at->format('Y-m-d'),
                         'status' => $test->status,
@@ -51,6 +57,7 @@ class PatientController extends Controller
                 'last_name' => $patient->last_name,
                 'middle_name' => $patient->middle_name,
                 'email' => $patient->email,
+                'is_active' => $patient->is_active,
                 'age' => $patient->age,
                 'gender' => $patient->gender,
                 'contact_number' => $patient->contact_number,
@@ -217,6 +224,7 @@ class PatientController extends Controller
         }
 
         $patients = Patient::with(['region', 'province', 'city', 'barangay'])
+            ->active() // Only show active patients for cashier/lab staff
             ->where(function ($q) use ($query) {
                 $q->where('first_name', 'ILIKE', "%{$query}%")
                     ->orWhere('last_name', 'ILIKE', "%{$query}%")
@@ -249,6 +257,93 @@ class PatientController extends Controller
             });
 
         return response()->json($patients);
+    }
+
+    /**
+     * Get detailed test result information
+     */
+    public function getTestDetails(Request $request, $transactionTestId)
+    {
+        $transactionTest = TransactionTest::with([
+            'performedBy:id,name,email',
+            'labTest:id,name,code,category,description'
+        ])->findOrFail($transactionTestId);
+
+        return response()->json([
+            'id' => $transactionTest->id,
+            'test_name' => $transactionTest->test_name,
+            'category' => $transactionTest->category,
+            'status' => $transactionTest->status,
+            'price' => $transactionTest->price,
+            'result_values' => $transactionTest->result_values,
+            'result_notes' => $transactionTest->result_notes,
+            'normal_range' => $transactionTest->normal_range, // Use actual normal_range from transaction test
+            'started_at' => $transactionTest->started_at?->format('Y-m-d H:i:s'),
+            'completed_at' => $transactionTest->completed_at?->format('Y-m-d H:i:s'),
+            'released_at' => $transactionTest->released_at?->format('Y-m-d H:i:s'),
+            'performed_by' => $transactionTest->performedBy ? [
+                'id' => $transactionTest->performedBy->id,
+                'name' => $transactionTest->performedBy->name,
+                'email' => $transactionTest->performedBy->email,
+            ] : null,
+            'documents' => $transactionTest->result_images ?? [],
+        ]);
+    }
+
+    /**
+     * Activate a patient
+     */
+    public function activate(Patient $patient)
+    {
+        if ($patient->is_active) {
+            return redirect()->back()->with('info', 'Patient is already active.');
+        }
+
+        $patient->update(['is_active' => true]);
+
+        app(AuditLogger::class)->log(
+            'activate',
+            'patient_management',
+            "Activated patient: {$patient->full_name}",
+            [
+                'patient_id' => $patient->id,
+                'patient_name' => $patient->full_name,
+                'action' => 'activated',
+            ],
+            'info',
+            'Patient',
+            $patient->id
+        );
+
+        return redirect()->back()->with('success', 'Patient activated successfully.');
+    }
+
+    /**
+     * Deactivate a patient
+     */
+    public function deactivate(Patient $patient)
+    {
+        if (!$patient->is_active) {
+            return redirect()->back()->with('info', 'Patient is already deactivated.');
+        }
+
+        $patient->update(['is_active' => false]);
+
+        app(AuditLogger::class)->log(
+            'deactivate',
+            'patient_management',
+            "Deactivated patient: {$patient->full_name}",
+            [
+                'patient_id' => $patient->id,
+                'patient_name' => $patient->full_name,
+                'action' => 'deactivated',
+            ],
+            'warning',
+            'Patient',
+            $patient->id
+        );
+
+        return redirect()->back()->with('success', 'Patient deactivated successfully.');
     }
 }
 

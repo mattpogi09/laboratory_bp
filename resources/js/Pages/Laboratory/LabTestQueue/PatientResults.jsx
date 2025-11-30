@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Search, Send, FileText, Bell, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
+import { Search, Send, FileText, Bell, ChevronLeft, ChevronRight, ArrowUpDown, AlertTriangle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SendResultsModal from './SendResultsModal';
 import NotifyPatientModal from './NotifyPatientModal';
@@ -12,6 +12,9 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [showSendModal, setShowSendModal] = useState(false);
     const [showNotifyModal, setShowNotifyModal] = useState(false);
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [incompleteTests, setIncompleteTests] = useState([]);
+    const [errorAction, setErrorAction] = useState(null); // 'send' or 'notify'
     const [isSearching, setIsSearching] = useState(false);
     const [sortBy, setSortBy] = useState(filters.sort_by || 'created_at');
     const [sortOrder, setSortOrder] = useState(filters.sort_order || 'desc');
@@ -60,24 +63,43 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
     };
 
     const handleSendResults = (transaction) => {
-        // Check if all tests are completed
-        const incomplete = transaction.tests?.filter(test => test.status !== 'completed') || [];
+        // Check if there are any pending or processing tests BEFORE opening modal
+        const incomplete = transaction.tests?.filter(test => {
+            const status = (test.status || '').toLowerCase();
+            return status === 'pending' || status === 'processing';
+        }) || [];
         
         if (incomplete.length > 0) {
             // Show error modal with incomplete tests
-            setSelectedTransaction({
-                ...transaction,
-                incompleteTests: incomplete
-            });
-            setShowSendModal(true);
-        } else {
-            // All tests completed, show send modal
+            setIncompleteTests(incomplete);
             setSelectedTransaction(transaction);
-            setShowSendModal(true);
+            setErrorAction('send');
+            setShowErrorModal(true);
+            return;
         }
+
+        // All tests completed, open send modal
+        setSelectedTransaction(transaction);
+        setShowSendModal(true);
     };
 
     const handleNotifyPatient = (transaction) => {
+        // Check if there are any pending or processing tests BEFORE opening modal
+        const incomplete = transaction.tests?.filter(test => {
+            const status = (test.status || '').toLowerCase();
+            return status === 'pending' || status === 'processing';
+        }) || [];
+        
+        if (incomplete.length > 0) {
+            // Show error modal with incomplete tests
+            setIncompleteTests(incomplete);
+            setSelectedTransaction(transaction);
+            setErrorAction('notify');
+            setShowErrorModal(true);
+            return;
+        }
+
+        // All tests completed, open notify modal
         setSelectedTransaction(transaction);
         setShowNotifyModal(true);
     };
@@ -114,16 +136,16 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
                         <thead>
                             <tr className="border-b border-gray-200 bg-gray-50">
                                 <th 
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                                     onClick={() => handleSort('transaction_number')}
                                 >
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 wrap text-nowrap">
                                         Transaction Code
                                         <ArrowUpDown className="h-3 w-3" />
                                     </div>
                                 </th>
                                 <th 
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                                     onClick={() => handleSort('patient_name')}
                                 >
                                     <div className="flex items-center gap-1">
@@ -131,28 +153,28 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
                                         <ArrowUpDown className="h-3 w-3" />
                                     </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Tests
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Email
                                 </th>
                                 <th 
-                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                                     onClick={() => handleSort('created_at')}
                                 >
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 ">
                                         Date
                                         <ArrowUpDown className="h-3 w-3" />
                                     </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider wrap text-nowrap">
                                     Completed Tests
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
@@ -176,7 +198,7 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
                                             <span className="text-sm text-gray-900">{transaction.patient_name}</span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-700">
+                                            <div className="text-sm text-gray-700 wrap text-nowrap">
                                                 {transaction.tests?.map((test, idx) => test.test_name).join(', ')}
                                             </div>
                                         </td>
@@ -187,13 +209,31 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
                                             <span className="text-sm text-gray-600">{transaction.created_at}</span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                All Completed
-                                            </span>
+                                            {(() => {
+                                                const incompleteTests = transaction.tests?.filter(test => {
+                                                    const status = (test.status || '').toLowerCase();
+                                                    return status === 'pending' || status === 'processing';
+                                                }) || [];
+                                                const allCompleted = incompleteTests.length === 0 && transaction.tests && transaction.tests.length > 0;
+                                                
+                                                if (allCompleted) {
+                                                    return (
+                                                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                            All Completed
+                                                        </span>
+                                                    );
+                                                } else {
+                                                    return (
+                                                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                            {incompleteTests.length} Pending
+                                                        </span>
+                                                    );
+                                                }
+                                            })()}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
+                                        <td className="px-6 py-4 whitespace-nowrap text-center">
                                             <span className="text-sm font-medium text-gray-900">
-                                                {transaction.completed_tests_count || 0}
+                                                {transaction.completed_tests_count || 0} / {transaction.total_tests_count || transaction.tests?.length || 0}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -296,6 +336,98 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
                         setSelectedTransaction(null);
                     }}
                 />
+            )}
+
+            {/* Error Modal for Incomplete Tests */}
+            {showErrorModal && selectedTransaction && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    <div className="flex min-h-screen items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => {
+                            setShowErrorModal(false);
+                            setIncompleteTests([]);
+                            setSelectedTransaction(null);
+                            setErrorAction(null);
+                        }} />
+                        
+                        <div className="relative w-full max-w-md bg-white rounded-xl shadow-xl">
+                            {/* Error Header */}
+                            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900">
+                                            Cannot {errorAction === 'send' ? 'Send Results' : 'Notify Patient'}
+                                        </h3>
+                                        <p className="text-sm text-gray-500">Some tests are not completed</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowErrorModal(false);
+                                        setIncompleteTests([]);
+                                        setSelectedTransaction(null);
+                                        setErrorAction(null);
+                                    }}
+                                    className="text-gray-400 hover:text-gray-500 transition-colors"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            {/* Error Content */}
+                            <div className="px-6 py-4">
+                                <div className="mb-4">
+                                    <p className="text-sm font-medium text-gray-900 mb-1">Patient:</p>
+                                    <p className="text-sm text-gray-700">{selectedTransaction.patient_name}</p>
+                                </div>
+                                
+                                <p className="text-sm text-gray-700 mb-4">
+                                    The following tests are not yet completed. Please process them first before {errorAction === 'send' ? 'sending the results' : 'sending the notification'}:
+                                </p>
+                                
+                                <div className="space-y-2 mb-4">
+                                    {incompleteTests.map((test, index) => (
+                                        <div key={index} className="flex items-center justify-between bg-red-50 border border-red-200 rounded-lg p-3">
+                                            <div className="flex items-center gap-2">
+                                                <AlertTriangle className="h-4 w-4 text-red-600" />
+                                                <span className="text-sm font-medium text-gray-900">{test.test_name}</span>
+                                            </div>
+                                            <span className={cn(
+                                                "inline-flex px-2 py-1 text-xs font-semibold rounded-full uppercase",
+                                                test.status === 'processing' ? 'bg-yellow-200 text-yellow-900' : 'bg-red-200 text-red-900'
+                                            )}>
+                                                {test.status}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <p className="text-xs text-blue-800">
+                                        <strong>Note:</strong> Go to Lab Test Queue to complete the pending tests before {errorAction === 'send' ? 'sending results' : 'sending notification'} to the patient.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="border-t border-gray-200 px-6 py-4 flex justify-end">
+                                <button
+                                    onClick={() => {
+                                        setShowErrorModal(false);
+                                        setIncompleteTests([]);
+                                        setSelectedTransaction(null);
+                                        setErrorAction(null);
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </DashboardLayout>
     );

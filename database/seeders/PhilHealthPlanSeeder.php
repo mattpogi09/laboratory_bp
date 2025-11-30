@@ -34,7 +34,10 @@ class PhilHealthPlanSeeder extends Seeder
         ];
 
         foreach ($plans as $plan) {
-            PhilHealthPlan::create($plan);
+            PhilHealthPlan::updateOrCreate(
+                ['name' => $plan['name']],
+                $plan
+            );
         }
     }
 }

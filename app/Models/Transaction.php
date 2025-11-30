@@ -88,6 +88,11 @@ class Transaction extends Model
         return $this->hasMany(TransactionEvent::class)->latest();
     }
 
+    public function resultSubmission()
+    {
+        return $this->hasOne(ResultSubmission::class);
+    }
+
     // Address relationships using PSGC codes (strings)
     public function region()
     {

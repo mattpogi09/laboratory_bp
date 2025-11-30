@@ -18,6 +18,8 @@ class TransactionTest extends Model
         'status',
         'result_values',
         'result_notes',
+        'normal_range',
+        'result_images',
         'performed_by',
         'started_at',
         'completed_at',
@@ -27,6 +29,7 @@ class TransactionTest extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'result_values' => 'array',
+        'result_images' => 'array',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
         'released_at' => 'datetime',

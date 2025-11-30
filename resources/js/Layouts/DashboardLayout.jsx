@@ -173,11 +173,14 @@ export default function DashboardLayout({ children, auth }) {
                 </nav>
 
                 {/* User section */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <div className="flex items-center px-3 py-2 text-sm font-medium text-gray-300">
-                        <div className="ml-3">
-                            <p className="text-sm font-medium text-black">{user?.name || 'User'}</p>
-                            <p className="text-xs text-black capitalize">{userRole?.replace('_', ' ') || 'User'}</p>
+                <div className="absolute bottom-0 left-0 right-0 p-4 border-black">
+                    <div className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-300">
+                        <div className="h-10 w-10 rounded-full bg-red-900 flex items-center justify-center text-white text-lg font-semibold flex-shrink-0">
+                            {(user?.name || 'User').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-sm font-medium text-black truncate">{user?.name || 'User'}</p>
+                            <p className="text-xs text-black capitalize truncate">{userRole?.replace('_', ' ') || 'User'}</p>
                         </div>
                     </div>
                     <button

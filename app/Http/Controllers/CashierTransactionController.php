@@ -47,9 +47,9 @@ class CashierTransactionController extends Controller
             'todayTransactions' => Transaction::today()->count(),
             'pendingLab' => Transaction::where('lab_status', 'pending')->count(),
             'processingLab' => Transaction::where('lab_status', 'processing')->count(),
-            'completedToday' => Transaction::where('lab_status', 'completed')
-                ->whereDate('updated_at', now()->toDateString())
-                ->count(),
+            'completedLab' => Transaction::where('lab_status', 'completed')->count(),
+            'releasedLab' => Transaction::where('lab_status', 'released')->count(),
+            'totalTests' => TransactionTest::count(),
         ];
 
         $nextQueueNumber = ((int) Transaction::today()->max('queue_number')) + 1;
@@ -132,7 +132,7 @@ class CashierTransactionController extends Controller
             'tests' => ['required', 'array', 'min:1'],
             'tests.*.id' => ['required', 'exists:lab_tests,id'],
             'payment.method' => ['required', 'string', 'max:50'],
-            'payment.amount_tendered' => ['nullable', 'numeric', 'min:0'],
+            'payment.amount_tendered' => ['required', 'numeric', 'min:0.01'],
             'discount' => ['nullable', 'array'],
             'discount.id' => ['nullable', 'string', 'max:100'],
             'discount.name' => ['nullable', 'string', 'max:255'],
@@ -160,8 +160,9 @@ class CashierTransactionController extends Controller
             'tests.min' => 'Please select at least one lab test.',
             'tests.*.id.exists' => 'One or more selected tests are invalid.',
             'payment.method.required' => 'Payment method is required.',
-            'payment.amount_tendered.numeric' => 'Amount tendered must be a valid number.',
-            'payment.amount_tendered.min' => 'Amount tendered cannot be negative.',
+            'payment.amount_tendered.required' => 'Amount paid is required.',
+            'payment.amount_tendered.numeric' => 'Amount paid must be a valid number.',
+            'payment.amount_tendered.min' => 'Amount paid must be greater than zero.',
             'discount.rate.numeric' => 'Discount rate must be a number.',
             'discount.rate.min' => 'Discount rate cannot be negative.',
             'discount.rate.max' => 'Discount rate cannot exceed 100%.',
@@ -469,8 +470,11 @@ class CashierTransactionController extends Controller
             ->take($limit)
             ->get()
             ->map(function (Transaction $transaction) {
-                // Force reload from database to get latest lab_status
+                // Force reload from database to get latest lab_status and tests
                 $transaction->refresh();
+                $transaction->load('tests');
+                // Ensure lab_status is up to date based on current test statuses
+                $transaction->refreshLabStatus();
                 return $this->transformTransaction($transaction);
             })
             ->values();

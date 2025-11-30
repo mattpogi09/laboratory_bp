@@ -43,10 +43,15 @@ Route::middleware('auth')->group(function () {
     // Patient routes with rate limiting (20 operations per minute)
     Route::middleware('throttle:20,1')->group(function () {
         Route::resource('patients', PatientController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::post('/patients/{patient}/activate', [PatientController::class, 'activate'])->name('patients.activate');
+        Route::post('/patients/{patient}/deactivate', [PatientController::class, 'deactivate'])->name('patients.deactivate');
     });
 
     // Search endpoint with higher limit (60 searches per minute)
     Route::middleware('throttle:60,1')->get('/api/patients/search', [PatientController::class, 'search'])->name('patients.search');
+
+    // Get test result details
+    Route::get('/api/patients/test-details/{transactionTestId}', [PatientController::class, 'getTestDetails'])->name('patients.test-details');
 
     // User management with rate limiting (15 per minute)
     Route::middleware('throttle:15,1')->prefix('users')->name('users.')->group(function () {

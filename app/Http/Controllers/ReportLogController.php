@@ -21,11 +21,20 @@ class ReportLogController extends Controller
             'from' => 'nullable|date',
             'to' => 'nullable|date|after_or_equal:from',
             'tab' => 'nullable|string|in:financial,lab,inventory,audit',
+            'period' => 'nullable|string|in:day,week,month,year',
         ]);
 
         $dateFrom = $validated['from'] ?? null;
         $dateTo = $validated['to'] ?? null;
         $activeTab = $validated['tab'] ?? 'financial';
+        $period = $validated['period'] ?? null;
+
+        // If period is set, calculate date range
+        if ($period && !$dateFrom && !$dateTo) {
+            $dateRange = $this->getDateRange($period);
+            $dateFrom = $dateRange[0]->format('Y-m-d');
+            $dateTo = $dateRange[1]->format('Y-m-d');
+        }
 
         // Log report generation
         if ($dateFrom || $dateTo) {
@@ -39,7 +48,7 @@ class ReportLogController extends Controller
             $auditLogger->logReportGenerated($reportType, $dateFrom, $dateTo);
         }
 
-        $transactionsQuery = Transaction::with('tests')
+        $transactionsQuery = Transaction::with(['tests', 'cashier'])
             ->latest();
 
         $labTestsQuery = TransactionTest::with(['transaction', 'performedBy'])
@@ -62,6 +71,7 @@ class ReportLogController extends Controller
             return [
                 'id' => $transaction->id,
                 'date' => $transaction->created_at?->toDateString(),
+                'transaction_number' => $transaction->transaction_number,
                 'patient' => $transaction->patient_full_name,
                 'tests' => $transaction->tests->pluck('test_name')->implode(', '),
                 'amount' => $transaction->total_amount,
@@ -70,6 +80,7 @@ class ReportLogController extends Controller
                 'net_amount' => $transaction->net_total,
                 'payment_method' => $transaction->payment_method,
                 'payment_status' => $transaction->payment_status,
+                'performed_by' => $transaction->cashier ? $transaction->cashier->name . ' (Cashier)' : 'Unknown',
             ];
         });
 
@@ -122,6 +133,7 @@ class ReportLogController extends Controller
                 'from' => $dateFrom,
                 'to' => $dateTo,
                 'tab' => $activeTab,
+                'period' => $period,
             ],
             'financial' => [
                 'rows' => $financialRows,
@@ -271,6 +283,17 @@ class ReportLogController extends Controller
                 'severity' => $severityFilter,
             ],
         ];
+    }
+
+    private function getDateRange($period)
+    {
+        return match ($period) {
+            'day' => [now()->startOfDay(), now()->endOfDay()],
+            'week' => [now()->startOfWeek(), now()->endOfWeek()],
+            'month' => [now()->startOfMonth(), now()->endOfMonth()],
+            'year' => [now()->startOfYear(), now()->endOfYear()],
+            default => [now()->startOfDay(), now()->endOfDay()],
+        };
     }
 }
 

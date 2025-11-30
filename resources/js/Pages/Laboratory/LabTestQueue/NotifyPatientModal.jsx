@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
-import { X, Bell, Mail, User, FileText, AlertTriangle } from 'lucide-react';
+import { X, Bell, Mail, User, FileText, AlertTriangle, MapPin } from 'lucide-react';
 import Modal from '@/Components/Modal';
 import LoadingOverlay from '@/Components/LoadingOverlay';
 
@@ -8,8 +8,55 @@ export default function NotifyPatientModal({ show, transaction, onClose }) {
     const [processing, setProcessing] = useState(false);
     const [showError, setShowError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const [incompleteTests, setIncompleteTests] = useState([]);
+
+    // Debug: Log transaction tests when modal opens
+    useEffect(() => {
+        if (show && transaction?.tests) {
+            console.log('Transaction tests:', transaction.tests);
+            const incomplete = transaction.tests.filter(test => {
+                const status = (test.status || '').toLowerCase();
+                return status === 'pending' || status === 'processing';
+            });
+            if (incomplete.length > 0) {
+                console.log('Incomplete tests found:', incomplete);
+            }
+        }
+    }, [show, transaction]);
 
     const handleNotify = () => {
+        // Check if there are any pending or processing tests (case-insensitive)
+        const incomplete = transaction.tests?.filter(test => {
+            const status = (test.status || '').toLowerCase();
+            return status === 'pending' || status === 'processing';
+        }) || [];
+        
+        if (incomplete.length > 0) {
+            setIncompleteTests(incomplete);
+            setShowError(true);
+            setProcessing(false);
+            return;
+        }
+
+        // Verify all tests are completed or released
+        const allCompleted = transaction.tests?.every(test => {
+            const status = (test.status || '').toLowerCase();
+            return status === 'completed' || status === 'released';
+        }) ?? false;
+
+        if (!allCompleted && transaction.tests && transaction.tests.length > 0) {
+            // Some tests might have unexpected status
+            const incomplete = transaction.tests.filter(test => {
+                const status = (test.status || '').toLowerCase();
+                return status !== 'completed' && status !== 'released';
+            });
+            setIncompleteTests(incomplete);
+            setShowError(true);
+            setProcessing(false);
+            return;
+        }
+
+        // All tests completed, proceed with notification
         setProcessing(true);
         
         router.post(
@@ -68,6 +115,11 @@ export default function NotifyPatientModal({ show, transaction, onClose }) {
                         <Mail className="h-4 w-4 text-gray-500" />
                         <span className="text-sm font-medium text-gray-700">Email:</span>
                         <span className="text-sm text-gray-900">{transaction.patient_email}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium text-gray-700">Address:</span>
+                        <span className="text-sm text-gray-900">{transaction.patient_address || 'No address'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4 text-gray-500" />
@@ -129,11 +181,92 @@ export default function NotifyPatientModal({ show, transaction, onClose }) {
                 </div>
             </div>
 
-            {/* Error Modal */}
-            {showError && (
+            {/* Error Modal for Incomplete Tests */}
+            {showError && incompleteTests.length > 0 && (
                 <div className="fixed inset-0 z-[60] overflow-y-auto">
                     <div className="flex min-h-screen items-center justify-center p-4">
-                        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowError(false)} />
+                        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => {
+                            setShowError(false);
+                            setIncompleteTests([]);
+                        }} />
+                        
+                        <div className="relative w-full max-w-md bg-white rounded-xl shadow-xl">
+                            {/* Error Header */}
+                            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900">Cannot Send Notification</h3>
+                                        <p className="text-sm text-gray-500">Some tests are not completed</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setShowError(false);
+                                        setIncompleteTests([]);
+                                    }}
+                                    className="text-gray-400 hover:text-gray-500 transition-colors"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            {/* Error Content */}
+                            <div className="px-6 py-4">
+                                <p className="text-sm text-gray-700 mb-4">
+                                    The following tests are not yet completed. Please process them first before sending the notification:
+                                </p>
+                                
+                                <div className="space-y-2 mb-4">
+                                    {incompleteTests.map((test, index) => (
+                                        <div key={index} className="flex items-center justify-between bg-red-50 border border-red-200 rounded-lg p-3">
+                                            <div className="flex items-center gap-2">
+                                                <AlertTriangle className="h-4 w-4 text-red-600" />
+                                                <span className="text-sm font-medium text-gray-900">{test.test_name}</span>
+                                            </div>
+                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full uppercase ${
+                                                test.status === 'processing' ? 'bg-yellow-200 text-yellow-900' : 'bg-red-200 text-red-900'
+                                            }`}>
+                                                {test.status}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <p className="text-xs text-blue-800">
+                                        <strong>Note:</strong> Go to Lab Test Queue to complete the pending tests before sending notification to the patient.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="border-t border-gray-200 px-6 py-4 flex justify-end">
+                                <button
+                                    onClick={() => {
+                                        setShowError(false);
+                                        setIncompleteTests([]);
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* General Error Modal (for email/sending failures) */}
+            {showError && incompleteTests.length === 0 && errorMessage && (
+                <div className="fixed inset-0 z-[60] overflow-y-auto">
+                    <div className="flex min-h-screen items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => {
+                            setShowError(false);
+                            setErrorMessage('');
+                        }} />
                         
                         <div className="relative w-full max-w-md bg-white rounded-xl shadow-xl p-6">
                             <div className="text-center">

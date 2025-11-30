@@ -66,6 +66,12 @@ class LabTestQueueController extends Controller
     {
         $query = TransactionTest::with(['transaction', 'transaction.patient'])
             ->where('status', $status)
+            // Filter out tests from deactivated patients for non-admin users
+            ->when(auth()->user()->role !== 'admin', function ($q) {
+                $q->whereHas('transaction.patient', function ($patientQuery) {
+                    $patientQuery->where('is_active', true);
+                });
+            })
             ->orderBy('updated_at', 'desc');
 
         $countQuery = clone $query;
@@ -133,10 +139,21 @@ class LabTestQueueController extends Controller
         $sortOrder = $request->input('sort_order', 'desc');
         $perPage = $request->input('per_page', 20);
 
-        // Get transactions where at least one test is completed
-        $query = Transaction::with(['patient', 'tests'])
-            ->whereHas('tests', function ($query) {
-                $query->where('status', 'completed');
+        // Get transactions where ALL tests are completed (not just at least one)
+        // Only show patients when every single test is completed or released
+        $query = Transaction::with([
+            'patient', 
+            'tests',
+            'region',
+            'province',
+            'city',
+            'barangay'
+        ])
+            // Must have at least one test
+            ->whereHas('tests')
+            // Must NOT have any pending or processing tests
+            ->whereDoesntHave('tests', function ($query) {
+                $query->whereIn('status', ['pending', 'processing']);
             });
 
         // Apply search filter
@@ -162,6 +179,22 @@ class LabTestQueueController extends Controller
         $transactions = $query->paginate($perPage)
             ->through(function ($transaction) {
                 $patient = $transaction->patient;
+                
+                // Check if all tests are completed or released
+                $allTests = $transaction->tests;
+                $incompleteTests = $allTests->filter(function($test) {
+                    $status = strtolower($test->status ?? '');
+                    return $status !== 'completed' && $status !== 'released';
+                });
+                $allCompleted = $incompleteTests->count() === 0 && $allTests->count() > 0;
+                
+                // Get formatted address from transaction (includes all address components)
+                $formattedAddress = $transaction->patient_formatted_address;
+                if (empty($formattedAddress) || $formattedAddress === '') {
+                    // Fallback to patient's formatted address if transaction doesn't have it
+                    $formattedAddress = $patient?->formatted_address ?? 'No address';
+                }
+                
                 return [
                     'id' => $transaction->id,
                     'transaction_number' => $transaction->transaction_number,
@@ -170,9 +203,11 @@ class LabTestQueueController extends Controller
                         : $transaction->patient_full_name,
                     'patient_email' => $patient?->email ?? 'No email',
                     'patient_age' => $patient?->age ?? $transaction->patient_age,
-                    'patient_address' => $patient?->address ?? 'No address',
+                    'patient_address' => $formattedAddress,
                     'created_at' => $transaction->created_at->format('M d, Y g:i A'),
-                    'completed_tests_count' => $transaction->tests->where('status', 'completed')->count(),
+                    'completed_tests_count' => $transaction->tests->whereIn('status', ['completed', 'released'])->count(),
+                    'total_tests_count' => $transaction->tests->count(),
+                    'all_completed' => $allCompleted,
                     'tests' => $transaction->tests->map(function ($test) {
                         return [
                             'id' => $test->id,
@@ -210,16 +245,33 @@ class LabTestQueueController extends Controller
     {
         $request->validate([
             'transaction_id' => 'required|exists:transactions,id',
-            'documents.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            'test_documents.*.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
         try {
             DB::beginTransaction();
 
-            $transaction = Transaction::with(['patient', 'tests'])->findOrFail($request->transaction_id);
+            $transaction = Transaction::with([
+                'patient',
+                'tests',
+                'region',
+                'province',
+                'city',
+                'barangay'
+            ])->findOrFail($request->transaction_id);
+            
+            // Refresh to get latest test statuses
+            $transaction->refresh();
+            $transaction->load(['tests', 'region', 'province', 'city', 'barangay']);
 
-            // Check if all tests are completed
-            $incompleteTests = $transaction->tests->filter(fn($test) => $test->status !== 'completed');
+            // Ensure we have all tests for this transaction
+            $allTests = $transaction->tests()->get();
+            
+            // Check if all tests are completed or released
+            $incompleteTests = $allTests->filter(function($test) {
+                $status = strtolower($test->status ?? '');
+                return $status !== 'completed' && $status !== 'released';
+            });
 
             if ($incompleteTests->count() > 0) {
                 $this->auditLogger->log(
@@ -231,24 +283,57 @@ class LabTestQueueController extends Controller
                         'patient_name' => $transaction->patient ?
                             $transaction->patient->first_name . ' ' . $transaction->patient->last_name :
                             $transaction->patient_full_name,
-                        'incomplete_tests' => $incompleteTests->pluck('test_name')->toArray(),
+                        'incomplete_tests' => $incompleteTests->map(function($test) {
+                            return [
+                                'test_name' => $test->test_name,
+                                'status' => $test->status,
+                            ];
+                        })->toArray(),
                     ],
                     'warning'
                 );
 
-                return back()->with('error', 'Cannot send results. Some tests are not completed yet.');
+                DB::rollBack();
+                
+                // Format incomplete tests for display
+                $incompleteTestsList = $incompleteTests->map(function($test) {
+                    return $test->test_name . ' (' . ucfirst($test->status) . ')';
+                })->implode(', ');
+                
+                return back()->with('error', 'Cannot send results. The following tests are not completed yet: ' . $incompleteTestsList);
             }
 
-            // Handle document uploads
-            $documentPaths = [];
-            if ($request->hasFile('documents')) {
-                foreach ($request->file('documents') as $document) {
-                    $path = $document->store('result_documents', 'public');
-                    $documentPaths[] = [
-                        'name' => $document->getClientOriginalName(),
-                        'path' => $path,
-                        'size' => $document->getSize(),
-                    ];
+            // Handle per-test document uploads
+            $allDocuments = [];
+            if ($request->has('test_documents')) {
+                foreach ($request->test_documents as $testId => $documents) {
+                    if (is_array($documents)) {
+                        $testDocuments = [];
+                        foreach ($documents as $document) {
+                            if ($document && $document->isValid()) {
+                                $path = $document->store('result_documents', 'public');
+                                $testDocuments[] = [
+                                    'name' => $document->getClientOriginalName(),
+                                    'path' => $path,
+                                    'size' => $document->getSize(),
+                                ];
+                                $allDocuments[] = [
+                                    'name' => $document->getClientOriginalName(),
+                                    'path' => $path,
+                                    'size' => $document->getSize(),
+                                ];
+                            }
+                        }
+                        
+                        // Update the transaction_test with images
+                        if (!empty($testDocuments)) {
+                            $test = TransactionTest::find($testId);
+                            if ($test) {
+                                $test->result_images = $testDocuments;
+                                $test->save();
+                            }
+                        }
+                    }
                 }
             }
 
@@ -258,7 +343,7 @@ class LabTestQueueController extends Controller
                 'sent_by' => auth()->id(),
                 'sent_at' => now(),
                 'submission_type' => 'full_results',
-                'documents' => $documentPaths,
+                'documents' => $allDocuments,
             ]);
 
             // Check if patient has email
@@ -269,7 +354,7 @@ class LabTestQueueController extends Controller
             }
 
             // Send results email with attachments
-            \Mail::to($patientEmail)->send(new \App\Mail\SendResultsMail($transaction, $documentPaths));
+            \Mail::to($patientEmail)->send(new \App\Mail\SendResultsMail($transaction, $allDocuments));
 
             // Update all tests to released status
             $transaction->tests()->update([
@@ -316,7 +401,7 @@ class LabTestQueueController extends Controller
                     'transaction_number' => $transaction->transaction_number,
                     'patient_email' => $transaction->patient?->email,
                     'tests_count' => $transaction->tests->count(),
-                    'documents_count' => count($documentPaths),
+                    'documents_count' => count($allDocuments),
                 ],
                 'info',
                 'Transaction',
@@ -354,11 +439,18 @@ class LabTestQueueController extends Controller
         try {
             DB::beginTransaction();
 
-            // Load relationships
-            $transaction->load(['patient', 'tests']);
+            // Refresh to get latest test statuses
+            $transaction->refresh();
+            $transaction->load(['patient', 'tests', 'region', 'province', 'city', 'barangay']);
 
-            // Check if all tests are completed
-            $incompleteTests = $transaction->tests->filter(fn($test) => $test->status !== 'completed');
+            // Ensure we have all tests for this transaction
+            $allTests = $transaction->tests()->get();
+            
+            // Check if all tests are completed or released
+            $incompleteTests = $allTests->filter(function($test) {
+                $status = strtolower($test->status ?? '');
+                return $status !== 'completed' && $status !== 'released';
+            });
 
             if ($incompleteTests->count() > 0) {
                 $this->auditLogger->log(
@@ -370,12 +462,24 @@ class LabTestQueueController extends Controller
                         'patient_name' => $transaction->patient ?
                             $transaction->patient->first_name . ' ' . $transaction->patient->last_name :
                             $transaction->patient_full_name,
-                        'incomplete_tests' => $incompleteTests->pluck('test_name')->toArray(),
+                        'incomplete_tests' => $incompleteTests->map(function($test) {
+                            return [
+                                'test_name' => $test->test_name,
+                                'status' => $test->status,
+                            ];
+                        })->toArray(),
                     ],
                     'warning'
                 );
 
-                return back()->with('error', 'Cannot notify patient. Some tests are not completed yet.');
+                DB::rollBack();
+                
+                // Format incomplete tests for display
+                $incompleteTestsList = $incompleteTests->map(function($test) {
+                    return $test->test_name . ' (' . ucfirst($test->status) . ')';
+                })->implode(', ');
+                
+                return back()->with('error', 'Cannot notify patient. The following tests are not completed yet: ' . $incompleteTestsList);
             }
 
             // Check if patient has email
@@ -487,6 +591,13 @@ class LabTestQueueController extends Controller
             ->through(function ($submission) {
                 $transaction = $submission->transaction;
                 $patient = $transaction->patient;
+                
+                // Get formatted address from transaction (includes all address components)
+                $formattedAddress = $transaction->patient_formatted_address;
+                if (empty($formattedAddress) || $formattedAddress === '') {
+                    // Fallback to patient's formatted address if transaction doesn't have it
+                    $formattedAddress = $patient?->formatted_address ?? 'No address';
+                }
 
                 return [
                     'id' => $submission->id,
@@ -496,7 +607,7 @@ class LabTestQueueController extends Controller
                         : $transaction->patient_full_name,
                     'patient_email' => $patient?->email ?? 'No email',
                     'patient_age' => $patient?->age ?? $transaction->patient_age,
-                    'patient_address' => $patient?->address ?? 'No address',
+                    'patient_address' => $formattedAddress,
                     'sent_at' => $submission->sent_at->format('M d, Y g:i A'),
                     'sent_by_name' => $submission->sentBy?->name ?? 'Unknown',
                     'submission_type' => $submission->submission_type,
@@ -506,6 +617,13 @@ class LabTestQueueController extends Controller
                             'result' => $test->result_values,
                             'result_notes' => $test->result_notes,
                             'status' => $test->status,
+                            'images' => $test->result_images ? collect($test->result_images)->map(function ($img) {
+                                return [
+                                    'name' => $img['name'] ?? 'Image',
+                                    'size' => isset($img['size']) ? round($img['size'] / 1024, 2) . ' KB' : 'Unknown',
+                                    'url' => Storage::url($img['path']),
+                                ];
+                            })->toArray() : [],
                         ];
                     }),
                     'documents' => collect($submission->documents)->map(function ($doc) {

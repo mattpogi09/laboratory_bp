@@ -99,6 +99,11 @@ The PHP GD extension is required, but is not installed.
 
 <body>
   <div class="header">
+    @if(file_exists(public_path('images/bp_logo.png')))
+      <div style="text-align: center; margin-bottom: 10px;">
+        <img src="{{ public_path('images/bp_logo.png') }}" alt="BP Diagnostic Logo" style="max-width: 120px; height: auto;">
+      </div>
+    @endif
     <h1>BP DIAGNOSTIC LABORATORY</h1>
     <p>Laboratory Test Result Images</p>
     <p style="font-size: 10px;">Transaction: {{ $transaction->transaction_number }}</p>
@@ -120,6 +125,22 @@ The PHP GD extension is required, but is not installed.
       <span>{{ $transaction->created_at->format('F d, Y') }}</span>
     </div>
   </div>
+  
+  @php
+    // Get unique lab staff from all tests
+    $labStaff = $transaction->tests->pluck('performedBy')->filter()->unique('id');
+  @endphp
+  
+  @if($labStaff->count() > 0)
+    <div style="background-color: #eff6ff; padding: 15px; margin-bottom: 20px; border-left: 4px solid #3b82f6;">
+      <h3 style="margin: 0 0 10px 0; color: #1e40af; font-size: 13px;">Processed By Lab Staff</h3>
+      @foreach($labStaff as $staff)
+        <div style="margin: 5px 0; font-size: 11px;">
+          <strong>{{ $staff->name }}</strong> - {{ $staff->email }}
+        </div>
+      @endforeach
+    </div>
+  @endif
 
   @if(isset($documentPaths) && count($documentPaths) > 0)
     @foreach($documentPaths as $index => $document)

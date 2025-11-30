@@ -179,21 +179,21 @@ export default function CreatePatientModal({ show, onClose }) {
                                 region_id: data.region_id,
                                 province_id: data.province_id,
                                 city_id: data.city_id,
-                                barangay_id: data.barangay_id,
+                                barangay_code: data.barangay_code,
                                 street: data.street
                             }}
                             onChange={(address) => {
                                 setData('region_id', address.region_id);
                                 setData('province_id', address.province_id);
                                 setData('city_id', address.city_id);
-                                setData('barangay_id', address.barangay_id);
+                                setData('barangay_code', address.barangay_code);
                                 setData('street', address.street);
                             }}
                             errors={{
                                 region_id: errors.region_id,
                                 province_id: errors.province_id,
                                 city_id: errors.city_id,
-                                barangay_id: errors.barangay_id,
+                                barangay_code: errors.barangay_code,
                                 street: errors.street
                             }}
                             required

@@ -211,10 +211,23 @@ export default function UsersIndex({ auth, users, filters = {} }) {
                                             {user.username !== 'admin' && (
                                                 <button
                                                     onClick={() => handleToggleClick(user)}
-                                                    className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
+                                                    className={`inline-flex items-center gap-1 text-sm font-medium transition-colors ${
+                                                        user.is_active 
+                                                            ? 'text-red-600 hover:text-red-800' 
+                                                            : 'text-green-600 hover:text-green-800'
+                                                    }`}
                                                 >
-                                                    <PowerOff className="h-4 w-4" />
-                                                    Deactivate
+                                                    {user.is_active ? (
+                                                        <>
+                                                            <PowerOff className="h-4 w-4" />
+                                                            Deactivate
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Power className="h-4 w-4" />
+                                                            Activate
+                                                        </>
+                                                    )}
                                                 </button>
                                             )}
                                         </div>

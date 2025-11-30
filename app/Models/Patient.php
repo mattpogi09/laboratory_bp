@@ -18,6 +18,7 @@ class Patient extends Model
         'last_name',
         'middle_name',
         'email',
+        'is_active',
         'age',
         'gender',
         'contact_number',
@@ -31,6 +32,7 @@ class Patient extends Model
 
     protected $casts = [
         'birth_date' => 'date',
+        'is_active' => 'boolean',
     ];
 
     protected $appends = [
@@ -41,6 +43,12 @@ class Patient extends Model
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
+    }
+
+    // Scope for active patients only
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 
     // Address relationships using PSGC codes (strings)

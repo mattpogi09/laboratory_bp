@@ -1,6 +1,6 @@
-import { memo } from 'react';
-import { History } from 'lucide-react';
-import TextField from './TextField';
+import { memo } from "react";
+import { History } from "lucide-react";
+import TextField from "./TextField";
 
 function PaymentSummary({
     payment,
@@ -16,16 +16,17 @@ function PaymentSummary({
     onSelectPhilHealth,
     errors = {},
 }) {
-    const handlePaymentChange = (field) => (e) => onPaymentChange(field, e.target.value);
+    const handlePaymentChange = (field) => (e) =>
+        onPaymentChange(field, e.target.value);
 
     const discountOptionsSafe = [
-        { id: 'none', name: 'No Discount', rate: 0 },
-        ...discountOptions
+        { id: "none", name: "No Discount", rate: 0 },
+        ...discountOptions,
     ];
 
     const philHealthOptionsSafe = [
-        { id: 'none', name: 'No PhilHealth', coverage_rate: 0 },
-        ...philHealthOptions
+        { id: "none", name: "No PhilHealth", coverage_rate: 0 },
+        ...philHealthOptions,
     ];
 
     return (
@@ -33,17 +34,23 @@ function PaymentSummary({
             <header className="flex items-center gap-2">
                 <History className="h-5 w-5 text-red-600" />
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Payment Summary</h2>
-                    <p className="text-sm text-gray-500">Confirm tendered amount, discounts, and method</p>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        Payment Summary
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                        Confirm tendered amount, discounts, and method
+                    </p>
                 </div>
             </header>
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                    <label className="text-sm font-medium text-gray-700">Payment Method</label>
+                    <label className="text-sm font-medium text-gray-700">
+                        Payment Method
+                    </label>
                     <select
                         value={payment.method}
-                        onChange={handlePaymentChange('method')}
+                        onChange={handlePaymentChange("method")}
                         className="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
                     >
                         <option value="cash">Cash</option>
@@ -54,22 +61,31 @@ function PaymentSummary({
                     label="Amount Paid"
                     type="number"
                     min="0"
+                    step="0.01"
                     value={payment.amount_tendered}
-                    onChange={handlePaymentChange('amount_tendered')}
-                    error={errors['payment.amount_tendered']}
+                    onChange={handlePaymentChange("amount_tendered")}
+                    error={errors["payment.amount_tendered"]}
                 />
             </div>
 
             <div>
-                <label className="text-sm font-medium text-gray-700">Base Discount</label>
+                <label className="text-sm font-medium text-gray-700">
+                    Base Discount
+                </label>
                 <select
-                    value={selectedDiscount?.id || 'none'}
+                    value={selectedDiscount?.id || "none"}
                     onChange={(e) => {
                         const value = e.target.value;
-                        if (value === 'none') {
-                            onSelectDiscount({ id: 'none', name: 'No Discount', rate: 0 });
+                        if (value === "none") {
+                            onSelectDiscount({
+                                id: "none",
+                                name: "No Discount",
+                                rate: 0,
+                            });
                         } else {
-                            const next = discountOptions.find((opt) => String(opt.id) === String(value));
+                            const next = discountOptions.find(
+                                (opt) => String(opt.id) === String(value)
+                            );
                             if (next) onSelectDiscount(next);
                         }
                     }}
@@ -77,11 +93,15 @@ function PaymentSummary({
                 >
                     {discountOptionsSafe.map((option) => {
                         // Remove any existing percentage from the name
-                        const cleanName = option.name.replace(/\s*\(\d+(?:\.\d+)?%\)\s*$/, '');
-                        const displayName = option.rate > 0 
-                            ? `${cleanName} (${parseFloat(option.rate)}%)`
-                            : cleanName;
-                        
+                        const cleanName = option.name.replace(
+                            /\s*\(\d+(?:\.\d+)?%\)\s*$/,
+                            ""
+                        );
+                        const displayName =
+                            option.rate > 0
+                                ? `${cleanName} (${parseFloat(option.rate)}%)`
+                                : cleanName;
+
                         return (
                             <option key={option.id} value={option.id}>
                                 {displayName}
@@ -90,20 +110,30 @@ function PaymentSummary({
                     })}
                 </select>
                 {selectedDiscount?.description && (
-                    <p className="mt-1 text-xs text-gray-500">{selectedDiscount.description}</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                        {selectedDiscount.description}
+                    </p>
                 )}
             </div>
 
             <div>
-                <label className="text-sm font-medium text-gray-700">PhilHealth Coverage</label>
+                <label className="text-sm font-medium text-gray-700">
+                    PhilHealth Coverage
+                </label>
                 <select
-                    value={selectedPhilHealth?.id || 'none'}
+                    value={selectedPhilHealth?.id || "none"}
                     onChange={(e) => {
                         const value = e.target.value;
-                        if (value === 'none') {
-                            onSelectPhilHealth({ id: 'none', name: 'No PhilHealth', coverage_rate: 0 });
+                        if (value === "none") {
+                            onSelectPhilHealth({
+                                id: "none",
+                                name: "No PhilHealth",
+                                coverage_rate: 0,
+                            });
                         } else {
-                            const next = philHealthOptions.find((opt) => String(opt.id) === String(value));
+                            const next = philHealthOptions.find(
+                                (opt) => String(opt.id) === String(value)
+                            );
                             if (next) onSelectPhilHealth(next);
                         }
                     }}
@@ -111,29 +141,42 @@ function PaymentSummary({
                 >
                     {philHealthOptionsSafe.map((option) => (
                         <option key={option.id} value={option.id}>
-                            {option.name} {option.coverage_rate > 0 ? `(${parseFloat(option.coverage_rate)}%)` : ''}
+                            {option.name}{" "}
+                            {option.coverage_rate > 0
+                                ? `(${parseFloat(option.coverage_rate)}%)`
+                                : ""}
                         </option>
                     ))}
                 </select>
-                {selectedPhilHealth?.description && selectedPhilHealth?.id !== 'none' && (
-                    <p className="mt-1 text-xs text-gray-500">{selectedPhilHealth.description}</p>
-                )}
+                {selectedPhilHealth?.description &&
+                    selectedPhilHealth?.id !== "none" && (
+                        <p className="mt-1 text-xs text-gray-500">
+                            {selectedPhilHealth.description}
+                        </p>
+                    )}
             </div>
 
             <div className="rounded-lg bg-gray-50 p-4">
                 <dl className="space-y-2 text-sm text-gray-700">
-                    <SummaryRow label="Total Fee" value={formatCurrency(totals.gross)} />
+                    <SummaryRow
+                        label="Total Fee"
+                        value={formatCurrency(totals.gross)}
+                    />
                     {totals.discount > 0 && (
                         <SummaryRow
                             label="Discount"
-                            value={`-₱${Number(totals.discount || 0).toLocaleString()}`}
+                            value={`-₱${Number(
+                                totals.discount || 0
+                            ).toLocaleString()}`}
                             valueClass="text-red-600"
                         />
                     )}
                     {totals.philhealthCoverage > 0 && (
                         <SummaryRow
                             label="PhilHealth Coverage"
-                            value={`-₱${Number(totals.philhealthCoverage || 0).toLocaleString()}`}
+                            value={`-₱${Number(
+                                totals.philhealthCoverage || 0
+                            ).toLocaleString()}`}
                             valueClass="text-blue-600"
                         />
                     )}
@@ -142,7 +185,10 @@ function PaymentSummary({
                         value={formatCurrency(totals.net)}
                         valueClass="font-semibold text-gray-900"
                     />
-                    <SummaryRow label="Amount Paid" value={formatCurrency(totals.tendered)} />
+                    <SummaryRow
+                        label="Amount Paid"
+                        value={formatCurrency(totals.tendered)}
+                    />
                     <SummaryRow
                         label="Change Due"
                         value={formatCurrency(totals.change)}
@@ -157,7 +203,9 @@ function PaymentSummary({
             </div>
 
             <div>
-                <label className="text-sm font-medium text-gray-700">Notes (optional)</label>
+                <label className="text-sm font-medium text-gray-700">
+                    Notes (optional)
+                </label>
                 <textarea
                     rows="3"
                     value={notes}
@@ -191,4 +239,3 @@ function SummaryRow({ label, value, valueClass }) {
 function formatCurrency(value) {
     return `₱${Number(value || 0).toLocaleString()}`;
 }
-

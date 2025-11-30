@@ -68,6 +68,9 @@ class SendResultsMail extends Mailable
       // ============================================
       // PDF 1: Test Results (values and remarks)
       // ============================================
+      // Load transaction with lab staff who performed the tests
+      $this->transaction->load(['tests.performedBy']);
+      
       $resultsPdf = Pdf::loadView('pdf.test-results', [
         'transaction' => $this->transaction,
         'documentPaths' => [] // No images embedded

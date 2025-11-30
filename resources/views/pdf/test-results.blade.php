@@ -128,6 +128,11 @@
 
 <body>
   <div class="header">
+    @if(file_exists(public_path('images/bp_logo.png')))
+      <div style="text-align: center; margin-bottom: 10px;">
+        <img src="{{ public_path('images/bp_logo.png') }}" alt="BP Diagnostic Logo" style="max-width: 120px; height: auto;">
+      </div>
+    @endif
     <h1>BP DIAGNOSTIC LABORATORY</h1>
     <p>Laboratory Test Results Report</p>
     <p style="font-size: 10px;">Transaction: {{ $transaction->transaction_number }}</p>
@@ -164,6 +169,13 @@
         {{ $test->test_name }}
         <span class="test-status">{{ strtoupper($test->status) }}</span>
       </div>
+      
+      @if($test->performedBy)
+        <div style="background-color: #eff6ff; padding: 10px; margin-bottom: 10px; border-left: 3px solid #3b82f6; font-size: 11px;">
+          <strong style="color: #1e40af;">Processed By:</strong> {{ $test->performedBy->name }}<br>
+          <span style="color: #6b7280;">{{ $test->performedBy->email }}</span>
+        </div>
+      @endif
 
       @if($test->result_values && is_array($test->result_values))
         <table class="result-table">
