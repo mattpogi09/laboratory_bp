@@ -30,8 +30,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Address API Routes
-    Route::prefix('api/address')->name('address.')->group(function () {
+    // Address Routes (for web frontend - uses session auth)
+    // Note: Mobile API uses /api/address/* routes defined in routes/api.php with Sanctum auth
+    Route::prefix('address')->name('address.')->group(function () {
         Route::get('/regions', [AddressController::class, 'getRegions'])->name('regions');
         Route::get('/provinces/{regionId}', [AddressController::class, 'getProvinces'])->name('provinces');
         Route::get('/cities/{provinceId}', [AddressController::class, 'getCities'])->name('cities');
