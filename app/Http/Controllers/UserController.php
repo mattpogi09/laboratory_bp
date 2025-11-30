@@ -105,6 +105,11 @@ class UserController extends Controller
 
     $user = User::findOrFail($id);
 
+    // Prevent modification of super admin account
+    if ($user->isSuperAdmin()) {
+      return redirect()->back()->with('error', 'Cannot modify the super admin account');
+    }
+
     $oldData = [
       'name' => $user->name,
       'username' => $user->username,
@@ -156,6 +161,11 @@ class UserController extends Controller
     }
 
     $user = User::findOrFail($id);
+
+    // Prevent deactivation of super admin account
+    if ($user->isSuperAdmin()) {
+      return redirect()->back()->with('error', 'Cannot deactivate the super admin account');
+    }
 
     // Prevent admin from deactivating themselves
     if ($user->id === auth()->id()) {

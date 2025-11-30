@@ -216,5 +216,28 @@ class PatientController extends Controller
             ],
         ]);
     }
-}
 
+    public function testDetails($id)
+    {
+        $test = TransactionTest::with(['transaction.patient', 'performedBy'])->findOrFail($id);
+
+        return response()->json([
+            'id' => $test->id,
+            'test_name' => $test->test_name,
+            'category' => $test->category,
+            'price' => $test->price,
+            'status' => $test->status,
+            'processed_by' => $test->performedBy?->name ?? 'Pending',
+            'completed_at' => $test->completed_at?->format('M d, Y, h:i A'),
+            'released_at' => $test->released_at?->format('M d, Y, h:i A'),
+            'result_values' => $test->result_values,
+            'normal_range' => $test->normal_range,
+            'notes' => $test->result_notes,
+            'images' => $test->result_images ? collect($test->result_images)->map(function ($img) {
+                $path = is_array($img) ? ($img['path'] ?? null) : $img;
+                // Return relative path starting with /storage/
+                return $path ? '/storage/' . $path : null;
+            })->filter()->values() : [],
+        ]);
+    }
+}

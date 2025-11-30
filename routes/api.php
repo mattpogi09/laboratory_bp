@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patients/{patient}', [MobilePatientController::class, 'show'])->name('mobile.patients.show');
     Route::post('/patients', [MobilePatientController::class, 'store'])->name('mobile.patients.store');
     Route::put('/patients/{patient}', [MobilePatientController::class, 'update'])->name('mobile.patients.update');
+    Route::get('/tests/{id}', [MobilePatientController::class, 'testDetails'])->name('mobile.tests.show');
 
     // Address API Routes
     Route::prefix('address')->group(function () {

@@ -82,23 +82,24 @@ class DatabaseSeeder extends Seeder
         try {
             // Create Admin User
             User::updateOrCreate(
-                ['username' => 'admin'],
+                ['username' => 'superadmin'],
                 [
-                    'name' => 'Admin User',
-                    'email' => 'admin@bpdiagnostic.com',
+                    'name' => ' Super Admin User',
+                    'email' => 'admin@gmail.com',
                     'role' => 'admin',
                     'is_active' => true,
+                    'is_super_admin' => true,
                     'password' => bcrypt('password123'),
                 ]
             );
-            $this->command->info('✓ Admin user created');
+            $this->command->info('✓ Admin user created (Super Admin - Protected)');
 
             // Create Lab Staff User
             User::updateOrCreate(
                 ['username' => 'labstaff'],
                 [
                     'name' => 'KuyaDats Lab Staff',
-                    'email' => 'staff@bpdiagnostic.com',
+                    'email' => 'staff@gmail.com',
                     'role' => 'lab_staff',
                     'is_active' => true,
                     'password' => bcrypt('password123'),
@@ -111,7 +112,7 @@ class DatabaseSeeder extends Seeder
                 ['username' => 'cashier'],
                 [
                     'name' => 'Jun Cashier',
-                    'email' => 'cashier@bpdiagnostic.com',
+                    'email' => 'cashier@gmail.com',
                     'role' => 'cashier',
                     'is_active' => true,
                     'password' => bcrypt('password123'),
