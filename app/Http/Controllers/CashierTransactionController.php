@@ -54,7 +54,7 @@ class CashierTransactionController extends Controller
 
         $nextQueueNumber = ((int) Transaction::today()->max('queue_number')) + 1;
 
-        return Inertia::render('Cashier/Transactions/Index', [
+        return Inertia::render('Cashier/Transactions/TransactionPage', [
             'labTests' => $labTests,
             'transactions' => $transactions,
             'stats' => $stats,
@@ -121,6 +121,7 @@ class CashierTransactionController extends Controller
             'patient.last_name' => ['required_without:patient.id', 'string', 'max:255'],
             'patient.middle_name' => ['nullable', 'string', 'max:255'],
             'patient.email' => ['nullable', 'email', 'max:255'],
+            'patient.date_of_birth' => ['nullable', 'date', 'before:today'],
             'patient.age' => ['nullable', 'integer', 'min:0', 'max:120'],
             'patient.gender' => ['nullable', 'string', 'max:30'],
             'patient.contact' => ['required', 'regex:/^09[0-9]{9}$/'],
@@ -146,6 +147,8 @@ class CashierTransactionController extends Controller
             'patient.first_name.required_without' => 'First name is required for new patients.',
             'patient.last_name.required_without' => 'Last name is required for new patients.',
             'patient.email.email' => 'Please enter a valid email address.',
+            'patient.date_of_birth.date' => 'Please enter a valid date of birth.',
+            'patient.date_of_birth.before' => 'Date of birth must be before today.',
             'patient.age.integer' => 'Age must be a number.',
             'patient.age.min' => 'Age must be at least 0.',
             'patient.age.max' => 'Age cannot exceed 120.',
@@ -232,6 +235,7 @@ class CashierTransactionController extends Controller
                 'patient_middle_name' => $patientMiddleName,
                 'patient_age' => $patientData['age'] ?? null,
                 'patient_gender' => $patientData['gender'] ?? null,
+                'patient_date_of_birth' => $patientData['date_of_birth'] ?? $patient->date_of_birth,
                 'patient_contact' => $patientData['contact'] ?? $patient->contact_number,
                 'region_id' => $patientData['region_id'] ?? $patient->region_id,
                 'province_id' => $patientData['province_id'] ?? $patient->province_id,
@@ -350,6 +354,7 @@ class CashierTransactionController extends Controller
                 'age' => $transaction->patient_age,
                 'gender' => $transaction->patient_gender,
                 'contact' => $transaction->patient_contact,
+                'date_of_birth' => $transaction->patient_date_of_birth,
                 'address' => $transaction->patient_formatted_address,
                 'region' => $transaction->region?->name,
                 'province' => $transaction->province?->name,
@@ -414,6 +419,7 @@ class CashierTransactionController extends Controller
             'last_name' => $patientData['last_name'],
             'middle_name' => $patientData['middle_name'] ?? null,
             'email' => $patientData['email'] ?? null,
+            'date_of_birth' => $patientData['date_of_birth'] ?? null,
             'age' => $patientData['age'] ?? null,
             'gender' => $patientData['gender'] ?? null,
             'contact_number' => $patientData['contact'] ?? null,
@@ -467,17 +473,13 @@ class CashierTransactionController extends Controller
                 });
             })
             ->latest()
-            ->take($limit)
-            ->get()
-            ->map(function (Transaction $transaction) {
-                // Force reload from database to get latest lab_status and tests
-                $transaction->refresh();
-                $transaction->load('tests');
+            ->paginate($limit)
+            ->through(function (Transaction $transaction) {
                 // Ensure lab_status is up to date based on current test statuses
+                // Tests are already eager loaded, no need to refresh or reload
                 $transaction->refreshLabStatus();
                 return $this->transformTransaction($transaction);
-            })
-            ->values();
+            });
     }
 
     protected function availableDiscounts(): array

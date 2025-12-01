@@ -80,19 +80,18 @@ class DatabaseSeeder extends Seeder
         // Create Users
         $this->command->info('Creating users...');
         try {
-            // Create Admin User
+            // Create Admin User (Primary Admin - ID will be 1)
             User::updateOrCreate(
-                ['username' => 'superadmin'],
+                ['username' => 'admin'],
                 [
-                    'name' => ' Super Admin User',
+                    'name' => 'Primary Admin User',
                     'email' => 'admin@gmail.com',
                     'role' => 'admin',
                     'is_active' => true,
-                    'is_super_admin' => true,
                     'password' => bcrypt('password123'),
                 ]
             );
-            $this->command->info('✓ Admin user created (Super Admin - Protected)');
+            $this->command->info('✓ Primary admin user created (Protected)');
 
             // Create Lab Staff User
             User::updateOrCreate(

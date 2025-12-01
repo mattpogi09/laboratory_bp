@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CashReconciliation;
 use App\Models\InventoryItem;
 use App\Models\Patient;
 use App\Models\Transaction;
@@ -64,8 +65,22 @@ class DashboardController extends Controller
       ->orWhere('status', 'processing')
       ->count();
 
-    // Low Stock Items - Get items that are low stock or out of stock
-    $lowStockItems = InventoryItem::whereIn('status', ['low_stock', 'out_of_stock'])
+    // Separate out-of-stock and low-stock items
+    $outOfStockItems = InventoryItem::where('status', 'out_of_stock')
+      ->orderBy('name')
+      ->get()
+      ->map(function ($item) {
+        return [
+          'id' => $item->id,
+          'name' => $item->name,
+          'current_stock' => $item->current_stock,
+          'minimum_stock' => $item->minimum_stock,
+          'unit' => $item->unit,
+          'status' => $item->status,
+        ];
+      });
+
+    $lowStockItems = InventoryItem::where('status', 'low_stock')
       ->orderBy('current_stock')
       ->get()
       ->map(function ($item) {
@@ -80,7 +95,10 @@ class DashboardController extends Controller
       });
 
     // Pending Tasks (Tests that need to be done)
-    $pendingTasks = TransactionTest::with(['transaction.patient'])
+    $pendingTasks = TransactionTest::with(['transaction' => function ($query) {
+        $query->select('id', 'patient_first_name', 'patient_last_name');
+      }])
+      ->select('id', 'transaction_id', 'test_name', 'status', 'created_at')
       ->whereIn('status', ['pending', 'processing'])
       ->orderBy('created_at', 'asc')
       ->take(10)
@@ -171,18 +189,60 @@ class DashboardController extends Controller
       ];
     }
 
+    // Check for cash discrepancies in recent reconciliations
+    $recentDiscrepancies = CashReconciliation::where('variance', '!=', 0)
+      ->where('created_at', '>=', now()->subDays(7))
+      ->orderBy('reconciliation_date', 'desc')
+      ->get();
+
+    foreach ($recentDiscrepancies as $discrepancy) {
+      $type = abs($discrepancy->variance) > 100 ? 'warning' : 'info';
+      $varianceType = $discrepancy->variance > 0 ? 'overage' : 'shortage';
+      $alerts[] = [
+        'type' => $type,
+        'message' => "Cash {$varianceType} of ₱" . number_format(abs($discrepancy->variance), 2) . " on " . $discrepancy->reconciliation_date->format('M d'),
+        'action' => 'View Details',
+        'route' => 'admin.reconciliation.show',
+        'params' => ['reconciliation' => $discrepancy->id]
+      ];
+    }
+
+    // Check if today hasn't been reconciled yet (after 5 PM)
+    if (now()->hour >= 17) {
+      $todayReconciled = CashReconciliation::where('reconciliation_date', now()->toDateString())->exists();
+      if (!$todayReconciled) {
+        $todayTransactions = Transaction::whereDate('created_at', now())
+          ->where('payment_status', 'paid')
+          ->where('payment_method', 'cash')
+          ->count();
+        
+        if ($todayTransactions > 0) {
+          $alerts[] = [
+            'type' => 'info',
+            'message' => "Today's cash has not been reconciled yet ({$todayTransactions} transactions).",
+            'action' => 'View Reconciliation',
+            'route' => 'admin.reconciliation.index'
+          ];
+        }
+      }
+    }
+
     return Inertia::render('Dashboard', [
       'stats' => [
         'totalRevenue' => number_format($totalRevenue, 2),
         'revenueTrend' => $revenueTrend,
+        'previousRevenue' => number_format($previousRevenue, 2),
         'patientsCount' => $patientsCount,
         'patientsTrend' => $patientsTrend,
+        'previousPatientsCount' => $previousPatientsCount,
         'lowStockItems' => count($lowStockItems),
+        'outOfStockItems' => count($outOfStockItems),
         'pendingTests' => $pendingTests,
       ],
       'period' => $period,
       'pendingTasks' => $pendingTasks,
       'lowStockItems' => $lowStockItems,
+      'outOfStockItems' => $outOfStockItems,
       'revenueChartData' => $revenueChartData,
       'testStatusData' => $testStatusData,
       'dailyRevenue' => $last7Days,

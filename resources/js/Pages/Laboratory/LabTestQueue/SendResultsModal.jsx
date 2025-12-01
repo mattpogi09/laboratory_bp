@@ -28,16 +28,15 @@ export default function SendResultsModal({ show, transaction, onClose }) {
     const hasIncompleteTests =
         transaction.incompleteTests && transaction.incompleteTests.length > 0;
 
-    // Debug: Log transaction tests when modal opens
+    // Check for incomplete tests when modal opens
     useEffect(() => {
         if (show && transaction?.tests) {
-            console.log("Transaction tests:", transaction.tests);
             const incomplete = transaction.tests.filter((test) => {
                 const status = (test.status || "").toLowerCase();
                 return status === "pending" || status === "processing";
             });
             if (incomplete.length > 0) {
-                console.log("Incomplete tests found:", incomplete);
+                setIncompleteTests(incomplete);
             }
         }
     }, [show, transaction]);

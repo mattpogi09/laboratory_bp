@@ -40,7 +40,7 @@ class UserController extends Controller
 
     $users = $query->paginate($perPage);
 
-    return Inertia::render('Management/Users/Index', [
+    return Inertia::render('Management/Users/UserManagement', [
       'users' => $users,
       'filters' => [
         'search' => $search,
@@ -105,9 +105,10 @@ class UserController extends Controller
 
     $user = User::findOrFail($id);
 
-    // Prevent modification of super admin account
-    if ($user->isSuperAdmin()) {
-      return redirect()->back()->with('error', 'Cannot modify the super admin account');
+    // Prevent modification of the first admin account (ID=1) by other users
+    // First admin can edit their own account
+    if ($user->id === 1 && auth()->id() !== 1) {
+      return redirect()->back()->with('error', 'Cannot modify the primary admin account');
     }
 
     $oldData = [
@@ -162,9 +163,9 @@ class UserController extends Controller
 
     $user = User::findOrFail($id);
 
-    // Prevent deactivation of super admin account
-    if ($user->isSuperAdmin()) {
-      return redirect()->back()->with('error', 'Cannot deactivate the super admin account');
+    // Prevent deactivation of the first admin account (ID=1)
+    if ($user->id === 1) {
+      return redirect()->back()->with('error', 'Cannot deactivate the primary admin account');
     }
 
     // Prevent admin from deactivating themselves

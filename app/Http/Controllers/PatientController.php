@@ -67,14 +67,14 @@ class PatientController extends Controller
                 'city_id' => $patient->city_id,
                 'barangay_code' => $patient->barangay_code,
                 'street' => $patient->street,
-                'birth_date' => $patient->birth_date,
+                'date_of_birth' => $patient->date_of_birth,
                 'last_visit' => optional($patient->transactions()->latest()->first())->created_at?->format('Y-m-d') ?? 'N/A',
                 'total_tests' => $patient->transactions()->withCount('tests')->get()->sum('tests_count'),
                 'tests' => $tests,
             ];
         });
 
-        return Inertia::render('Management/Patients/Index', [
+        return Inertia::render('Management/Patients/PatientManagement', [
             'patients' => $patients,
             'filters' => [
                 'search' => $search,
@@ -102,7 +102,7 @@ class PatientController extends Controller
             'city_id' => 'required|exists:cities,city_id',
             'barangay_code' => 'required|exists:barangays,code',
             'street' => 'required|string|max:255',
-            'birth_date' => 'nullable|date',
+            'date_of_birth' => 'nullable|date|before:today',
         ], [
             'first_name.required' => 'First name is required.',
             'last_name.required' => 'Last name is required.',
@@ -120,7 +120,8 @@ class PatientController extends Controller
             'city_id.required' => 'City/Municipality is required.',
             'barangay_code.required' => 'Barangay is required.',
             'street.required' => 'Street address is required.',
-            'birth_date.date' => 'Please enter a valid birth date.',
+            'date_of_birth.date' => 'Please enter a valid birth date.',
+            'date_of_birth.before' => 'Birth date must be in the past.',
         ]);
 
         $patient = Patient::create($validated);
@@ -166,7 +167,8 @@ class PatientController extends Controller
             'age.max' => 'Age cannot exceed 150.',
             'gender.required' => 'Gender is required.',
             'gender.in' => 'Please select a valid gender.',
-            'birth_date.date' => 'Please enter a valid birth date.',
+            'date_of_birth.date' => 'Please enter a valid birth date.',
+            'date_of_birth.before' => 'Birth date must be in the past.',
         ];
 
         // Admin can update all fields
@@ -177,7 +179,7 @@ class PatientController extends Controller
                 'middle_name' => 'nullable|string|max:255',
                 'age' => 'required|integer|min:0|max:150',
                 'gender' => 'required|in:Male,Female',
-                'birth_date' => 'nullable|date',
+                'date_of_birth' => 'nullable|date|before:today',
             ]);
         }
 
@@ -253,6 +255,7 @@ class PatientController extends Controller
                     'city_id' => $patient->city_id,
                     'barangay_code' => $patient->barangay_code,
                     'street' => $patient->street,
+                    'date_of_birth' => $patient->date_of_birth,
                 ];
             });
 

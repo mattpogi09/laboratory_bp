@@ -19,6 +19,7 @@ class Patient extends Model
         'middle_name',
         'email',
         'is_active',
+        'date_of_birth',
         'age',
         'gender',
         'contact_number',
@@ -32,6 +33,7 @@ class Patient extends Model
 
     protected $casts = [
         'birth_date' => 'date',
+        'date_of_birth' => 'date',
         'is_active' => 'boolean',
     ];
 

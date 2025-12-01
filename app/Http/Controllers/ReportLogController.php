@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
+use App\Models\CashReconciliation;
 use App\Models\InventoryItem;
 use App\Models\InventoryTransaction;
 use App\Models\Transaction;
@@ -20,7 +21,7 @@ class ReportLogController extends Controller
         $validated = $request->validate([
             'from' => 'nullable|date',
             'to' => 'nullable|date|after_or_equal:from',
-            'tab' => 'nullable|string|in:financial,lab,inventory,audit',
+            'tab' => 'nullable|string|in:financial,lab,inventory,audit,reconciliation',
             'period' => 'nullable|string|in:day,week,month,year',
         ]);
 
@@ -43,6 +44,7 @@ class ReportLogController extends Controller
                 'lab' => 'Lab Report',
                 'inventory' => 'Inventory Report',
                 'audit' => 'Audit Log Report',
+                'reconciliation' => 'Cash Reconciliation Report',
                 default => 'General Report',
             };
             $auditLogger->logReportGenerated($reportType, $dateFrom, $dateTo);
@@ -128,7 +130,7 @@ class ReportLogController extends Controller
             ];
         });
 
-        return Inertia::render('Configuration/ReportsLogs/Index', [
+        return Inertia::render('Configuration/ReportsLogs/ReportsLogsPage', [
             'filters' => [
                 'from' => $dateFrom,
                 'to' => $dateTo,
@@ -157,6 +159,7 @@ class ReportLogController extends Controller
             ],
             'inventoryLogs' => $this->inventoryLogs($dateFrom, $dateTo, $request),
             'auditLogs' => $this->auditLogs($request, $dateFrom, $dateTo),
+            'reconciliationReport' => $this->reconciliationReport($dateFrom, $dateTo),
         ]);
     }
 
@@ -281,6 +284,68 @@ class ReportLogController extends Controller
                 'role' => $roleFilter,
                 'category' => $categoryFilter,
                 'severity' => $severityFilter,
+            ],
+        ];
+    }
+
+    protected function reconciliationReport($dateFrom = null, $dateTo = null): array
+    {
+        $query = CashReconciliation::with('cashier')
+            ->orderBy('reconciliation_date', 'desc');
+
+        if ($dateFrom) {
+            $query->whereDate('reconciliation_date', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('reconciliation_date', '<=', $dateTo);
+        }
+
+        $reconciliations = $query->paginate(50, ['*'], 'reconciliation_page');
+
+        // Calculate summary statistics
+        $allReconciliations = CashReconciliation::query()
+            ->when($dateFrom, fn($q) => $q->whereDate('reconciliation_date', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('reconciliation_date', '<=', $dateTo))
+            ->get();
+
+        $stats = [
+            'total_count' => $allReconciliations->count(),
+            'balanced_count' => $allReconciliations->where('variance', 0)->count(),
+            'overage_count' => $allReconciliations->where('variance', '>', 0)->count(),
+            'shortage_count' => $allReconciliations->where('variance', '<', 0)->count(),
+            'total_expected' => $allReconciliations->sum('expected_cash'),
+            'total_actual' => $allReconciliations->sum('actual_cash'),
+            'total_overage' => $allReconciliations->where('variance', '>', 0)->sum('variance'),
+            'total_shortage' => abs($allReconciliations->where('variance', '<', 0)->sum('variance')),
+            'total_variance' => $allReconciliations->sum('variance'),
+            'accuracy_rate' => $allReconciliations->count() > 0 
+                ? round(($allReconciliations->where('variance', 0)->count() / $allReconciliations->count()) * 100, 1)
+                : 0,
+        ];
+
+        return [
+            'data' => $reconciliations->map(function ($rec) {
+                return [
+                    'id' => $rec->id,
+                    'date' => $rec->reconciliation_date->toDateString(),
+                    'cashier' => $rec->cashier->name,
+                    'expected_cash' => $rec->expected_cash,
+                    'actual_cash' => $rec->actual_cash,
+                    'variance' => $rec->variance,
+                    'status' => $rec->status,
+                    'variance_type' => $rec->variance_type,
+                    'transaction_count' => $rec->transaction_count,
+                    'notes' => $rec->notes,
+                    'created_at' => $rec->created_at->format('Y-m-d H:i:s'),
+                ];
+            })->toArray(),
+            'stats' => $stats,
+            'pagination' => [
+                'current_page' => $reconciliations->currentPage(),
+                'last_page' => $reconciliations->lastPage(),
+                'per_page' => $reconciliations->perPage(),
+                'total' => $reconciliations->total(),
             ],
         ];
     }
