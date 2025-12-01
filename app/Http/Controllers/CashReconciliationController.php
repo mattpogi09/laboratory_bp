@@ -147,11 +147,11 @@ class CashReconciliationController extends Controller
         $this->auditLogger->log(
             actionType: 'cash_reconciliation_created',
             actionCategory: 'cash_management',
-            description: "Cash reconciliation completed by {$cashierName}. Expected: ₱" . number_format($validated['expected_amount'], 2) . ", Counted: ₱" . number_format($validated['counted_amount'], 2) . ", Variance: {$varianceDisplay}, Status: {$reconciliation->status}",
+            description: "Cash reconciliation completed by {$cashierName}. Expected: ₱" . number_format($expectedCash, 2) . ", Counted: ₱" . number_format($validated['actual_cash'], 2) . ", Variance: {$varianceDisplay}, Status: {$reconciliation->status}",
             metadata: [
                 'reconciliation_id' => $reconciliation->id,
-                'expected_amount' => $validated['expected_amount'],
-                'counted_amount' => $validated['counted_amount'],
+                'expected_amount' => $expectedCash,
+                'counted_amount' => $validated['actual_cash'],
                 'variance' => $variance,
                 'variance_type' => $reconciliation->variance_type,
                 'status' => $reconciliation->status,
