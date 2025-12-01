@@ -12,8 +12,15 @@ use App\Http\Controllers\Api\ServiceController as MobileServiceController;
 use App\Http\Controllers\Api\UserController as MobileUserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\NewPasswordController;
 
 Route::post('/login', [MobileAuthController::class, 'login'])->name('mobile.login');
+
+// Password Reset Routes (No CSRF required for API)
+Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->name('mobile.password.email');
+Route::post('/verify-otp', [PasswordResetLinkController::class, 'verifyOtp'])->name('mobile.password.verify-otp');
+Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('mobile.password.store');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [MobileAuthController::class, 'logout'])->name('mobile.logout');
@@ -79,4 +86,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reconciliations/create', [\App\Http\Controllers\Api\ReconciliationController::class, 'create'])->name('mobile.reconciliations.create');
     Route::post('/reconciliations', [\App\Http\Controllers\Api\ReconciliationController::class, 'store'])->name('mobile.reconciliations.store');
     Route::get('/reconciliations/{id}', [\App\Http\Controllers\Api\ReconciliationController::class, 'show'])->name('mobile.reconciliations.show');
+    Route::post('/reconciliations/{id}/approve', [\App\Http\Controllers\Api\ReconciliationController::class, 'approveCorrection'])->name('mobile.reconciliations.approve');
 });

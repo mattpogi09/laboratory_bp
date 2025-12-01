@@ -33,7 +33,7 @@ class NewPasswordController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
@@ -82,6 +82,16 @@ class NewPasswordController extends Controller
 
         event(new PasswordReset($user));
 
-        return redirect()->route('login')->with('status', 'Your password has been reset successfully. You can now login with your new password.');
+        $message = 'Your password has been reset successfully. You can now login with your new password.';
+
+        // Return JSON for API requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $message,
+                'status' => 'success'
+            ]);
+        }
+
+        return redirect()->route('login')->with('status', $message);
     }
 }

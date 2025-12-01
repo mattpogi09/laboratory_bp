@@ -78,6 +78,12 @@ class ReconciliationController extends Controller
                         'name' => $rec->cashier->name,
                         'email' => $rec->cashier->email,
                     ] : null,
+                    'correction_requested' => $rec->correction_requested,
+                    'correction_reason' => $rec->correction_reason,
+                    'correction_requested_at' => $rec->correction_requested_at?->toDateTimeString(),
+                    'is_approved' => $rec->is_approved,
+                    'approved_by' => $rec->approved_by,
+                    'approved_at' => $rec->approved_at?->toDateTimeString(),
                     'created_at' => $rec->created_at->toDateTimeString(),
                 ];
             }),
@@ -257,5 +263,66 @@ class ReconciliationController extends Controller
                 'variance' => (float) $variance,
             ],
         ], 201);
+    }
+
+    /**
+     * Approve correction request (Admin only)
+     */
+    public function approveCorrection(Request $request, $id)
+    {
+        $user = $request->user();
+
+        // Only admin can approve
+        if ($user->role !== 'admin') {
+            return response()->json([
+                'message' => 'Only administrators can approve correction requests.',
+            ], 403);
+        }
+
+        $reconciliation = CashReconciliation::with('cashier:id,name,email')->findOrFail($id);
+
+        if (!$reconciliation->correction_requested) {
+            return response()->json([
+                'message' => 'No correction request found for this reconciliation.',
+            ], 400);
+        }
+
+        $reconciliationDate = $reconciliation->reconciliation_date->format('M d, Y');
+        $cashierName = $reconciliation->cashier->name;
+
+        // Mark as approved
+        $reconciliation->update([
+            'is_approved' => true,
+            'approved_by' => $user->id,
+            'approved_at' => now(),
+        ]);
+
+        // Log approval
+        $this->auditLogger->log(
+            actionType: 'correction_approved',
+            actionCategory: 'cash_management',
+            description: "Correction request approved for {$reconciliationDate} by admin {$user->name}. Cashier {$cashierName} can now re-reconcile.",
+            metadata: [
+                'reconciliation_id' => $reconciliation->id,
+                'reconciliation_date' => $reconciliation->reconciliation_date,
+                'cashier_id' => $reconciliation->cashier_id,
+                'cashier_name' => $cashierName,
+                'correction_reason' => $reconciliation->correction_reason,
+                'approved_by' => $user->name,
+            ],
+            severity: 'info',
+            entityType: 'CashReconciliation',
+            entityId: $reconciliation->id
+        );
+
+        return response()->json([
+            'message' => "Correction request approved. {$cashierName} can now re-reconcile for {$reconciliationDate}.",
+            'reconciliation' => [
+                'id' => $reconciliation->id,
+                'is_approved' => true,
+                'approved_by' => $user->name,
+                'approved_at' => $reconciliation->approved_at->toDateTimeString(),
+            ],
+        ]);
     }
 }
