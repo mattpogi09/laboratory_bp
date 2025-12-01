@@ -95,7 +95,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="{{ asset('images/logo.png') }}" alt="BP Diagnostic Logo">
+            <img src="{{ $message->embed(public_path('images/logo.png')) }}" alt="BP Diagnostic Logo">
             <h1>BP Diagnostic Laboratory</h1>
         </div>
         

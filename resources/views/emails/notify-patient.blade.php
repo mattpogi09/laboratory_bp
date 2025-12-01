@@ -66,7 +66,7 @@
   <div class="header">
     @if(file_exists(public_path('images/logo.png')))
       <div style="margin-bottom: 15px;">
-        <img src="{{ asset('images/logo.png') }}" alt="BP Diagnostic Logo" style="max-width: 100px; height: auto;">
+        <img src="{{ $message->embed(public_path('images/logo.png')) }}" alt="BP Diagnostic Logo" style="max-width: 100px; height: auto;">
       </div>
     @endif
     <h1>BP Diagnostic Laboratory</h1>
