@@ -183,6 +183,8 @@ class CashReconciliationController extends Controller
             description: "Cash reconciliation completed by {$cashierName}. Expected: ₱" . number_format($expectedCash, 2) . ", Counted: ₱" . number_format($validated['actual_cash'], 2) . ", Variance: {$varianceDisplay}, Status: {$reconciliation->status}",
             metadata: [
                 'reconciliation_id' => $reconciliation->id,
+                'expected_cash' => $expectedCash,
+                'actual_cash' => $validated['actual_cash'],
                 'expected_amount' => $expectedCash,
                 'counted_amount' => $validated['actual_cash'],
                 'variance' => $variance,

@@ -31,7 +31,7 @@ class PasswordResetLinkController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
@@ -67,13 +67,23 @@ class PasswordResetLinkController extends Controller
         // Send OTP via email
         Mail::to($request->email)->send(new SendPasswordResetOTP($otp, $user->name));
 
-        return back()->with('status', 'We have sent a 6-digit OTP to your email address. Please check your inbox.');
+        $message = 'We have sent a 6-digit OTP to your email address. Please check your inbox.';
+
+        // Return JSON for API requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $message,
+                'status' => 'success'
+            ]);
+        }
+
+        return back()->with('status', $message);
     }
 
     /**
      * Verify the OTP code provided by the user.
      */
-    public function verifyOtp(Request $request): RedirectResponse
+    public function verifyOtp(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
@@ -110,8 +120,19 @@ class PasswordResetLinkController extends Controller
             ->where('email', $request->email)
             ->update(['is_verified' => true]);
 
+        $message = 'OTP verified successfully. You can now reset your password.';
+
+        // Return JSON for API requests
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $message,
+                'status' => 'success',
+                'email' => $request->email
+            ]);
+        }
+
         // Redirect to password reset page with email
         return redirect()->route('password.reset', ['token' => 'verified', 'email' => $request->email])
-            ->with('status', 'OTP verified successfully. You can now reset your password.');
+            ->with('status', $message);
     }
 }

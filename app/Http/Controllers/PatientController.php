@@ -283,6 +283,21 @@ class PatientController extends Controller
             'labTest:id,name,code,category,description'
         ])->findOrFail($transactionTestId);
 
+        // Convert image paths to full URLs
+        $documents = [];
+        if ($transactionTest->result_images) {
+            foreach ($transactionTest->result_images as $image) {
+                if (is_array($image) && isset($image['path'])) {
+                    $documents[] = [
+                        'name' => $image['name'] ?? '',
+                        'path' => $image['path'],
+                        'url' => \Storage::url($image['path']),
+                        'size' => $image['size'] ?? 0,
+                    ];
+                }
+            }
+        }
+
         return response()->json([
             'id' => $transactionTest->id,
             'test_name' => $transactionTest->test_name,
@@ -300,7 +315,7 @@ class PatientController extends Controller
                 'name' => $transactionTest->performedBy->name,
                 'email' => $transactionTest->performedBy->email,
             ] : null,
-            'documents' => $transactionTest->result_images ?? [],
+            'documents' => $documents,
         ]);
     }
 

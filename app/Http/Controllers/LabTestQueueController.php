@@ -367,7 +367,21 @@ class LabTestQueueController extends Controller
             }
 
             // Send results email with attachments
-            \Mail::to($patientEmail)->send(new \App\Mail\SendResultsMail($transaction, $allDocuments));
+            try {
+                \Mail::to($patientEmail)->send(new \App\Mail\SendResultsMail($transaction, $allDocuments));
+                \Log::info('Email sent successfully', [
+                    'to' => $patientEmail,
+                    'transaction' => $transaction->transaction_number,
+                ]);
+            } catch (\Exception $mailException) {
+                DB::rollBack();
+                \Log::error('Failed to send email', [
+                    'error' => $mailException->getMessage(),
+                    'to' => $patientEmail,
+                    'transaction' => $transaction->transaction_number,
+                ]);
+                throw new \Exception('Failed to send email: ' . $mailException->getMessage());
+            }
 
             // Update all tests to released status
             $transaction->tests()->update([
@@ -440,7 +454,12 @@ class LabTestQueueController extends Controller
                 'error'
             );
 
-            return back()->with('error', 'Failed to send results. Please try again.');
+            \Log::error('Send results error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Failed to send results: ' . $e->getMessage());
         }
     }
 
@@ -502,7 +521,21 @@ class LabTestQueueController extends Controller
             }
 
             // Send notification email
-            \Mail::to($patientEmail)->send(new \App\Mail\NotifyPatientMail($transaction));
+            try {
+                \Mail::to($patientEmail)->send(new \App\Mail\NotifyPatientMail($transaction));
+                \Log::info('Notification email sent successfully', [
+                    'to' => $patientEmail,
+                    'transaction' => $transaction->transaction_number,
+                ]);
+            } catch (\Exception $mailException) {
+                DB::rollBack();
+                \Log::error('Failed to send notification email', [
+                    'error' => $mailException->getMessage(),
+                    'to' => $patientEmail,
+                    'transaction' => $transaction->transaction_number,
+                ]);
+                throw new \Exception('Failed to send notification email: ' . $mailException->getMessage());
+            }
 
             // Create ResultSubmission record for history tracking
             ResultSubmission::create([
@@ -558,7 +591,12 @@ class LabTestQueueController extends Controller
                 'error'
             );
 
-            return back()->with('error', 'Failed to send notification. Please try again.');
+            \Log::error('Send notification error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->with('error', 'Failed to send notification: ' . $e->getMessage());
         }
     }
 
