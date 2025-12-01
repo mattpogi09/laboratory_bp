@@ -29,7 +29,7 @@ class DiscountController extends Controller
             ->orderBy($sortBy, $sortOrder)
             ->paginate($perPage);
 
-        return Inertia::render('Configuration/DiscountsPhilhealth/Index', [
+        return Inertia::render('Configuration/DiscountsPhilhealth/DiscountsPhilhealthPage', [
             'discounts' => $discounts,
             'philHealthPlans' => PhilHealthPlan::orderBy('name')->paginate(20),
             'filters' => [

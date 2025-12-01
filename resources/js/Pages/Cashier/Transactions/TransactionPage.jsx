@@ -17,6 +17,7 @@ const initialPatient = {
     middle_name: "",
     last_name: "",
     email: "",
+    date_of_birth: "",
     age: "",
     gender: "",
     contact: "",
@@ -272,8 +273,6 @@ export default function TransactionsIndex({
                 },
                 onError: (errors) => {
                     setIsSubmitting(false);
-
-                    console.error("Transaction submission error:", errors);
 
                     // Check if there's a general error message
                     if (errors.message) {

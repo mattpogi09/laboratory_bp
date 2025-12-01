@@ -36,19 +36,24 @@ class LabTestQueueController extends Controller
                 ->count(),
         ];
 
-        return Inertia::render('Laboratory/LabTestQueue/Index', [
+        // Get full history with pagination (avoid duplicate query)
+        $fullHistoryPaginated = TransactionTest::with(['transaction', 'transaction.patient'])
+            ->latest()
+            ->paginate(25, ['*'], 'history_page');
+
+        return Inertia::render('Laboratory/LabTestQueue/LabTestQueuePage', [
             'stats' => $stats,
             'tests' => [
                 'pending' => $pending['items'],
+                'pending_pagination' => $pending['pagination'] ?? null,
                 'processing' => $processing['items'],
+                'processing_pagination' => $processing['pagination'] ?? null,
                 'completed' => $completed['items'],
+                'completed_pagination' => $completed['pagination'] ?? null,
                 'released' => $released['items'],
-                'full_history' => $this->transformCollection(
-                    TransactionTest::with(['transaction', 'transaction.patient'])
-                        ->latest()
-                        ->take(25)
-                        ->get()
-                ),
+                'released_pagination' => $released['pagination'] ?? null,
+                'full_history' => $this->transformCollection($fullHistoryPaginated->items()),
+                'full_history_pagination' => $fullHistoryPaginated->only(['current_page', 'last_page', 'per_page', 'total']),
             ],
         ]);
     }
@@ -74,13 +79,18 @@ class LabTestQueueController extends Controller
             })
             ->orderBy('updated_at', 'desc');
 
-        $countQuery = clone $query;
+        $pageName = 'page_' . $status;
+        $paginated = $query->paginate($limit, ['*'], $pageName);
 
         return [
-            'count' => $countQuery->count(),
-            'items' => $this->transformCollection(
-                $query->take($limit)->get()
-            ),
+            'count' => $paginated->total(),
+            'items' => $this->transformCollection($paginated->items()),
+            'pagination' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
         ];
     }
 
@@ -121,6 +131,7 @@ class LabTestQueueController extends Controller
                     'gender' => $patient?->gender ?? $test->transaction?->patient_gender,
                     'email' => $patient?->email ?? null,
                     'contact' => $patient?->contact_number ?? $test->transaction?->patient_contact,
+                    'date_of_birth' => $patient?->date_of_birth ?? $test->transaction?->patient_date_of_birth,
                 ],
                 'created_at' => $test->transaction?->created_at?->toDayDateTimeString(),
             ];

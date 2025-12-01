@@ -19,6 +19,7 @@ class InventoryController extends Controller
         }
 
         $search = $request->input('search');
+        $status = $request->input('status');
         $sortBy = $request->input('sort_by', 'name');
         $sortOrder = $request->input('sort_order', 'asc');
         $perPage = $request->input('per_page', 20);
@@ -27,6 +28,10 @@ class InventoryController extends Controller
             $query->where('name', 'ILIKE', "%{$search}%")
                 ->orWhere('category', 'ILIKE', "%{$search}%");
         })
+            // Filter by status
+            ->when($status, function ($query, $status) {
+                $query->where('status', $status);
+            })
             // Lab staff only sees active items, admin sees all
             ->when($request->user()->role === 'lab_staff', function ($query) {
                 $query->where('is_active', true);
@@ -56,20 +61,42 @@ class InventoryController extends Controller
                 })->count(),
         ];
 
-        $lowStockAlerts = InventoryItem::where('status', '!=', 'good')
+        // Category statistics
+        $categories = ['Reagents', 'Consumables', 'Equipment', 'Safety Items', 'Chemicals', 'Cleaning Supplies', 'Office Supplies', 'Other'];
+        $categoryStats = InventoryItem::select('category', DB::raw('count(*) as count'))
+            ->when($request->user()->role === 'lab_staff', function ($query) {
+                $query->where('is_active', true);
+            })
+            ->groupBy('category')
+            ->pluck('count', 'category')
+            ->toArray();
+
+        // Separate alerts by priority: out of stock (critical) and low stock (warning)
+        $outOfStockItems = InventoryItem::where('status', 'out_of_stock')
+            ->when($request->user()->role === 'lab_staff', function ($query) {
+                $query->where('is_active', true);
+            })
+            ->orderBy('name')
+            ->get();
+
+        $lowStockItems = InventoryItem::where('status', 'low_stock')
             ->when($request->user()->role === 'lab_staff', function ($query) {
                 $query->where('is_active', true);
             })
             ->orderBy('current_stock')
             ->get();
 
-        return Inertia::render('Configuration/Inventory/Index', [
+        return Inertia::render('Configuration/Inventory/InventoryManagement', [
             'items' => $items,
             'transactions' => $transactions,
             'stats' => $stats,
-            'lowStockAlerts' => $lowStockAlerts,
+            'categories' => $categories,
+            'categoryStats' => $categoryStats,
+            'outOfStockItems' => $outOfStockItems,
+            'lowStockItems' => $lowStockItems,
             'filters' => [
                 'search' => $search,
+                'status' => $status,
                 'sort_by' => $sortBy,
                 'sort_order' => $sortOrder,
             ],

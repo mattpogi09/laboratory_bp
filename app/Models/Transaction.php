@@ -23,6 +23,7 @@ class Transaction extends Model
         'patient_middle_name',
         'patient_age',
         'patient_gender',
+        'patient_date_of_birth',
         'patient_contact',
         'region_id',
         'province_id',
@@ -61,6 +62,7 @@ class Transaction extends Model
         'balance_due' => 'decimal:2',
         'queued_at' => 'datetime',
         'completed_at' => 'datetime',
+        'patient_date_of_birth' => 'date',
     ];
 
     protected $appends = [

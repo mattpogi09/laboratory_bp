@@ -28,16 +28,11 @@ export default function TestResultDetailsModal({ testId, show, onClose }) {
         setLoading(true);
         setError(null);
         try {
-            console.log("Fetching test details for ID:", testId);
             const response = await axios.get(
                 route("patients.test-details", testId)
             );
-            console.log("Test details response:", response.data);
-            console.log("Documents:", response.data.documents);
             setTestDetails(response.data);
         } catch (err) {
-            console.error("Error fetching test details:", err);
-            console.error("Error response:", err.response);
             const errorMsg =
                 err.response?.data?.message ||
                 "Failed to load test details. Please try again.";
@@ -160,11 +155,6 @@ export default function TestResultDetailsModal({ testId, show, onClose }) {
                                     }
                                     className="w-full h-full object-contain hover:scale-105 transition-transform duration-200"
                                     onError={(e) => {
-                                        console.error(
-                                            "Failed to load image:",
-                                            imagePath,
-                                            doc
-                                        );
                                         e.target.src =
                                             'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23f3f4f6" width="100" height="100"/%3E%3Ctext fill="%236b7280" font-family="sans-serif" font-size="14" x="50%25" y="50%25" text-anchor="middle" dominant-baseline="middle"%3EImage Error%3C/text%3E%3C/svg%3E';
                                     }}

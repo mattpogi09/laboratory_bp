@@ -34,46 +34,60 @@ export default function PatientDetailsModal({ patient, show, onClose }) {
 
     return (
         <Modal show={show} onClose={onClose} maxWidth="2xl">
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
                 {/* Header */}
-                <div className="flex items-start justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900">
+                <div className="flex items-start justify-between mb-4 sm:mb-6">
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                         Patient Details
                     </h2>
                     <button
                         onClick={onClose}
-                        className="text-gray-500 hover:text-gray-700 transition-colors"
+                        className="text-gray-500 hover:text-gray-700 transition-colors touch-manipulation"
                     >
                         <X className="h-5 w-5" />
                     </button>
                 </div>
 
                 {/* Patient Info Card */}
-                <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 mb-6">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="h-16 w-16 rounded-full bg-red-900 flex items-center justify-center text-white text-2xl font-semibold">
+                <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-4">
+                        <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-red-900 flex items-center justify-center text-white text-xl sm:text-2xl font-semibold">
                             {patient.name.charAt(0)}
                         </div>
-                        <div>
-                            <h3 className="text-lg font-semibold text-black">
+                        <div className="flex-1">
+                            <h3 className="text-base sm:text-lg font-semibold text-black">
                                 {patient.name}
                             </h3>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-xs sm:text-sm text-gray-500">
                                 {patient.email || "No email provided"}
                             </p>
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span className="text-black">Age / Gender:</span>
-                            <span className="text-black ml-2">
-                                {patient.age} / {patient.gender}
-                            </span>
-                        </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                         <div>
                             <span className="text-black">Contact:</span>
                             <span className="text-black ml-2">
                                 {patient.contact_number}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-black">Date of Birth:</span>
+                            <span className="text-black ml-2">
+                                {patient.date_of_birth
+                                    ? new Date(
+                                          patient.date_of_birth
+                                      ).toLocaleDateString("en-US", {
+                                          year: "numeric",
+                                          month: "short",
+                                          day: "numeric",
+                                      })
+                                    : "N/A"}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-black">Age / Gender:</span>
+                            <span className="text-black ml-2">
+                                {patient.age} / {patient.gender}
                             </span>
                         </div>
                         <div className="col-span-2">
@@ -93,35 +107,35 @@ export default function PatientDetailsModal({ patient, show, onClose }) {
 
                 {/* Test History */}
                 <div>
-                    <h3 className="text-base font-semibold text-gray-900 mb-4">
+                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">
                         Test History
                     </h3>
                     {patient.tests && patient.tests.length > 0 ? (
-                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                        <div className="space-y-2 max-h-64 sm:max-h-96 overflow-y-auto">
                             {patient.tests.map((test, index) => (
                                 <button
                                     key={index}
                                     onClick={() => handleTestClick(test.id)}
-                                    className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer group"
+                                    className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-all cursor-pointer group gap-2 sm:gap-0 touch-manipulation"
                                 >
-                                    <div className="flex items-center gap-3 flex-1">
-                                        <FileText className="h-5 w-5 text-blue-600 group-hover:text-blue-700" />
-                                        <div className="flex-1 text-left">
-                                            <p className="text-sm font-medium text-gray-900 group-hover:text-blue-900">
+                                    <div className="flex items-start sm:items-center gap-3 flex-1 w-full">
+                                        <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 group-hover:text-blue-700 mt-0.5 sm:mt-0 flex-shrink-0" />
+                                        <div className="flex-1 text-left min-w-0">
+                                            <p className="text-xs sm:text-sm font-medium text-gray-900 group-hover:text-blue-900 truncate">
                                                 {test.name}
                                             </p>
-                                            <p className="text-xs text-gray-500">
+                                            <p className="text-[10px] sm:text-xs text-gray-500">
                                                 {test.date}
                                             </p>
                                             {test.result && (
-                                                <p className="text-xs text-gray-600 mt-1">
+                                                <p className="text-[10px] sm:text-xs text-gray-600 mt-1 truncate">
                                                     Result: {test.result}
                                                 </p>
                                             )}
                                         </div>
                                     </div>
                                     <span
-                                        className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize ${getStatusColor(
+                                        className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium capitalize whitespace-nowrap ${getStatusColor(
                                             test.status
                                         )}`}
                                     >
@@ -131,7 +145,7 @@ export default function PatientDetailsModal({ patient, show, onClose }) {
                             ))}
                         </div>
                     ) : (
-                        <p className="text-sm text-gray-500 text-center py-8">
+                        <p className="text-xs sm:text-sm text-gray-500 text-center py-6 sm:py-8">
                             No test history available
                         </p>
                     )}

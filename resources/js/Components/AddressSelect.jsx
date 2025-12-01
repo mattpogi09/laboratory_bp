@@ -20,6 +20,13 @@ export default function AddressSelect({
         barangays: false,
     });
 
+    const [loadErrors, setLoadErrors] = useState({
+        regions: null,
+        provinces: null,
+        cities: null,
+        barangays: null,
+    });
+
     const [selectedValues, setSelectedValues] = useState({
         region_id: value.region_id || "",
         province_id: value.province_id || "",
@@ -98,18 +105,28 @@ export default function AddressSelect({
                     response.data.length > 0
                 ) {
                     setRegions(response.data);
+                    setLoadErrors((prev) => ({ ...prev, regions: null }));
                 } else {
                     console.error(
                         "Invalid or empty regions data:",
                         response.data,
                     );
                     setRegions([]);
-                    regionsLoadedRef.current = false; // Allow retry on error
+                    setLoadErrors((prev) => ({
+                        ...prev,
+                        regions: "No regions available",
+                    }));
+                    regionsLoadedRef.current = false;
                 }
             } catch (error) {
                 console.error("Failed to load regions:", error);
                 setRegions([]);
-                regionsLoadedRef.current = false; // Allow retry on error
+                setLoadErrors((prev) => ({
+                    ...prev,
+                    regions:
+                        "Failed to load regions. Please check your connection and try again.",
+                }));
+                regionsLoadedRef.current = false;
             } finally {
                 setLoading((prev) => ({ ...prev, regions: false }));
             }
@@ -207,6 +224,7 @@ export default function AddressSelect({
         try {
             const response = await axios.get(`/address/provinces/${regionId}`);
             setProvinces(response.data);
+            setLoadErrors((prev) => ({ ...prev, provinces: null }));
             return response.data;
         } catch (error) {
             console.error("Failed to load provinces:", error);
@@ -221,6 +239,7 @@ export default function AddressSelect({
         try {
             const response = await axios.get(`/address/cities/${provinceId}`);
             setCities(response.data);
+            setLoadErrors((prev) => ({ ...prev, cities: null }));
             return response.data;
         } catch (error) {
             console.error("Failed to load cities:", error);
@@ -235,6 +254,7 @@ export default function AddressSelect({
         try {
             const response = await axios.get(`/address/barangays/${cityId}`);
             setBarangays(response.data);
+            setLoadErrors((prev) => ({ ...prev, barangays: null }));
             return response.data;
         } catch (error) {
             console.error("Failed to load barangays:", error);
@@ -286,6 +306,11 @@ export default function AddressSelect({
                         </option>
                     ))}
                 </select>
+                {loadErrors.regions && (
+                    <p className="mt-1 text-sm text-red-600">
+                        {loadErrors.regions}
+                    </p>
+                )}
                 {errors.region_id && (
                     <p className="mt-1 text-sm text-red-500">
                         {errors.region_id}
@@ -322,6 +347,11 @@ export default function AddressSelect({
                         </option>
                     ))}
                 </select>
+                {loadErrors.provinces && (
+                    <p className="mt-1 text-sm text-red-600">
+                        {loadErrors.provinces}
+                    </p>
+                )}
                 {errors.province_id && (
                     <p className="mt-1 text-sm text-red-500">
                         {errors.province_id}
@@ -354,6 +384,11 @@ export default function AddressSelect({
                         </option>
                     ))}
                 </select>
+                {loadErrors.cities && (
+                    <p className="mt-1 text-sm text-red-600">
+                        {loadErrors.cities}
+                    </p>
+                )}
                 {errors.city_id && (
                     <p className="mt-1 text-sm text-red-500">
                         {errors.city_id}
@@ -388,6 +423,11 @@ export default function AddressSelect({
                         </option>
                     ))}
                 </select>
+                {loadErrors.barangays && (
+                    <p className="mt-1 text-sm text-red-600">
+                        {loadErrors.barangays}
+                    </p>
+                )}
                 {errors.barangay_code && (
                     <p className="mt-1 text-sm text-red-500">
                         {errors.barangay_code}

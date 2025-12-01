@@ -319,6 +319,22 @@ export default function TransactionShow({ auth, transaction }) {
                             </div>
                             <div>
                                 <dt className="font-medium text-gray-500">
+                                    Date of Birth
+                                </dt>
+                                <dd className="text-gray-900">
+                                    {transaction.patient?.date_of_birth
+                                        ? new Date(
+                                              transaction.patient.date_of_birth
+                                          ).toLocaleDateString("en-US", {
+                                              year: "numeric",
+                                              month: "short",
+                                              day: "numeric",
+                                          })
+                                        : "—"}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt className="font-medium text-gray-500">
                                     Age / Gender
                                 </dt>
                                 <dd className="text-gray-900">
@@ -326,7 +342,7 @@ export default function TransactionShow({ auth, transaction }) {
                                     {transaction.patient?.gender || "—"}
                                 </dd>
                             </div>
-                            <div>
+                            <div className="sm:col-span-2">
                                 <dt className="font-medium text-gray-500">
                                     Address
                                 </dt>

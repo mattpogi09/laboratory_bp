@@ -49,7 +49,7 @@ class LabTestController extends Controller
         ->pluck('count', 'category');
     });
 
-    return Inertia::render('Management/Services/Index', [
+    return Inertia::render('Management/Services/ServiceManagement', [
       'tests' => $tests,
       'categories' => $categories,
       'categoryStats' => $categoryStats,

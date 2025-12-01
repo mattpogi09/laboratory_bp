@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\CashierTransactionController;
+use App\Http\Controllers\CashReconciliationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\InventoryController;
@@ -97,13 +98,19 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/discounts-philhealth', function () {
-        return Inertia::render('Configuration/DiscountsPhilhealth/Index', [
+        return Inertia::render('Configuration/DiscountsPhilhealth/DiscountsPhilhealthPage', [
             'discounts' => \App\Models\Discount::orderBy('name')->paginate(100),
             'philHealthPlans' => \App\Models\PhilHealthPlan::orderBy('name')->paginate(100),
         ]);
     })->name('discounts-philhealth');
 
     Route::get('/reports-logs', [ReportLogController::class, 'index'])->name('reports-logs');
+
+    // Admin-only Cash Reconciliation Routes
+    Route::prefix('admin/reconciliation')->name('admin.reconciliation.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\CashReconciliationController::class, 'index'])->name('index');
+        Route::get('/{reconciliation}', [\App\Http\Controllers\CashReconciliationController::class, 'show'])->name('show');
+    });
 
     // Cashier Routes
     Route::prefix('cashier')->name('cashier.')->group(function () {
@@ -117,6 +124,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/transactions', [CashierTransactionController::class, 'store'])->name('transactions.store');
             Route::post('/transactions/check-duplicates', [CashierTransactionController::class, 'checkDuplicateTests'])->name('transactions.check-duplicates');
         });
+
+        // Cash Reconciliation Routes
+        Route::get('/reconciliation', [\App\Http\Controllers\CashReconciliationController::class, 'index'])->name('reconciliation.index');
+        Route::get('/reconciliation/create', [\App\Http\Controllers\CashReconciliationController::class, 'create'])->name('reconciliation.create');
+        Route::post('/reconciliation', [\App\Http\Controllers\CashReconciliationController::class, 'store'])->name('reconciliation.store');
+        Route::get('/reconciliation/{reconciliation}', [\App\Http\Controllers\CashReconciliationController::class, 'show'])->name('reconciliation.show');
     });
 
     // Laboratory Routes

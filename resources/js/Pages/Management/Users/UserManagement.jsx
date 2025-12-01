@@ -130,21 +130,22 @@ export default function UsersIndex({ auth, users, filters = {} }) {
     return (
         <DashboardLayout auth={auth}>
             <Head title="User Management" />
-            <LoadingOverlay show={isLoading} message="Loading..." />
+            <LoadingOverlay
+                show={isLoading || isSearching}
+                message={isSearching ? "Searching..." : "Loading..."}
+            />
 
-            {isSearching && <LoadingOverlay message="Searching..." />}
-
-            <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-gray-900">
+            <div className="mb-4 sm:mb-6">
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
                     User Management
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                     Manage staff accounts, roles, and permissions
                 </p>
             </div>
 
             {/* Search and Actions */}
-            <div className="mb-6 flex gap-4">
+            <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                     <input
@@ -168,10 +169,10 @@ export default function UsersIndex({ auth, users, filters = {} }) {
             {users.data?.length > 0 ? (
                 <div className="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="w-full">
+                        <table className="w-full min-w-[800px]">
                             <thead>
                                 <tr className="border-b border-gray-200 bg-gray-50">
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">
                                         <div
                                             className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors"
                                             onClick={() => handleSort("name")}
@@ -179,7 +180,7 @@ export default function UsersIndex({ auth, users, filters = {} }) {
                                             Name ↕
                                         </div>
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="hidden md:table-cell px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">
                                         <div
                                             className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors"
                                             onClick={() =>
@@ -189,10 +190,10 @@ export default function UsersIndex({ auth, users, filters = {} }) {
                                             Username ↕
                                         </div>
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="hidden lg:table-cell px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">
                                         Email
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">
                                         <div
                                             className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors"
                                             onClick={() => handleSort("role")}
@@ -200,13 +201,13 @@ export default function UsersIndex({ auth, users, filters = {} }) {
                                             Role ↕
                                         </div>
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="hidden sm:table-cell px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">
                                         Status
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="hidden xl:table-cell px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-700">
                                         Created
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-700">
                                         Actions
                                     </th>
                                 </tr>
@@ -217,32 +218,39 @@ export default function UsersIndex({ auth, users, filters = {} }) {
                                         key={user.id}
                                         className="hover:bg-gray-50 transition-colors"
                                     >
-                                        <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                        <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm font-medium text-gray-900">
                                             {user.name}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900">
+                                        <td className="hidden md:table-cell px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-900">
                                             {user.username}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-blue-600">
+                                        <td className="hidden lg:table-cell px-3 sm:px-4 py-3 text-xs sm:text-sm text-blue-600">
                                             {user.email}
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <span
-                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    user.role === "admin"
-                                                        ? "bg-red-100 text-red-800"
-                                                        : user.role ===
-                                                          "lab_staff"
-                                                        ? "bg-blue-100 text-blue-800"
-                                                        : "bg-teal-100 text-teal-800"
-                                                }`}
-                                            >
-                                                {formatRole(user.role)}
-                                            </span>
+                                        <td className="px-3 sm:px-4 py-3">
+                                            <div className="flex flex-col gap-1">
+                                                <span
+                                                    className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium w-fit ${
+                                                        user.role === "admin"
+                                                            ? "bg-red-100 text-red-800"
+                                                            : user.role ===
+                                                              "lab_staff"
+                                                            ? "bg-blue-100 text-blue-800"
+                                                            : "bg-teal-100 text-teal-800"
+                                                    }`}
+                                                >
+                                                    {formatRole(user.role)}
+                                                </span>
+                                                {user.id === 1 && (
+                                                    <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-purple-100 text-purple-800 w-fit">
+                                                        Primary Admin
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
-                                        <td className="px-4 py-3">
+                                        <td className="hidden sm:table-cell px-3 sm:px-4 py-3">
                                             <span
-                                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                                     user.is_active
                                                         ? "bg-green-100 text-green-800"
                                                         : "bg-gray-100 text-gray-800"
@@ -253,42 +261,61 @@ export default function UsersIndex({ auth, users, filters = {} }) {
                                                     : "Inactive"}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                        <td className="hidden xl:table-cell px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-600">
                                             {formatDate(user.created_at)}
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() =>
-                                                        handleEdit(user)
-                                                    }
-                                                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                    Edit
-                                                </button>
-                                                {user.username !== "admin" && (
+                                        <td className="px-3 sm:px-4 py-3">
+                                            <div className="flex items-center justify-end gap-1 sm:gap-2">
+                                                {/* Show edit button only if: not first admin (ID=1) OR current user is the first admin themselves */}
+                                                {(user.id !== 1 ||
+                                                    (user.id === 1 &&
+                                                        auth.user.id ===
+                                                            1)) && (
+                                                    <button
+                                                        onClick={() =>
+                                                            handleEdit(user)
+                                                        }
+                                                        className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs sm:text-sm font-medium transition-colors touch-manipulation p-1.5 sm:p-0"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                        <span className="hidden sm:inline">
+                                                            Edit
+                                                        </span>
+                                                    </button>
+                                                )}
+                                                {/* Hide deactivate button for first admin (ID=1) */}
+                                                {user.id !== 1 && (
                                                     <button
                                                         onClick={() =>
                                                             handleToggleClick(
                                                                 user
                                                             )
                                                         }
-                                                        className={`inline-flex items-center gap-1 text-sm font-medium transition-colors ${
+                                                        className={`inline-flex items-center gap-1 text-xs sm:text-sm font-medium transition-colors touch-manipulation p-1.5 sm:p-0 ${
                                                             user.is_active
                                                                 ? "text-red-600 hover:text-red-800"
                                                                 : "text-green-600 hover:text-green-800"
                                                         }`}
+                                                        title={
+                                                            user.is_active
+                                                                ? "Deactivate"
+                                                                : "Activate"
+                                                        }
                                                     >
                                                         {user.is_active ? (
                                                             <>
-                                                                <PowerOff className="h-4 w-4" />
-                                                                Deactivate
+                                                                <PowerOff className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                                <span className="hidden md:inline">
+                                                                    Deactivate
+                                                                </span>
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <Power className="h-4 w-4" />
-                                                                Activate
+                                                                <Power className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                                <span className="hidden md:inline">
+                                                                    Activate
+                                                                </span>
                                                             </>
                                                         )}
                                                     </button>

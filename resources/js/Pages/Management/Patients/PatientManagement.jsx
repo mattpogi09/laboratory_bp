@@ -115,26 +115,28 @@ export default function PatientsIndex({
     return (
         <DashboardLayout auth={auth}>
             <Head title="Patient Management" />
-            <LoadingOverlay show={isLoading} message="Loading..." />
+            <LoadingOverlay
+                show={isLoading || isSearching}
+                message={isSearching ? "Searching..." : "Loading..."}
+            />
 
-            <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-gray-900">
+            <div className="mb-4 sm:mb-6">
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
                     Patient Management
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-sm sm:text-base text-gray-600">
                     {patients.total || 0} total patients
                 </p>
             </div>
 
             {/* Search and Actions */}
-            <div className="mb-6 flex gap-4 relative">
-                {isSearching && <LoadingOverlay message="Searching..." />}
+            <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-3 sm:gap-4 relative">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                     <input
                         type="text"
-                        placeholder="Search patients by name, ID, or contact..."
-                        className="h-10 w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        placeholder="Search patients..."
+                        className="h-10 sm:h-10 w-full rounded-lg border border-gray-900 bg-white pl-10 pr-4 text-sm sm:text-base text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -145,18 +147,18 @@ export default function PatientsIndex({
             {patients.data?.length > 0 ? (
                 <div className="rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
-                        <table className="w-full">
+                        <table className="w-full min-w-[800px]">
                             <thead>
                                 <tr className="border-b border-gray-200 bg-gray-50">
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
                                         <div
-                                            className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors wrap text-nowrap"
+                                            className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors whitespace-nowrap"
                                             onClick={() => handleSort("id")}
                                         >
-                                            Patient ID ↕
+                                            ID ↕
                                         </div>
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
                                         <div
                                             className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors"
                                             onClick={() =>
@@ -166,16 +168,16 @@ export default function PatientsIndex({
                                             Name ↕
                                         </div>
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="hidden lg:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700">
                                         Age/Gender
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="hidden md:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700">
                                         Contact
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="hidden xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700">
                                         Address
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="hidden lg:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700">
                                         <div
                                             className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-2 py-1 -mx-2 transition-colors"
                                             onClick={() =>
@@ -185,10 +187,10 @@ export default function PatientsIndex({
                                             Last Visit ↕
                                         </div>
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 wrap text-nowrap">
+                                    <th className="hidden md:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">
                                         Total Tests
                                     </th>
-                                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                    <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
                                         Actions
                                     </th>
                                 </tr>
@@ -199,55 +201,70 @@ export default function PatientsIndex({
                                         key={patient.id}
                                         className="hover:bg-gray-50 transition-colors"
                                     >
-                                        <td className="px-4 py-3 text-sm text-gray-900 wrap text-nowrap">
-                                            {patient.patient_id}
+                                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-gray-900 whitespace-nowrap">
+                                            <span className="hidden sm:inline">
+                                                {patient.patient_id}
+                                            </span>
+                                            <span className="sm:hidden">
+                                                {
+                                                    patient.patient_id.split(
+                                                        "-"
+                                                    )[1]
+                                                }
+                                            </span>
                                         </td>
-                                        <td className="px-4 py-3">
+                                        <td className="px-2 sm:px-4 py-2 sm:py-3">
                                             <div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-medium text-gray-900">
+                                                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                                                    <span className="text-xs sm:text-sm font-medium text-gray-900">
                                                         {patient.name}
                                                     </span>
                                                     {!patient.is_active && (
-                                                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                                                        <span className="inline-flex items-center rounded-full bg-gray-100 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-medium text-gray-700">
                                                             Inactive
                                                         </span>
                                                     )}
                                                 </div>
-                                                <div className="text-sm text-gray-500">
+                                                <div className="text-xs sm:text-sm text-gray-500 md:hidden">
+                                                    {patient.contact_number}
+                                                </div>
+                                                <div className="hidden md:block text-sm text-gray-500">
                                                     {patient.email || "N/A"}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900">
+                                        <td className="hidden lg:table-cell px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
                                             {patient.age} / {patient.gender}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900">
+                                        <td className="hidden md:table-cell px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
                                             {patient.contact_number}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-600 wrap text-nowrap">
+                                        <td className="hidden xl:table-cell px-4 py-3 text-sm text-gray-600 max-w-xs truncate">
                                             {patient.address || "N/A"}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-900 wrap text-nowrap">
+                                        <td className="hidden lg:table-cell px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
                                             {patient.last_visit}
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800 ">
-                                                {patient.total_tests} tests
+                                        <td className="hidden md:table-cell px-4 py-3">
+                                            <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                                                {patient.total_tests}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
+                                        <td className="px-2 sm:px-4 py-2 sm:py-3">
+                                            <div className="flex items-center gap-1 sm:gap-2">
                                                 <button
                                                     onClick={() =>
                                                         handleViewPatient(
                                                             patient
                                                         )
                                                     }
-                                                    className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 text-sm font-medium transition-colors"
+                                                    className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-800 text-xs sm:text-sm font-medium transition-colors p-1 sm:p-0"
+                                                    title="View patient"
                                                 >
                                                     <Eye className="h-4 w-4" />
-                                                    View
+                                                    <span className="hidden sm:inline">
+                                                        View
+                                                    </span>
                                                 </button>
                                                 <button
                                                     onClick={() =>
@@ -255,10 +272,13 @@ export default function PatientsIndex({
                                                             patient
                                                         )
                                                     }
-                                                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                                                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs sm:text-sm font-medium transition-colors p-1 sm:p-0"
+                                                    title="Edit patient"
                                                 >
                                                     <Edit className="h-4 w-4" />
-                                                    Edit
+                                                    <span className="hidden sm:inline">
+                                                        Edit
+                                                    </span>
                                                 </button>
                                                 {userRole === "admin" &&
                                                     (patient.is_active ? (
@@ -268,11 +288,13 @@ export default function PatientsIndex({
                                                                     patient
                                                                 )
                                                             }
-                                                            className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-800 text-sm font-medium transition-colors"
+                                                            className="hidden lg:inline-flex items-center gap-1 text-orange-600 hover:text-orange-800 text-sm font-medium transition-colors"
                                                             title="Deactivate patient"
                                                         >
                                                             <PowerOff className="h-4 w-4" />
-                                                            Deactivate
+                                                            <span className="hidden xl:inline">
+                                                                Deactivate
+                                                            </span>
                                                         </button>
                                                     ) : (
                                                         <button
@@ -281,11 +303,13 @@ export default function PatientsIndex({
                                                                     patient
                                                                 )
                                                             }
-                                                            className="inline-flex items-center gap-1 text-green-600 hover:text-green-800 text-sm font-medium transition-colors"
+                                                            className="hidden lg:inline-flex items-center gap-1 text-green-600 hover:text-green-800 text-sm font-medium transition-colors"
                                                             title="Activate patient"
                                                         >
                                                             <Power className="h-4 w-4" />
-                                                            Activate
+                                                            <span className="hidden xl:inline">
+                                                                Activate
+                                                            </span>
                                                         </button>
                                                     ))}
                                             </div>
@@ -297,21 +321,23 @@ export default function PatientsIndex({
                     </div>
 
                     {/* Pagination Controls */}
-                    <div className="border-t border-gray-200 px-4 py-3 bg-gray-50">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                    <div className="border-t border-gray-200 px-3 sm:px-4 py-3 bg-gray-50">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
                                 <button
                                     onClick={() =>
                                         router.visit(patients.prev_page_url)
                                     }
                                     disabled={!patients.prev_page_url}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
-                                    Previous
+                                    <span className="hidden sm:inline">
+                                        Previous
+                                    </span>
                                 </button>
-                                <span className="text-sm text-gray-600">
-                                    Page {patients.current_page} /{" "}
+                                <span className="text-xs sm:text-sm text-gray-600 px-2">
+                                    {patients.current_page} /{" "}
                                     {patients.last_page}
                                 </span>
                                 <button
@@ -319,16 +345,17 @@ export default function PatientsIndex({
                                         router.visit(patients.next_page_url)
                                     }
                                     disabled={!patients.next_page_url}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="inline-flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
                                 >
-                                    Next
+                                    <span className="hidden sm:inline">
+                                        Next
+                                    </span>
                                     <ChevronRight className="h-4 w-4" />
                                 </button>
                             </div>
-                            <div className="text-sm text-gray-600">
-                                Showing {patients.from || 0} to{" "}
-                                {patients.to || 0} of {patients.total || 0}{" "}
-                                patients
+                            <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
+                                Showing {patients.from || 0} -{" "}
+                                {patients.to || 0} of {patients.total || 0}
                             </div>
                         </div>
                     </div>

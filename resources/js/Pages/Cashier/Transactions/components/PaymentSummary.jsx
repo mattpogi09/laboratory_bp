@@ -59,12 +59,21 @@ function PaymentSummary({
 
                 <TextField
                     label="Amount Paid"
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={payment.amount_tendered}
-                    onChange={handlePaymentChange("amount_tendered")}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow numbers and decimal point
+                        if (value === "" || /^\d*\.?\d*$/.test(value)) {
+                            handlePaymentChange("amount_tendered")(e);
+                        }
+                    }}
                     error={errors["payment.amount_tendered"]}
+                    style={{
+                        WebkitAppearance: "none",
+                        MozAppearance: "textfield",
+                    }}
                 />
             </div>
 
