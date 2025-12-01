@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\CashReconciliation;
 use App\Models\InventoryTransaction;
 use App\Models\Transaction;
 use App\Models\TransactionTest;
@@ -305,6 +306,62 @@ class ReportController extends Controller
                 'per_page' => $labTests->perPage(),
                 'total' => $labTests->total(),
             ],
+        ]);
+    }
+
+    public function reconciliation(Request $request)
+    {
+        $validated = $request->validate([
+            'from' => 'nullable|date',
+            'to' => 'nullable|date|after_or_equal:from',
+        ]);
+
+        $dateFrom = $validated['from'] ?? null;
+        $dateTo = $validated['to'] ?? null;
+
+        $query = CashReconciliation::with('cashier')->latest('reconciliation_date');
+
+        if ($dateFrom) {
+            $query->whereDate('reconciliation_date', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('reconciliation_date', '<=', $dateTo);
+        }
+
+        $reconciliations = $query->get();
+
+        // Calculate stats
+        $balanced = $reconciliations->where('variance', 0)->count();
+        $overage = $reconciliations->where('variance', '>', 0);
+        $shortage = $reconciliations->where('variance', '<', 0);
+
+        $stats = [
+            'total' => $reconciliations->count(),
+            'balanced' => $balanced,
+            'overage' => $overage->count(),
+            'shortage' => $shortage->count(),
+            'total_overage_amount' => (float) $overage->sum('variance'),
+            'total_shortage_amount' => (float) abs($shortage->sum('variance')),
+        ];
+
+        // Map to rows
+        $rows = $reconciliations->map(function ($reconciliation) {
+            return [
+                'id' => $reconciliation->id,
+                'date' => $reconciliation->reconciliation_date->format('Y-m-d'),
+                'cashier' => $reconciliation->cashier->name,
+                'expected_cash' => (float) $reconciliation->expected_cash,
+                'actual_cash' => (float) $reconciliation->actual_cash,
+                'variance' => (float) $reconciliation->variance,
+                'status' => $reconciliation->status,
+                'transaction_count' => (int) $reconciliation->transaction_count,
+            ];
+        });
+
+        return response()->json([
+            'stats' => $stats,
+            'rows' => $rows,
         ]);
     }
 }

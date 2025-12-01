@@ -11,18 +11,19 @@ return [
      * --------------------------------------------------------------------------
      * API Route Prefix
      * --------------------------------------------------------------------------
+     * Set to null to disable automatic route registration since we define
+     * our own routes in routes/api.php and routes/web.php
      */
-    'prefix' => '/api/address',
+    'prefix' => null,
 
     /*
      * --------------------------------------------------------------------------
      * API Route Middleware
      * --------------------------------------------------------------------------
+     * Empty array disables automatic route registration
+     * We use our own routes in routes/api.php and routes/web.php instead
      */
-    'middleware' => [
-        'web',
-        'auth',
-    ],
+    'middleware' => ['__disabled__'],
 
     /*
      * --------------------------------------------------------------------------

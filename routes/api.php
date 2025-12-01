@@ -30,13 +30,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/patients/{patient}', [MobilePatientController::class, 'update'])->name('mobile.patients.update');
     Route::get('/tests/{id}', [MobilePatientController::class, 'testDetails'])->name('mobile.tests.show');
 
-    // Address API Routes
-    Route::prefix('address')->group(function () {
-        Route::get('/regions', [\App\Http\Controllers\AddressController::class, 'getRegions'])->name('mobile.address.regions');
-        Route::get('/provinces/{regionId}', [\App\Http\Controllers\AddressController::class, 'getProvinces'])->name('mobile.address.provinces');
-        Route::get('/cities/{provinceId}', [\App\Http\Controllers\AddressController::class, 'getCities'])->name('mobile.address.cities');
-        Route::get('/barangays/{cityId}', [\App\Http\Controllers\AddressController::class, 'getBarangays'])->name('mobile.address.barangays');
-    });
+    // Address API Routes - use /addr/ prefix instead of /address/ to avoid Yajra package middleware conflict
+    Route::get('/addr/regions', [\App\Http\Controllers\AddressController::class, 'getRegions'])->name('mobile.address.regions');
+    Route::get('/addr/provinces/{regionId}', [\App\Http\Controllers\AddressController::class, 'getProvinces'])->name('mobile.address.provinces');
+    Route::get('/addr/cities/{provinceId}', [\App\Http\Controllers\AddressController::class, 'getCities'])->name('mobile.address.cities');
+    Route::get('/addr/barangays/{cityId}', [\App\Http\Controllers\AddressController::class, 'getBarangays'])->name('mobile.address.barangays');
 
     Route::get('/inventory', [MobileInventoryController::class, 'index'])->name('mobile.inventory.index');
     Route::get('/inventory/transactions', [MobileInventoryController::class, 'transactions'])->name('mobile.inventory.transactions');
@@ -49,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/inventory-log', [MobileReportController::class, 'inventoryLog'])->name('mobile.reports.inventory-log');
     Route::get('/reports/audit-log', [MobileReportController::class, 'auditLog'])->name('mobile.reports.audit-log');
     Route::get('/reports/lab-report', [MobileReportController::class, 'labReport'])->name('mobile.reports.lab-report');
+    Route::get('/reports/reconciliation', [MobileReportController::class, 'reconciliation'])->name('mobile.reports.reconciliation');
 
     // User Management Routes
     Route::get('/users', [MobileUserController::class, 'index'])->name('mobile.users.index');
