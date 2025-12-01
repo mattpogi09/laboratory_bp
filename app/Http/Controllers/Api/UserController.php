@@ -124,6 +124,12 @@ class UserController extends Controller
 
         $user = User::findOrFail($id);
 
+        // Prevent modification of the primary admin (ID=1) by other users
+        // Primary admin can edit their own account
+        if ($user->id === 1 && $request->user()->id !== 1) {
+            return response()->json(['message' => 'Cannot modify the primary admin account'], 403);
+        }
+
         $oldData = [
             'name' => $user->name,
             'username' => $user->username,
@@ -185,12 +191,13 @@ class UserController extends Controller
 
         $user = User::findOrFail($id);
 
-        if ($user->id === $request->user()->id) {
-            return response()->json(['message' => 'You cannot deactivate your own account'], 400);
+        // Prevent deactivation of the primary admin (ID=1)
+        if ($user->id === 1) {
+            return response()->json(['message' => 'Cannot deactivate the primary admin account'], 400);
         }
 
-        if ($user->username === 'superadmin') {
-            return response()->json(['message' => 'Cannot deactivate the super admin account'], 400);
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'You cannot deactivate your own account'], 400);
         }
 
         $user->update([

@@ -74,4 +74,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/philhealth-plans', [MobilePhilHealthPlanController::class, 'store'])->name('mobile.philhealth-plans.store');
     Route::put('/philhealth-plans/{id}', [MobilePhilHealthPlanController::class, 'update'])->name('mobile.philhealth-plans.update');
     Route::post('/philhealth-plans/{id}/toggle', [MobilePhilHealthPlanController::class, 'toggleActive'])->name('mobile.philhealth-plans.toggle');
+
+    // Cash Reconciliation Routes
+    Route::get('/reconciliations', [\App\Http\Controllers\Api\ReconciliationController::class, 'index'])->name('mobile.reconciliations.index');
+    Route::get('/reconciliations/create', [\App\Http\Controllers\Api\ReconciliationController::class, 'create'])->name('mobile.reconciliations.create');
+    Route::post('/reconciliations', [\App\Http\Controllers\Api\ReconciliationController::class, 'store'])->name('mobile.reconciliations.store');
+    Route::get('/reconciliations/{id}', [\App\Http\Controllers\Api\ReconciliationController::class, 'show'])->name('mobile.reconciliations.show');
 });
