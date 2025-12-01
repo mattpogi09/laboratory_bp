@@ -189,6 +189,10 @@ class UserController extends Controller
             return response()->json(['message' => 'You cannot deactivate your own account'], 400);
         }
 
+        if ($user->username === 'superadmin') {
+            return response()->json(['message' => 'Cannot deactivate the super admin account'], 400);
+        }
+
         $user->update([
             'is_active' => !$user->is_active,
         ]);
