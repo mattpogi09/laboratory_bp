@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\SendPasswordResetOTP;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Carbon\Carbon;
 
 class PasswordResetLinkController extends Controller
 {
@@ -23,7 +27,7 @@ class PasswordResetLinkController extends Controller
     }
 
     /**
-     * Handle an incoming password reset link request.
+     * Handle an incoming password reset link request - Send OTP to email.
      *
      * @throws \Illuminate\Validation\ValidationException
      */
@@ -36,19 +40,78 @@ class PasswordResetLinkController extends Controller
             'email.email' => 'Please provide a valid email address.',
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        // Check if user exists
+        $user = User::where('email', $request->email)->first();
 
-        if ($status == Password::RESET_LINK_SENT) {
-            return back()->with('status', __($status));
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['We could not find a user with that email address.'],
+            ]);
         }
 
-        throw ValidationException::withMessages([
-            'email' => [trans($status)],
+        // Generate 6-digit OTP
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        // Delete any existing OTP for this email
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        // Store OTP in database
+        DB::table('password_reset_tokens')->insert([
+            'email' => $request->email,
+            'otp' => $otp,
+            'created_at' => Carbon::now(),
+            'expires_at' => Carbon::now()->addMinutes(10),
+            'is_verified' => false,
         ]);
+
+        // Send OTP via email
+        Mail::to($request->email)->send(new SendPasswordResetOTP($otp, $user->name));
+
+        return back()->with('status', 'We have sent a 6-digit OTP to your email address. Please check your inbox.');
+    }
+
+    /**
+     * Verify the OTP code provided by the user.
+     */
+    public function verifyOtp(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|string|size:6',
+        ]);
+
+        $resetRecord = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$resetRecord) {
+            throw ValidationException::withMessages([
+                'otp' => ['No OTP request found. Please request a new OTP.'],
+            ]);
+        }
+
+        // Check if OTP has expired
+        if (Carbon::parse($resetRecord->expires_at)->isPast()) {
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            throw ValidationException::withMessages([
+                'otp' => ['This OTP has expired. Please request a new one.'],
+            ]);
+        }
+
+        // Verify OTP
+        if ($resetRecord->otp !== $request->otp) {
+            throw ValidationException::withMessages([
+                'otp' => ['The OTP you entered is incorrect. Please try again.'],
+            ]);
+        }
+
+        // Mark OTP as verified
+        DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->update(['is_verified' => true]);
+
+        // Redirect to password reset page with email
+        return redirect()->route('password.reset', ['token' => 'verified', 'email' => $request->email])
+            ->with('status', 'OTP verified successfully. You can now reset your password.');
     }
 }

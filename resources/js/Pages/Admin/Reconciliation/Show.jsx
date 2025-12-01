@@ -201,6 +201,9 @@ export default function Show({ auth, reconciliation, transactions }) {
                                         Patient
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Date
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Time
                                     </th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -223,7 +226,21 @@ export default function Show({ auth, reconciliation, transactions }) {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {new Date(
                                                 transaction.created_at
-                                            ).toLocaleTimeString()}
+                                            ).toLocaleDateString("en-US", {
+                                                month: "2-digit",
+                                                day: "2-digit",
+                                                year: "numeric",
+                                            })}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {new Date(
+                                                transaction.created_at
+                                            ).toLocaleTimeString("en-US", {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                                second: "2-digit",
+                                                hour12: true,
+                                            })}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
                                             ₱
@@ -238,7 +255,7 @@ export default function Show({ auth, reconciliation, transactions }) {
                                 ))}
                                 <tr className="bg-gray-50 font-bold">
                                     <td
-                                        colSpan="3"
+                                        colSpan="4"
                                         className="px-6 py-4 text-sm text-right text-gray-900"
                                     >
                                         Total:

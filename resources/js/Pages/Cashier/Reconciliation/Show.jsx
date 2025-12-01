@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
+import Modal from "@/Components/Modal";
 import {
     ArrowLeft,
     TrendingDown,
@@ -9,9 +10,34 @@ import {
     Calendar,
     User,
     FileText,
+    AlertTriangle,
 } from "lucide-react";
 
 export default function Show({ auth, reconciliation, transactions }) {
+    const { flash } = usePage().props;
+    const [showCorrectionModal, setShowCorrectionModal] = useState(false);
+    const [correctionReason, setCorrectionReason] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleRequestCorrection = (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        router.post(
+            route(
+                "cashier.reconciliation.request-correction",
+                reconciliation.id
+            ),
+            { reason: correctionReason },
+            {
+                onSuccess: () => {
+                    setShowCorrectionModal(false);
+                    setCorrectionReason("");
+                },
+                onFinish: () => setIsSubmitting(false),
+            }
+        );
+    };
     const getStatusBadge = () => {
         if (reconciliation.variance == 0) {
             return (
@@ -43,6 +69,22 @@ export default function Show({ auth, reconciliation, transactions }) {
 
             <div className="py-4 sm:py-6 lg:py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    {/* Flash Messages */}
+                    {flash?.success && (
+                        <div className="mb-6 rounded-lg bg-green-50 border border-green-200 p-4">
+                            <p className="text-sm text-green-800">
+                                {flash.success}
+                            </p>
+                        </div>
+                    )}
+                    {flash?.error && (
+                        <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
+                            <p className="text-sm text-red-800">
+                                {flash.error}
+                            </p>
+                        </div>
+                    )}
+
                     {/* Header */}
                     <div className="mb-6">
                         <Link
@@ -68,7 +110,34 @@ export default function Show({ auth, reconciliation, transactions }) {
                                     })}
                                 </p>
                             </div>
-                            {getStatusBadge()}
+                            <div className="flex items-center gap-3">
+                                {getStatusBadge()}
+                                {!reconciliation.correction_requested &&
+                                    !reconciliation.is_approved && (
+                                        <button
+                                            onClick={() =>
+                                                setShowCorrectionModal(true)
+                                            }
+                                            className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700"
+                                        >
+                                            <AlertTriangle className="h-4 w-4" />
+                                            Request Correction
+                                        </button>
+                                    )}
+                                {reconciliation.correction_requested &&
+                                    !reconciliation.is_approved && (
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800">
+                                            <AlertTriangle className="h-4 w-4" />
+                                            Correction Requested
+                                        </span>
+                                    )}
+                                {reconciliation.is_approved && (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
+                                        <CheckCircle className="h-4 w-4" />
+                                        Approved
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -207,6 +276,9 @@ export default function Show({ auth, reconciliation, transactions }) {
                                                 Patient
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Date
+                                            </th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Time
                                             </th>
                                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -231,7 +303,27 @@ export default function Show({ auth, reconciliation, transactions }) {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {new Date(
                                                         transaction.created_at
-                                                    ).toLocaleTimeString()}
+                                                    ).toLocaleDateString(
+                                                        "en-US",
+                                                        {
+                                                            month: "2-digit",
+                                                            day: "2-digit",
+                                                            year: "numeric",
+                                                        }
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {new Date(
+                                                        transaction.created_at
+                                                    ).toLocaleTimeString(
+                                                        "en-US",
+                                                        {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                            second: "2-digit",
+                                                            hour12: true,
+                                                        }
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-gray-900">
                                                     ₱
@@ -246,7 +338,7 @@ export default function Show({ auth, reconciliation, transactions }) {
                                         ))}
                                         <tr className="bg-gray-50 font-bold">
                                             <td
-                                                colSpan="3"
+                                                colSpan="4"
                                                 className="px-6 py-4 text-sm text-right text-gray-900"
                                             >
                                                 Total:
@@ -268,6 +360,78 @@ export default function Show({ auth, reconciliation, transactions }) {
                     </div>
                 </div>
             </div>
+
+            {/* Request Correction Modal */}
+            <Modal
+                show={showCorrectionModal}
+                onClose={() => setShowCorrectionModal(false)}
+                maxWidth="md"
+            >
+                <div className="p-6">
+                    <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+                                <AlertTriangle className="h-6 w-6 text-amber-600" />
+                            </div>
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                                Request Correction
+                            </h3>
+                            <p className="mt-2 text-sm text-gray-600">
+                                Submit a correction request to the
+                                administrator. Please explain why this
+                                reconciliation needs to be corrected.
+                            </p>
+
+                            <form
+                                onSubmit={handleRequestCorrection}
+                                className="mt-4"
+                            >
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Reason for Correction{" "}
+                                    <span className="text-red-600">*</span>
+                                </label>
+                                <textarea
+                                    value={correctionReason}
+                                    onChange={(e) =>
+                                        setCorrectionReason(e.target.value)
+                                    }
+                                    rows={4}
+                                    className="w-full rounded-lg border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
+                                    placeholder="Example: Miscounted the cash, forgot to include some bills..."
+                                    required
+                                />
+
+                                <div className="mt-6 flex gap-3 justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowCorrectionModal(false)
+                                        }
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                                        disabled={isSubmitting}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 disabled:opacity-50"
+                                        disabled={
+                                            isSubmitting ||
+                                            !correctionReason.trim()
+                                        }
+                                    >
+                                        {isSubmitting
+                                            ? "Submitting..."
+                                            : "Submit Request"}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
         </DashboardLayout>
     );
 }

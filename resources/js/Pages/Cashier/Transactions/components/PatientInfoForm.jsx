@@ -88,27 +88,89 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
 
     // Calculate age from date of birth
     const handleDateOfBirthChange = (e) => {
-        const dob = e.target.value;
-        onChange("date_of_birth", dob);
+        let value = e.target.value;
 
-        if (dob) {
-            const birthDate = new Date(dob);
-            const today = new Date();
-            let age = today.getFullYear() - birthDate.getFullYear();
-            const monthDiff = today.getMonth() - birthDate.getMonth();
-
-            // Adjust age if birthday hasn't occurred this year
-            if (
-                monthDiff < 0 ||
-                (monthDiff === 0 && today.getDate() < birthDate.getDate())
-            ) {
-                age--;
-            }
-
-            onChange("age", age >= 0 ? age : "");
-        } else {
-            onChange("age", "");
+        // If input type is date, convert from YYYY-MM-DD to MM/DD/YYYY
+        if (e.target.type === "date" && value) {
+            const [year, month, day] = value.split("-");
+            value = `${month}/${day}/${year}`;
         }
+
+        onChange("date_of_birth", value);
+        calculateAgeFromDOB(value);
+    };
+
+    // Handle manual text input for MM/DD/YYYY format
+    const handleDateOfBirthInput = (e) => {
+        let value = e.target.value;
+
+        // Remove non-numeric characters except /
+        value = value.replace(/[^\d/]/g, "");
+
+        // Auto-add slashes
+        if (value.length === 2 && !value.includes("/")) {
+            value = value + "/";
+        } else if (value.length === 5 && value.split("/").length === 2) {
+            value = value + "/";
+        }
+
+        // Limit to MM/DD/YYYY format
+        const parts = value.split("/");
+        if (parts[0] && parts[0].length > 2) {
+            parts[0] = parts[0].substring(0, 2);
+        }
+        if (parts[1] && parts[1].length > 2) {
+            parts[1] = parts[1].substring(0, 2);
+        }
+        if (parts[2] && parts[2].length > 4) {
+            parts[2] = parts[2].substring(0, 4);
+        }
+        value = parts.join("/");
+
+        onChange("date_of_birth", value);
+
+        // Calculate age if date is complete
+        if (isValidDateFormat(value)) {
+            calculateAgeFromDOB(value);
+        }
+    };
+
+    const isValidDateFormat = (dateStr) => {
+        if (!dateStr) return false;
+        const parts = dateStr.split("/");
+        if (parts.length !== 3) return false;
+        const [month, day, year] = parts;
+        return month?.length === 2 && day?.length === 2 && year?.length === 4;
+    };
+
+    const calculateAgeFromDOB = (dateStr) => {
+        if (!dateStr || !isValidDateFormat(dateStr)) {
+            onChange("age", "");
+            return;
+        }
+
+        const [month, day, year] = dateStr.split("/");
+        const birthDate = new Date(year, month - 1, day);
+
+        // Validate date
+        if (isNaN(birthDate.getTime())) {
+            onChange("age", "");
+            return;
+        }
+
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+        // Adjust age if birthday hasn't occurred this year
+        if (
+            monthDiff < 0 ||
+            (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ) {
+            age--;
+        }
+
+        onChange("age", age >= 0 ? age : "");
     };
 
     const handleGenderChange = (e) => {
@@ -279,16 +341,40 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
                 <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label className="mb-1 block text-sm font-medium text-gray-700">
-                            Date of Birth
+                            Date of Birth (MM/DD/YYYY)
                         </label>
-                        <input
-                            type="date"
-                            value={patient.date_of_birth || ""}
-                            onChange={handleDateOfBirthChange}
-                            max={new Date().toISOString().split("T")[0]}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            disabled={isExistingPatient}
-                        />
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={patient.date_of_birth || ""}
+                                onChange={handleDateOfBirthInput}
+                                placeholder="MM/DD/YYYY"
+                                maxLength="10"
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-gray-900 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                disabled={isExistingPatient}
+                            />
+                            <input
+                                type="date"
+                                onChange={handleDateOfBirthChange}
+                                max={new Date().toISOString().split("T")[0]}
+                                className="absolute inset-y-0 right-0 w-10 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                disabled={isExistingPatient}
+                                title="Pick a date"
+                            />
+                            <svg
+                                className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                            </svg>
+                        </div>
                         {errors["patient.date_of_birth"] && (
                             <p className="mt-1 text-xs text-red-600">
                                 {errors["patient.date_of_birth"]}

@@ -49,6 +49,18 @@ export default function Dashboard({
         return labels[period] || "Today";
     };
 
+    const getWelcomeMessage = (period) => {
+        const messages = {
+            day: "Welcome back! Here's what's happening today.",
+            week: "Welcome back! Here's what's happening this week.",
+            month: "Welcome back! Here's what's happening this month.",
+            year: "Welcome back! Here's what's happening this year.",
+        };
+        return (
+            messages[period] || "Welcome back! Here's what's happening today."
+        );
+    };
+
     const statsCards = [
         {
             title: `Total Revenue ${getPeriodLabel(selectedPeriod)}`,
@@ -110,7 +122,7 @@ export default function Dashboard({
                         Dashboard
                     </h1>
                     <p className="text-sm sm:text-base text-gray-600">
-                        Welcome back! Here's what's happening today.
+                        {getWelcomeMessage(selectedPeriod)}
                     </p>
                 </div>
 

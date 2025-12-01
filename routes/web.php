@@ -109,6 +109,8 @@ Route::middleware('auth')->group(function () {
     Route::prefix('admin/reconciliation')->name('admin.reconciliation.')->group(function () {
         Route::get('/', [\App\Http\Controllers\CashReconciliationController::class, 'index'])->name('index');
         Route::get('/{reconciliation}', [\App\Http\Controllers\CashReconciliationController::class, 'show'])->name('show');
+        Route::post('/{reconciliation}/approve', [\App\Http\Controllers\CashReconciliationController::class, 'approveCorrection'])->name('approve');
+        Route::delete('/{reconciliation}', [\App\Http\Controllers\CashReconciliationController::class, 'destroy'])->name('destroy');
     });
 
     // Cashier Routes
@@ -129,6 +131,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/reconciliation/create', [\App\Http\Controllers\CashReconciliationController::class, 'create'])->name('reconciliation.create');
         Route::post('/reconciliation', [\App\Http\Controllers\CashReconciliationController::class, 'store'])->name('reconciliation.store');
         Route::get('/reconciliation/{reconciliation}', [\App\Http\Controllers\CashReconciliationController::class, 'show'])->name('reconciliation.show');
+        Route::post('/reconciliation/{reconciliation}/request-correction', [\App\Http\Controllers\CashReconciliationController::class, 'requestCorrection'])->name('reconciliation.request-correction');
     });
 
     // Laboratory Routes

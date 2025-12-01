@@ -23,11 +23,8 @@ return new class extends Migration {
             $table->timestamps();
         });
 
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-        });
+        // Password reset tokens table is created in a separate migration
+        // See: 2025_12_01_000000_create_password_reset_tokens_table.php
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
