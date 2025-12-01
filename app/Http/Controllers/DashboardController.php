@@ -196,10 +196,9 @@ class DashboardController extends Controller
       ->get();
 
     foreach ($recentDiscrepancies as $discrepancy) {
-      $type = abs($discrepancy->variance) > 100 ? 'warning' : 'info';
       $varianceType = $discrepancy->variance > 0 ? 'overage' : 'shortage';
       $alerts[] = [
-        'type' => $type,
+        'type' => $varianceType,
         'message' => "Cash {$varianceType} of ₱" . number_format(abs($discrepancy->variance), 2) . " on " . $discrepancy->reconciliation_date->format('M d'),
         'action' => 'View Details',
         'route' => 'admin.reconciliation.show',

@@ -49,6 +49,18 @@ export default function Dashboard({
         return labels[period] || "Today";
     };
 
+    const getWelcomeMessage = (period) => {
+        const messages = {
+            day: "Welcome back! Here's what's happening today.",
+            week: "Welcome back! Here's what's happening this week.",
+            month: "Welcome back! Here's what's happening this month.",
+            year: "Welcome back! Here's what's happening this year.",
+        };
+        return (
+            messages[period] || "Welcome back! Here's what's happening today."
+        );
+    };
+
     const statsCards = [
         {
             title: `Total Revenue ${getPeriodLabel(selectedPeriod)}`,
@@ -110,7 +122,7 @@ export default function Dashboard({
                         Dashboard
                     </h1>
                     <p className="text-sm sm:text-base text-gray-600">
-                        Welcome back! Here's what's happening today.
+                        {getWelcomeMessage(selectedPeriod)}
                     </p>
                 </div>
 
@@ -143,6 +155,10 @@ export default function Dashboard({
                                 "rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0",
                                 alert.type === "critical"
                                     ? "bg-red-50 border border-red-200"
+                                    : alert.type === "shortage"
+                                    ? "bg-red-50 border border-red-200"
+                                    : alert.type === "overage"
+                                    ? "bg-blue-50 border border-blue-200"
                                     : alert.type === "warning"
                                     ? "bg-amber-50 border border-amber-200"
                                     : "bg-blue-50 border border-blue-200"
@@ -154,6 +170,10 @@ export default function Dashboard({
                                         "h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0",
                                         alert.type === "critical"
                                             ? "text-red-600"
+                                            : alert.type === "shortage"
+                                            ? "text-red-600"
+                                            : alert.type === "overage"
+                                            ? "text-blue-600"
                                             : alert.type === "warning"
                                             ? "text-amber-600"
                                             : "text-blue-600"
@@ -164,6 +184,10 @@ export default function Dashboard({
                                         "text-xs sm:text-sm font-medium",
                                         alert.type === "critical"
                                             ? "text-red-900"
+                                            : alert.type === "shortage"
+                                            ? "text-red-900"
+                                            : alert.type === "overage"
+                                            ? "text-blue-900"
                                             : alert.type === "warning"
                                             ? "text-amber-900"
                                             : "text-blue-900"
@@ -178,6 +202,10 @@ export default function Dashboard({
                                     "text-xs sm:text-sm font-medium hover:underline flex items-center gap-1 ml-6 sm:ml-0",
                                     alert.type === "critical"
                                         ? "text-red-700"
+                                        : alert.type === "shortage"
+                                        ? "text-red-700"
+                                        : alert.type === "overage"
+                                        ? "text-blue-700"
                                         : alert.type === "warning"
                                         ? "text-amber-700"
                                         : "text-blue-700"

@@ -17,6 +17,12 @@ class CashReconciliation extends Model
         'transaction_count',
         'notes',
         'cashier_id',
+        'correction_requested',
+        'correction_reason',
+        'correction_requested_at',
+        'is_approved',
+        'approved_by',
+        'approved_at',
     ];
 
     protected $casts = [
@@ -24,11 +30,20 @@ class CashReconciliation extends Model
         'expected_cash' => 'decimal:2',
         'actual_cash' => 'decimal:2',
         'variance' => 'decimal:2',
+        'correction_requested' => 'boolean',
+        'correction_requested_at' => 'datetime',
+        'is_approved' => 'boolean',
+        'approved_at' => 'datetime',
     ];
 
     public function cashier()
     {
         return $this->belongsTo(User::class, 'cashier_id');
+    }
+
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     /**

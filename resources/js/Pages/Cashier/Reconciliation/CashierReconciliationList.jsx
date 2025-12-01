@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import EmptyState from "@/Components/EmptyState";
 import LoadingOverlay from "@/Components/LoadingOverlay";
 import { cn } from "@/lib/utils";
@@ -15,8 +15,18 @@ import {
 } from "lucide-react";
 
 export default function Index({ auth, reconciliations, filters }) {
+    const { flash } = usePage().props;
     const [search, setSearch] = useState(filters.search || "");
     const [isSearching, setIsSearching] = useState(false);
+
+    // Check if today is already reconciled and NOT approved
+    const today = new Date().toISOString().split("T")[0];
+    const isTodayReconciled = reconciliations.data?.some((rec) => {
+        const recDate = new Date(rec.reconciliation_date)
+            .toISOString()
+            .split("T")[0];
+        return recDate === today && !rec.is_approved;
+    });
 
     // Debounced search with 300ms delay
     useEffect(() => {
@@ -76,6 +86,18 @@ export default function Index({ auth, reconciliations, filters }) {
             <Head title="Cash Reconciliation" />
             <LoadingOverlay show={isSearching} message="Searching..." />
 
+            {/* Flash Messages */}
+            {flash?.success && (
+                <div className="mb-6 rounded-lg bg-green-50 border border-green-200 p-4">
+                    <p className="text-sm text-green-800">{flash.success}</p>
+                </div>
+            )}
+            {flash?.error && (
+                <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
+                    <p className="text-sm text-red-800">{flash.error}</p>
+                </div>
+            )}
+
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-gray-900">
                     Cash Reconciliation
@@ -111,7 +133,17 @@ export default function Index({ auth, reconciliations, filters }) {
                         </form>
                         <Link
                             href={route("cashier.reconciliation.create")}
-                            className="inline-flex items-center  wrap text-nowrap gap-1 rounded-lg border border-gray-900 bg-blue-600 px-3 py-4 text-xs font-semibold text-white transition hover:bg-blue-700"
+                            className={`inline-flex items-center wrap text-nowrap gap-1 rounded-lg border px-3 py-4 text-xs font-semibold transition ${
+                                isTodayReconciled
+                                    ? "border-gray-300 bg-gray-300 text-gray-500 cursor-not-allowed"
+                                    : "border-gray-900 bg-blue-600 text-white hover:bg-blue-700"
+                            }`}
+                            disabled={isTodayReconciled}
+                            title={
+                                isTodayReconciled
+                                    ? "Today's reconciliation has already been completed"
+                                    : "Create new reconciliation"
+                            }
                         >
                             <CalendarDays className="h-4 w-6" />
                             Reconcile Today
@@ -199,7 +231,22 @@ export default function Index({ auth, reconciliations, filters }) {
                                             })}
                                         </td>
                                         <td className="px-4 py-3">
-                                            {getStatusBadge(reconciliation)}
+                                            <div className="flex items-center gap-2">
+                                                {getStatusBadge(reconciliation)}
+                                                {reconciliation.correction_requested &&
+                                                    !reconciliation.is_approved && (
+                                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
+                                                            <FileText className="h-3 w-3" />
+                                                            Pending Review
+                                                        </span>
+                                                    )}
+                                                {reconciliation.is_approved && (
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                                                        <CheckCircle className="h-3 w-3" />
+                                                        Approved
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-4 py-3 text-gray-700">
                                             {reconciliation.transaction_count}

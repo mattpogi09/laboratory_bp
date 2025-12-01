@@ -128,9 +128,9 @@
 
 <body>
   <div class="header">
-    @if(file_exists(public_path('images/bp_logo.png')))
+    @if(file_exists(public_path('images/logo.png')))
       <div style="text-align: center; margin-bottom: 10px;">
-        <img src="{{ public_path('images/bp_logo.png') }}" alt="BP Diagnostic Logo" style="max-width: 120px; height: auto;">
+        <img src="{{ public_path('images/logo.png') }}" alt="BP Diagnostic Logo" style="max-width: 120px; height: auto;">
       </div>
     @endif
     <h1>BP DIAGNOSTIC LABORATORY</h1>

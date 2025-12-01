@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import EmptyState from "@/Components/EmptyState";
 import LoadingOverlay from "@/Components/LoadingOverlay";
+import Modal from "@/Components/Modal";
 import { cn } from "@/lib/utils";
 import {
     TrendingDown,
@@ -12,12 +13,21 @@ import {
     Eye,
     Filter,
     Wallet,
+    Trash2,
+    AlertTriangle,
+    FileText,
 } from "lucide-react";
 
 export default function Index({ auth, reconciliations, filters, stats }) {
+    const { flash } = usePage().props;
     const [search, setSearch] = useState(filters.search || "");
     const [status, setStatus] = useState(filters.status || "");
     const [isSearching, setIsSearching] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showApproveModal, setShowApproveModal] = useState(false);
+    const [selectedReconciliation, setSelectedReconciliation] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isApproving, setIsApproving] = useState(false);
 
     // Debounced search with 300ms delay
     useEffect(() => {
@@ -82,10 +92,61 @@ export default function Index({ auth, reconciliations, filters, stats }) {
         }
     };
 
+    const handleDelete = (reconciliation) => {
+        setSelectedReconciliation(reconciliation);
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = () => {
+        setIsDeleting(true);
+        router.delete(
+            route("admin.reconciliation.destroy", selectedReconciliation.id),
+            {
+                onSuccess: () => {
+                    setShowDeleteModal(false);
+                    setSelectedReconciliation(null);
+                },
+                onFinish: () => setIsDeleting(false),
+            }
+        );
+    };
+
+    const handleApprove = (reconciliation) => {
+        setSelectedReconciliation(reconciliation);
+        setShowApproveModal(true);
+    };
+
+    const confirmApprove = () => {
+        setIsApproving(true);
+        router.post(
+            route("admin.reconciliation.approve", selectedReconciliation.id),
+            {},
+            {
+                onSuccess: () => {
+                    setShowApproveModal(false);
+                    setSelectedReconciliation(null);
+                },
+                onFinish: () => setIsApproving(false),
+            }
+        );
+    };
+
     return (
         <DashboardLayout auth={auth}>
             <Head title="Cash Reconciliation - Admin" />
             <LoadingOverlay show={isSearching} message="Searching..." />
+
+            {/* Flash Messages */}
+            {flash?.success && (
+                <div className="mb-6 rounded-lg bg-green-50 border border-green-200 p-4">
+                    <p className="text-sm text-green-800">{flash.success}</p>
+                </div>
+            )}
+            {flash?.error && (
+                <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
+                    <p className="text-sm text-red-800">{flash.error}</p>
+                </div>
+            )}
 
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-gray-900">
@@ -107,7 +168,14 @@ export default function Index({ auth, reconciliations, filters, stats }) {
                             {stats.total_reconciliations}
                         </p>
                     </div>
-                    <div className="bg-green-50 p-6 rounded-lg shadow-sm ring-1 ring-green-200">
+                    <button
+                        onClick={() => handleStatusChange("balanced")}
+                        className={`text-left p-6 rounded-lg shadow-sm ring-1 transition-all ${
+                            status === "balanced"
+                                ? "bg-green-100 ring-2 ring-green-500 scale-105"
+                                : "bg-green-50 ring-green-200 hover:bg-green-100 hover:scale-102"
+                        }`}
+                    >
                         <p className="text-sm text-green-700 mb-1">Balanced</p>
                         <p className="text-2xl font-bold text-green-900">
                             {stats.balanced_count}
@@ -122,8 +190,20 @@ export default function Index({ auth, reconciliations, filters, stats }) {
                                 : 0}
                             % accuracy
                         </p>
-                    </div>
-                    <div className="bg-blue-50 p-6 rounded-lg shadow-sm ring-1 ring-blue-200">
+                        {status === "balanced" && (
+                            <p className="text-xs text-green-700 mt-2 font-medium">
+                                ✓ Filtered
+                            </p>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => handleStatusChange("overage")}
+                        className={`text-left p-6 rounded-lg shadow-sm ring-1 transition-all ${
+                            status === "overage"
+                                ? "bg-blue-100 ring-2 ring-blue-500 scale-105"
+                                : "bg-blue-50 ring-blue-200 hover:bg-blue-100 hover:scale-102"
+                        }`}
+                    >
                         <p className="text-sm text-blue-700 mb-1">
                             Total Overage
                         </p>
@@ -140,8 +220,20 @@ export default function Index({ auth, reconciliations, filters, stats }) {
                         <p className="text-xs text-blue-600 mt-1">
                             {stats.overage_count} occurrences
                         </p>
-                    </div>
-                    <div className="bg-red-50 p-6 rounded-lg shadow-sm ring-1 ring-red-200">
+                        {status === "overage" && (
+                            <p className="text-xs text-blue-700 mt-2 font-medium">
+                                ✓ Filtered
+                            </p>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => handleStatusChange("shortage")}
+                        className={`text-left p-6 rounded-lg shadow-sm ring-1 transition-all ${
+                            status === "shortage"
+                                ? "bg-red-100 ring-2 ring-red-500 scale-105"
+                                : "bg-red-50 ring-red-200 hover:bg-red-100 hover:scale-102"
+                        }`}
+                    >
                         <p className="text-sm text-red-700 mb-1">
                             Total Shortage
                         </p>
@@ -158,7 +250,12 @@ export default function Index({ auth, reconciliations, filters, stats }) {
                         <p className="text-xs text-red-600 mt-1">
                             {stats.shortage_count} occurrences
                         </p>
-                    </div>
+                        {status === "shortage" && (
+                            <p className="text-xs text-red-700 mt-2 font-medium">
+                                ✓ Filtered
+                            </p>
+                        )}
+                    </button>
                 </div>
             )}
 
@@ -229,14 +326,14 @@ export default function Index({ auth, reconciliations, filters, stats }) {
                                     Status
                                 </th>
                                 <th className="px-3 sm:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-medium text-gray-700">
-                                    Transactions
+                                    Actions
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {reconciliations.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan="8" className="px-0 py-0">
+                                    <td colSpan="7" className="px-0 py-0">
                                         <EmptyState
                                             icon={Wallet}
                                             title="No Reconciliation Records"
@@ -298,21 +395,50 @@ export default function Index({ auth, reconciliations, filters, stats }) {
                                             })}
                                         </td>
                                         <td className="whitespace-nowrap px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-center">
-                                            {getStatusBadge(reconciliation)}
+                                            <div className="flex flex-col items-center gap-1">
+                                                {getStatusBadge(reconciliation)}
+                                                {reconciliation.correction_requested &&
+                                                    !reconciliation.is_approved && (
+                                                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
+                                                            <AlertTriangle className="h-3 w-3" />
+                                                            Correction Requested
+                                                        </span>
+                                                    )}
+                                                {reconciliation.is_approved && (
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                                                        <CheckCircle className="h-3 w-3" />
+                                                        Approved Request
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="whitespace-nowrap px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-center">
-                                            <Link
-                                                href={route(
-                                                    "admin.reconciliation.show",
-                                                    reconciliation.id
-                                                )}
-                                                className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                                            >
-                                                <Eye className="h-3.5 w-3.5" />
-                                                {
-                                                    reconciliation.transaction_count
-                                                }
-                                            </Link>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <Link
+                                                    href={route(
+                                                        "admin.reconciliation.show",
+                                                        reconciliation.id
+                                                    )}
+                                                    className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                    View
+                                                </Link>
+                                                {reconciliation.correction_requested &&
+                                                    !reconciliation.is_approved && (
+                                                        <button
+                                                            onClick={() =>
+                                                                handleApprove(
+                                                                    reconciliation
+                                                                )
+                                                            }
+                                                            className="inline-flex items-center gap-1 text-green-600 hover:text-green-800 font-medium"
+                                                        >
+                                                            <CheckCircle className="h-4 w-4" />
+                                                            Approve
+                                                        </button>
+                                                    )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
@@ -398,6 +524,168 @@ export default function Index({ auth, reconciliations, filters, stats }) {
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <Modal
+                show={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                maxWidth="md"
+            >
+                <div className="p-6">
+                    <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                                <Trash2 className="h-6 w-6 text-red-600" />
+                            </div>
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                                Delete Reconciliation
+                            </h3>
+                            <div className="mt-3 text-sm text-gray-600 space-y-2">
+                                <p>
+                                    Are you sure you want to delete this
+                                    reconciliation? This action cannot be
+                                    undone.
+                                </p>
+                                {selectedReconciliation && (
+                                    <div className="mt-4 rounded-lg bg-gray-50 p-3 space-y-1">
+                                        <p>
+                                            <strong>Date:</strong>{" "}
+                                            {new Date(
+                                                selectedReconciliation.reconciliation_date
+                                            ).toLocaleDateString()}
+                                        </p>
+                                        <p>
+                                            <strong>Cashier:</strong>{" "}
+                                            {
+                                                selectedReconciliation.cashier
+                                                    ?.name
+                                            }
+                                        </p>
+                                        <p>
+                                            <strong>Variance:</strong> ₱
+                                            {parseFloat(
+                                                selectedReconciliation.variance
+                                            ).toFixed(2)}
+                                        </p>
+                                        {selectedReconciliation.correction_requested && (
+                                            <p className="text-amber-700">
+                                                <strong>Reason:</strong>{" "}
+                                                {
+                                                    selectedReconciliation.correction_reason
+                                                }
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                                <p className="mt-3 text-amber-700 font-medium">
+                                    ⚠️ The cashier will be able to create a new
+                                    reconciliation after deletion.
+                                </p>
+                            </div>
+                            <div className="mt-6 flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setShowDeleteModal(false)}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                                    disabled={isDeleting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting
+                                        ? "Deleting..."
+                                        : "Delete Reconciliation"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* Approve Correction Modal */}
+            <Modal
+                show={showApproveModal}
+                onClose={() => setShowApproveModal(false)}
+                maxWidth="md"
+            >
+                <div className="p-6">
+                    <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                            <CheckCircle className="h-6 w-6 text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                                Approve Correction Request
+                            </h3>
+                            <div className="mt-3 text-sm text-gray-600 space-y-2">
+                                <p>
+                                    By approving this request, the cashier will
+                                    be able to re-reconcile for this date. The
+                                    current reconciliation will be removed.
+                                </p>
+                                {selectedReconciliation && (
+                                    <div className="mt-4 rounded-lg bg-gray-50 p-3 space-y-1">
+                                        <p>
+                                            <strong>Date:</strong>{" "}
+                                            {new Date(
+                                                selectedReconciliation.reconciliation_date
+                                            ).toLocaleDateString()}
+                                        </p>
+                                        <p>
+                                            <strong>Cashier:</strong>{" "}
+                                            {
+                                                selectedReconciliation.cashier
+                                                    ?.name
+                                            }
+                                        </p>
+                                        <p>
+                                            <strong>Current Variance:</strong> ₱
+                                            {parseFloat(
+                                                selectedReconciliation.variance
+                                            ).toFixed(2)}
+                                        </p>
+                                        {selectedReconciliation.correction_reason && (
+                                            <p className="text-amber-700">
+                                                <strong>Reason:</strong>{" "}
+                                                {
+                                                    selectedReconciliation.correction_reason
+                                                }
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                                <p className="mt-3 text-green-700 font-medium">
+                                    ✓ The cashier will be notified and can
+                                    re-reconcile immediately.
+                                </p>
+                            </div>
+                            <div className="mt-6 flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setShowApproveModal(false)}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                                    disabled={isApproving}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmApprove}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                                    disabled={isApproving}
+                                >
+                                    {isApproving
+                                        ? "Approving..."
+                                        : "Approve Request"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
         </DashboardLayout>
     );
 }

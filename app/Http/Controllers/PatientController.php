@@ -146,6 +146,17 @@ class PatientController extends Controller
      */
     public function update(Request $request, Patient $patient)
     {
+        // Convert MM/DD/YYYY to YYYY-MM-DD for validation
+        if (isset($request->date_of_birth) && $request->date_of_birth) {
+            $dob = $request->date_of_birth;
+            // Check if format is MM/DD/YYYY
+            if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $dob, $matches)) {
+                $request->merge([
+                    'date_of_birth' => $matches[3] . '-' . $matches[1] . '-' . $matches[2]
+                ]);
+            }
+        }
+
         $rules = [
             'email' => 'nullable|email|max:255',
             'contact_number' => ['nullable', 'regex:/^09[0-9]{9}$/'],
@@ -167,7 +178,7 @@ class PatientController extends Controller
             'age.max' => 'Age cannot exceed 150.',
             'gender.required' => 'Gender is required.',
             'gender.in' => 'Please select a valid gender.',
-            'date_of_birth.date' => 'Please enter a valid birth date.',
+            'date_of_birth.date' => 'Please enter a valid birth date in MM/DD/YYYY format.',
             'date_of_birth.before' => 'Birth date must be in the past.',
         ];
 

@@ -115,6 +115,19 @@ class CashierTransactionController extends Controller
 
     public function store(Request $request)
     {
+        // Convert MM/DD/YYYY to YYYY-MM-DD for validation
+        if (isset($request->patient['date_of_birth']) && $request->patient['date_of_birth']) {
+            $dob = $request->patient['date_of_birth'];
+            // Check if format is MM/DD/YYYY
+            if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $dob, $matches)) {
+                $request->merge([
+                    'patient' => array_merge($request->patient, [
+                        'date_of_birth' => $matches[3] . '-' . $matches[1] . '-' . $matches[2]
+                    ])
+                ]);
+            }
+        }
+
         $validated = $request->validate([
             'patient.id' => ['nullable', 'exists:patients,id'],
             'patient.first_name' => ['required_without:patient.id', 'string', 'max:255'],
@@ -147,7 +160,7 @@ class CashierTransactionController extends Controller
             'patient.first_name.required_without' => 'First name is required for new patients.',
             'patient.last_name.required_without' => 'Last name is required for new patients.',
             'patient.email.email' => 'Please enter a valid email address.',
-            'patient.date_of_birth.date' => 'Please enter a valid date of birth.',
+            'patient.date_of_birth.date' => 'Please enter a valid date of birth in MM/DD/YYYY format.',
             'patient.date_of_birth.before' => 'Date of birth must be before today.',
             'patient.age.integer' => 'Age must be a number.',
             'patient.age.min' => 'Age must be at least 0.',
