@@ -168,7 +168,7 @@ export default function TransactionShow({ auth, transaction }) {
                 <body>
                     <div class="text-center">
                         <h2>BP Diagnostic Center</h2>
-                        <p style="font-weight: 700;">Official Receipt</p>
+                        <p style="font-weight: 700;">Unofficial Receipt</p>
                         <p>Receipt #: ${transaction.receipt_number}</p>
                         <p>Transaction #: ${transaction.transaction_number}</p>
                         <p class="queue-bold">Queue #: ${
@@ -327,8 +327,8 @@ export default function TransactionShow({ auth, transaction }) {
                                               transaction.patient.date_of_birth
                                           ).toLocaleDateString("en-US", {
                                               year: "numeric",
-                                              month: "short",
-                                              day: "numeric",
+                                              month: "2-digit",
+                                              day: "2-digit",
                                           })
                                         : "—"}
                                 </dd>

@@ -136,7 +136,7 @@ export default function PatientsIndex({
                     <input
                         type="text"
                         placeholder="Search patients..."
-                        className="h-10 sm:h-10 w-full rounded-lg border border-gray-900 bg-white pl-10 pr-4 text-sm sm:text-base text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        className="h-10 sm:h-10 w-full rounded-lg border border-gray-900 bg-white pl-10 pr-4 text-sm sm:text-base text-gray-900 placeholder:text-gray-400 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />

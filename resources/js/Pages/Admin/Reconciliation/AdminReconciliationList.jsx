@@ -171,7 +171,7 @@ export default function Index({ auth, reconciliations, filters, stats }) {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search by date or cashier..."
-                        className="h-10 w-full rounded-lg border border-gray-900 bg-white pl-10 pr-4 text-gray-900 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        className="h-10 w-full rounded-lg border border-gray-900 bg-white pl-10 pr-4 text-gray-900 placeholder:text-gray-500 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
                     />
                 </div>
                 <div className="flex gap-2">

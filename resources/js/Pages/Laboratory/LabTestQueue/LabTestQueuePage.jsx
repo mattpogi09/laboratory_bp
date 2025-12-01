@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 export default function LabTestQueueIndex({ auth, stats = {}, tests = {} }) {
     const [activeTab, setActiveTab] = useState("pending");
     const [isLoading, setIsLoading] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
 
     const tabConfig = {
         pending: {

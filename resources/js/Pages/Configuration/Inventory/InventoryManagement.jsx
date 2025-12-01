@@ -371,7 +371,7 @@ export default function InventoryIndex({
                                                         e.target.value
                                                     )
                                                 }
-                                                className="min-h-[44px] sm:min-h-0 sm:h-10 w-full rounded-lg border border-gray-900 bg-white/5 pl-9 sm:pl-10 pr-3 sm:pr-4 text-xs sm:text-sm text-gray-900 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 touch-manipulation"
+                                                className="min-h-[44px] sm:min-h-0 sm:h-10 w-full rounded-lg border border-gray-900 bg-white/5 pl-9 sm:pl-10 pr-3 sm:pr-4 text-xs sm:text-sm text-gray-900 placeholder:text-gray-500 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20 touch-manipulation"
                                             />
                                         </div>
                                         <div className="relative">

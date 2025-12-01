@@ -151,7 +151,7 @@ export default function UsersIndex({ auth, users, filters = {} }) {
                     <input
                         type="text"
                         placeholder="Search users by name, username, or role..."
-                        className="h-10 w-full rounded-lg border border-gray-900 bg-white/5 pl-10 pr-4 text-gray-900 placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        className="h-10 w-full rounded-lg border border-gray-900 bg-white/5 pl-10 pr-4 text-gray-900 placeholder:text-gray-500 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />

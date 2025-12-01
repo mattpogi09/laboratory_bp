@@ -96,7 +96,7 @@ class LabTestQueueController extends Controller
 
     protected function transformCollection($tests)
     {
-        return $tests->map(fn(TransactionTest $test) => $this->transformTest($test));
+        return collect($tests)->map(fn(TransactionTest $test) => $this->transformTest($test))->all();
     }
 
     protected function transformTest(TransactionTest $test, bool $includeResults = false): array
@@ -171,7 +171,8 @@ class LabTestQueueController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('transaction_number', 'ILIKE', "%{$search}%")
-                    ->orWhere('patient_full_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('patient_first_name', 'ILIKE', "%{$search}%")
+                    ->orWhere('patient_last_name', 'ILIKE', "%{$search}%")
                     ->orWhereHas('patient', function ($patientQuery) use ($search) {
                         $patientQuery->where('first_name', 'ILIKE', "%{$search}%")
                             ->orWhere('last_name', 'ILIKE', "%{$search}%")
@@ -182,7 +183,8 @@ class LabTestQueueController extends Controller
 
         // Apply sorting
         if ($sortBy === 'patient_name') {
-            $query->orderBy('patient_full_name', $sortOrder);
+            $query->orderBy('patient_last_name', $sortOrder)
+                  ->orderBy('patient_first_name', $sortOrder);
         } else {
             $query->orderBy($sortBy, $sortOrder);
         }
@@ -578,7 +580,8 @@ class LabTestQueueController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->whereHas('transaction', function ($transQuery) use ($search) {
                     $transQuery->where('transaction_number', 'ILIKE', "%{$search}%")
-                        ->orWhere('patient_full_name', 'ILIKE', "%{$search}%")
+                        ->orWhere('patient_first_name', 'ILIKE', "%{$search}%")
+                        ->orWhere('patient_last_name', 'ILIKE', "%{$search}%")
                         ->orWhereHas('patient', function ($patientQuery) use ($search) {
                             $patientQuery->where('first_name', 'ILIKE', "%{$search}%")
                                 ->orWhere('last_name', 'ILIKE', "%{$search}%")

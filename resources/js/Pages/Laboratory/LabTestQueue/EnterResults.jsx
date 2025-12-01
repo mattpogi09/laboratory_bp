@@ -90,8 +90,8 @@ export default function EnterResults({ auth, test }) {
                                           test.transaction.patient.date_of_birth
                                       ).toLocaleDateString("en-US", {
                                           year: "numeric",
-                                          month: "short",
-                                          day: "numeric",
+                                          month: "2-digit",
+                                          day: "2-digit",
                                       })
                                     : "—"}
                             </dd>

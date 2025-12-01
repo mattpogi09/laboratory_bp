@@ -78,8 +78,8 @@ export default function PatientDetailsModal({ patient, show, onClose }) {
                                           patient.date_of_birth
                                       ).toLocaleDateString("en-US", {
                                           year: "numeric",
-                                          month: "short",
-                                          day: "numeric",
+                                          month: "2-digit",
+                                          day: "2-digit",
                                       })
                                     : "N/A"}
                             </span>

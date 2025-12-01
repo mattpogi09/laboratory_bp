@@ -121,7 +121,7 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
         <DashboardLayout auth={auth}>
             <Head title="Patient Results" />
 
-            {isSearching && <LoadingOverlay message="Searching..." />}
+            <LoadingOverlay show={isSearching} message="Searching..." />
 
             <div className="mb-6">
                 <h1 className="text-2xl font-semibold text-gray-900">
