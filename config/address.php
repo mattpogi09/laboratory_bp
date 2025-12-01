@@ -18,10 +18,11 @@ return [
      * --------------------------------------------------------------------------
      * API Route Middleware
      * --------------------------------------------------------------------------
+     * Using api middleware with sanctum for mobile API token authentication
      */
     'middleware' => [
-        'web',
-        'auth',
+        'api',
+        'auth:sanctum',
     ],
 
     /*

@@ -98,7 +98,7 @@ export default function AddressSelect({
             setLoading((prev) => ({ ...prev, regions: true }));
 
             try {
-                const response = await axios.get("/api/address/regions");
+                const response = await axios.get("/address/regions");
                 if (
                     response.data &&
                     Array.isArray(response.data) &&
@@ -107,6 +107,10 @@ export default function AddressSelect({
                     setRegions(response.data);
                     setLoadErrors((prev) => ({ ...prev, regions: null }));
                 } else {
+                    console.error(
+                        "Invalid or empty regions data:",
+                        response.data,
+                    );
                     setRegions([]);
                     setLoadErrors((prev) => ({
                         ...prev,
@@ -115,6 +119,7 @@ export default function AddressSelect({
                     regionsLoadedRef.current = false;
                 }
             } catch (error) {
+                console.error("Failed to load regions:", error);
                 setRegions([]);
                 setLoadErrors((prev) => ({
                     ...prev,
@@ -161,7 +166,7 @@ export default function AddressSelect({
                                         () => {
                                             loadedRef.current.city =
                                                 selectedValues.city_id;
-                                        }
+                                        },
                                     );
                                 }
                             });
@@ -217,18 +222,12 @@ export default function AddressSelect({
     const loadProvinces = async (regionId) => {
         setLoading((prev) => ({ ...prev, provinces: true }));
         try {
-            const response = await axios.get(
-                `/api/address/provinces/${regionId}`
-            );
+            const response = await axios.get(`/address/provinces/${regionId}`);
             setProvinces(response.data);
             setLoadErrors((prev) => ({ ...prev, provinces: null }));
             return response.data;
         } catch (error) {
-            setProvinces([]);
-            setLoadErrors((prev) => ({
-                ...prev,
-                provinces: "Failed to load provinces. Please try again.",
-            }));
+            console.error("Failed to load provinces:", error);
             return [];
         } finally {
             setLoading((prev) => ({ ...prev, provinces: false }));
@@ -238,18 +237,12 @@ export default function AddressSelect({
     const loadCities = async (provinceId) => {
         setLoading((prev) => ({ ...prev, cities: true }));
         try {
-            const response = await axios.get(
-                `/api/address/cities/${provinceId}`
-            );
+            const response = await axios.get(`/address/cities/${provinceId}`);
             setCities(response.data);
             setLoadErrors((prev) => ({ ...prev, cities: null }));
             return response.data;
         } catch (error) {
-            setCities([]);
-            setLoadErrors((prev) => ({
-                ...prev,
-                cities: "Failed to load cities. Please try again.",
-            }));
+            console.error("Failed to load cities:", error);
             return [];
         } finally {
             setLoading((prev) => ({ ...prev, cities: false }));
@@ -259,18 +252,12 @@ export default function AddressSelect({
     const loadBarangays = async (cityId) => {
         setLoading((prev) => ({ ...prev, barangays: true }));
         try {
-            const response = await axios.get(
-                `/api/address/barangays/${cityId}`
-            );
+            const response = await axios.get(`/address/barangays/${cityId}`);
             setBarangays(response.data);
             setLoadErrors((prev) => ({ ...prev, barangays: null }));
             return response.data;
         } catch (error) {
-            setBarangays([]);
-            setLoadErrors((prev) => ({
-                ...prev,
-                barangays: "Failed to load barangays. Please try again.",
-            }));
+            console.error("Failed to load barangays:", error);
             return [];
         } finally {
             setLoading((prev) => ({ ...prev, barangays: false }));

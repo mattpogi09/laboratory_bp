@@ -8,11 +8,16 @@ use App\Models\Patient;
 use App\Models\Transaction;
 use App\Models\TransactionTest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Services\DashboardDataService;
 
 class DashboardController extends Controller
 {
+  public function __construct(
+    private readonly DashboardDataService $dashboardDataService
+  ) {
+  }
+
   public function index(Request $request)
   {
     // Role-based redirect
@@ -25,6 +30,7 @@ class DashboardController extends Controller
     }
 
     $period = $request->input('period', 'day'); // day, week, month, year
+    $dashboardData = $this->dashboardDataService->build($period);
 
     // Get date range based on period
     $dateRange = $this->getDateRange($period);
@@ -249,103 +255,5 @@ class DashboardController extends Controller
       'topTests' => $topTests,
       'alerts' => $alerts,
     ]);
-  }
-
-  private function getDateRange($period)
-  {
-    return match ($period) {
-      'day' => [now()->startOfDay(), now()->endOfDay()],
-      'week' => [now()->startOfWeek(), now()->endOfWeek()],
-      'month' => [now()->startOfMonth(), now()->endOfMonth()],
-      'year' => [now()->startOfYear(), now()->endOfYear()],
-      default => [now()->startOfDay(), now()->endOfDay()],
-    };
-  }
-
-  private function getPreviousDateRange($period)
-  {
-    return match ($period) {
-      'day' => [now()->subDay()->startOfDay(), now()->subDay()->endOfDay()],
-      'week' => [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()],
-      'month' => [now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth()],
-      'year' => [now()->subYear()->startOfYear(), now()->subYear()->endOfYear()],
-      default => [now()->subDay()->startOfDay(), now()->subDay()->endOfDay()],
-    };
-  }
-
-  private function getRevenueChartData($period)
-  {
-    switch ($period) {
-      case 'day':
-        // Hourly breakdown for today
-        $data = Transaction::where('payment_status', 'paid')
-          ->whereDate('created_at', today())
-          ->selectRaw('EXTRACT(HOUR FROM created_at) as hour, SUM(net_total) as total')
-          ->groupBy('hour')
-          ->orderBy('hour')
-          ->get()
-          ->mapWithKeys(fn($item) => [$item->hour => $item->total]);
-
-        return collect(range(0, 23))->map(function ($hour) use ($data) {
-          return [
-            'label' => sprintf('%02d:00', $hour),
-            'value' => $data->get($hour, 0),
-          ];
-        })->values();
-
-      case 'week':
-        // Daily breakdown for this week
-        $startOfWeek = now()->startOfWeek();
-        $data = Transaction::where('payment_status', 'paid')
-          ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
-          ->selectRaw('created_at::date as date, SUM(net_total) as total')
-          ->groupBy('date')
-          ->get()
-          ->mapWithKeys(fn($item) => [$item->date => $item->total]);
-
-        return collect(range(0, 6))->map(function ($day) use ($startOfWeek, $data) {
-          $date = $startOfWeek->copy()->addDays($day);
-          return [
-            'label' => $date->format('D'),
-            'value' => $data->get($date->format('Y-m-d'), 0),
-          ];
-        })->values();
-
-      case 'month':
-        // Daily breakdown for this month
-        $data = Transaction::where('payment_status', 'paid')
-          ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
-          ->selectRaw('EXTRACT(DAY FROM created_at) as day, SUM(net_total) as total')
-          ->groupBy('day')
-          ->get()
-          ->mapWithKeys(fn($item) => [$item->day => $item->total]);
-
-        $daysInMonth = now()->daysInMonth;
-        return collect(range(1, $daysInMonth))->map(function ($day) use ($data) {
-          return [
-            'label' => (string) $day,
-            'value' => $data->get($day, 0),
-          ];
-        })->values();
-
-      case 'year':
-        // Monthly breakdown for this year
-        $data = Transaction::where('payment_status', 'paid')
-          ->whereBetween('created_at', [now()->startOfYear(), now()->endOfYear()])
-          ->selectRaw('EXTRACT(MONTH FROM created_at) as month, SUM(net_total) as total')
-          ->groupBy('month')
-          ->get()
-          ->mapWithKeys(fn($item) => [$item->month => $item->total]);
-
-        return collect(range(1, 12))->map(function ($month) use ($data) {
-          return [
-            'label' => date('M', mktime(0, 0, 0, $month, 1)),
-            'value' => $data->get($month, 0),
-          ];
-        })->values();
-
-      default:
-        return collect([]);
-    }
   }
 }
