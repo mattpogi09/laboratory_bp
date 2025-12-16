@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import { Printer } from 'lucide-react';
 
-export default function QueuePreview({ patientName, testsCount, netTotal, queueNumber }) {
+function QueuePreview({ patientName, testsCount, netTotal, queueNumber }) {
     return (
         <section className="rounded-xl bg-white p-6 shadow">
             <div className="mb-4 flex items-center justify-between">
@@ -31,4 +32,6 @@ export default function QueuePreview({ patientName, testsCount, netTotal, queueN
         </section>
     );
 }
+
+export default memo(QueuePreview);
 

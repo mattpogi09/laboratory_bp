@@ -1,52 +1,58 @@
-import Checkbox from '@/Components/Checkbox';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
-import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Button } from '@/Components/ui/button';
-import { useState } from 'react';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { memo, useState, useCallback, useMemo } from "react";
+import { Head, Link, useForm } from "@inertiajs/react";
+import Checkbox from "@/Components/Checkbox";
+import InputError from "@/Components/InputError";
+import InputLabel from "@/Components/InputLabel";
+import TextInput from "@/Components/TextInput";
+import { Button } from "@/Components/ui/button";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
-export default function Login({ status, canResetPassword }) {
+const Login = memo(function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        username: '',
-        password: '',
+        username: "",
+        password: "",
         remember: false,
     });
 
-    // Add loading state if needed
-    const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    const isFormValid = data.username.trim() !== '' && data.password.trim() !== '';
+    const isFormValid = useMemo(
+        () => data.username.trim() !== "" && data.password.trim() !== "",
+        [data.username, data.password]
+    );
 
-    const submit = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
+    const submit = useCallback(
+        (e) => {
+            e.preventDefault();
+            post(route("login"), {
+                onFinish: () => reset("password"),
+            });
+        },
+        [post, reset]
+    );
 
-        post(route('login'), {
-            onFinish: () => {
-                setIsLoading(false);
-                reset('password');
-            },
-        });
-    };
+    const togglePassword = useCallback(() => {
+        setShowPassword((prev) => !prev);
+    }, []);
 
     return (
-        <div className="min-h-screen bg[#F8F8F8] flex items-center justify-center p-6">
+        <div className="min-h-screen bg-[#F8F8F8] flex items-center justify-center p-6">
             <Head title="Log in" />
-            
+
             <div className="glass-panel w-full max-w-md p-8">
                 <div className="mb-8 text-center">
-                    <img 
-                        src="/images/logo.png" 
-                        alt="BP Diagnostic and Clinical Laboratory" 
+                    <img
+                        src="/images/logo.png"
+                        alt="BP Diagnostic Laboratory"
                         className="mx-auto h-16 mb-4"
+                        loading="eager"
+                        decoding="async"
+                        width="64"
+                        height="64"
                     />
-                    <h2 className="text-black text-xl font-semibold">BP Diagnostic</h2>
-                    
+                    <h2 className="text-black text-xl font-semibold">
+                        BP Diagnostic
+                    </h2>
                 </div>
 
                 {status && (
@@ -57,7 +63,11 @@ export default function Login({ status, canResetPassword }) {
 
                 <form onSubmit={submit} className="space-y-6">
                     <div className="space-y-2">
-                        <InputLabel htmlFor="username" value="Username" className="text-gray-700 font-medium" />
+                        <InputLabel
+                            htmlFor="username"
+                            value="Username"
+                            className="text-gray-700 font-medium"
+                        />
                         <TextInput
                             id="username"
                             type="text"
@@ -67,13 +77,22 @@ export default function Login({ status, canResetPassword }) {
                             placeholder="Enter your Username"
                             autoComplete="username"
                             isFocused={false}
-                            onChange={(e) => setData('username', e.target.value)}
+                            onChange={(e) =>
+                                setData("username", e.target.value)
+                            }
                         />
-                        <InputError message={errors.username} className="text-red-600" />
+                        <InputError
+                            message={errors.username}
+                            className="text-red-600"
+                        />
                     </div>
 
                     <div className="space-y-2">
-                        <InputLabel htmlFor="password" value="Password" className="text-gray-700 font-medium" />
+                        <InputLabel
+                            htmlFor="password"
+                            value="Password"
+                            className="text-gray-700 font-medium"
+                        />
                         <div className="relative">
                             <TextInput
                                 id="password"
@@ -83,22 +102,31 @@ export default function Login({ status, canResetPassword }) {
                                 className="w-full bg-white border-2 border-gray-300 text-gray-900 placeholder:text-gray-400 focus:border-[#eea7a7] focus:ring-[#ac3434] pr-10"
                                 placeholder="Enter your Password"
                                 autoComplete="current-password"
-                                onChange={(e) => setData('password', e.target.value)}
+                                onChange={(e) =>
+                                    setData("password", e.target.value)
+                                }
                             />
                             <button
                                 type="button"
-                                onClick={() => setShowPassword(!showPassword)}
+                                onClick={togglePassword}
                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                aria-label={
+                                    showPassword
+                                        ? "Hide password"
+                                        : "Show password"
+                                }
                             >
                                 {showPassword ? (
-                                    <Eye className = "h-5 w-5" />
+                                    <Eye className="h-5 w-5" />
                                 ) : (
-                                        
-                                <EyeOff className="h-5 w-5" />
+                                    <EyeOff className="h-5 w-5" />
                                 )}
                             </button>
                         </div>
-                        <InputError message={errors.password} className="text-red-600" />
+                        <InputError
+                            message={errors.password}
+                            className="text-red-600"
+                        />
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -106,15 +134,19 @@ export default function Login({ status, canResetPassword }) {
                             <Checkbox
                                 name="remember"
                                 checked={data.remember}
-                                onChange={(e) => setData('remember', e.target.checked)}
+                                onChange={(e) =>
+                                    setData("remember", e.target.checked)
+                                }
                                 className="border-gray-300 bg-white data-[state=checked]:bg-[#ac3434] data-[state=checked]:text-white"
                             />
-                            <span className="ml-2 text-sm text-gray-700">Remember me</span>
+                            <span className="ml-2 text-sm text-gray-700">
+                                Remember me
+                            </span>
                         </label>
 
                         {canResetPassword && (
                             <Link
-                                href={route('password.request')}
+                                href={route("password.request")}
                                 className="text-sm text-[#ac3434] hover:text-[#990000]"
                             >
                                 Forgot password?
@@ -122,21 +154,24 @@ export default function Login({ status, canResetPassword }) {
                         )}
                     </div>
 
-                    <Button 
-                        className="w-full bg-[#ac3434] text-white hover:bg-[#ba4242] " 
+                    <Button
+                        className="w-full bg-[#ac3434] text-white hover:bg-[#ba4242]"
                         disabled={processing || !isFormValid}
+                        type="submit"
                     >
-                        {isLoading ? (
+                        {processing ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Logging in...
                             </>
                         ) : (
-                            'LOGIN'
+                            "LOGIN"
                         )}
                     </Button>
                 </form>
             </div>
         </div>
     );
-}
+});
+
+export default Login;

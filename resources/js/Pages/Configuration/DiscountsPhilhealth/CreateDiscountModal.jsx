@@ -1,84 +1,128 @@
-import { useState } from 'react';
-import Modal from '@/Components/Modal';
-import InputLabel from '@/Components/InputLabel';
-import TextInput from '@/Components/TextInput';
-import PrimaryButton from '@/Components/PrimaryButton';
-import { X } from 'lucide-react';
+import Modal from "@/Components/Modal";
+import TextInput from "@/Components/TextInput";
+import InputLabel from "@/Components/InputLabel";
+import InputError from "@/Components/InputError";
+import { X, Tag } from "lucide-react";
+import { useForm } from "@inertiajs/react";
 
 export default function CreateDiscountModal({ show, onClose }) {
-    const [formData, setFormData] = useState({
-        name: '',
-        rate: '',
-        description: ''
+    const { data, setData, post, processing, errors, reset } = useForm({
+        name: "",
+        rate: "",
+        description: "",
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Create discount:', formData);
+        post(route("discounts.store"), {
+            onSuccess: () => {
+                reset();
+                onClose();
+            },
+        });
+    };
+
+    const handleClose = () => {
+        reset();
         onClose();
     };
 
     return (
-        <Modal show={show} onClose={onClose} maxWidth="md">
-            <div className="p-6">
-                <div className="flex items-start justify-between mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900">Create Discount</h2>
+        <Modal show={show} onClose={handleClose} maxWidth="md">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6">
+                <div className="flex items-start justify-between mb-4 sm:mb-6">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="p-1.5 sm:p-2 bg-blue-500/10 rounded-lg">
+                            <Tag className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                        </div>
+                        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                            Create New Discount
+                        </h2>
+                    </div>
                     <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-white transition-colors"
+                        type="button"
+                        onClick={handleClose}
+                        className="text-gray-400 hover:text-gray-600 transition-colors min-h-[44px] sm:min-h-0 touch-manipulation -mr-2"
                     >
-                        <X className="h-5 w-5" />
+                        <X className="h-4 w-4 sm:h-5 sm:w-5" />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-4">
                     <div>
-                        <InputLabel>Discount Name</InputLabel>
+                        <InputLabel htmlFor="name" value="Discount Name" />
                         <TextInput
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="Senior Citizen"
-                            className="border-gray-400"
+                            id="name"
+                            type="text"
+                            className="mt-1 block w-full"
+                            value={data.name}
+                            onChange={(e) => setData("name", e.target.value)}
+                            placeholder="e.g., Senior Citizen, PWD"
+                            required
                         />
+                        <InputError message={errors.name} className="mt-2" />
                     </div>
 
                     <div>
-                        <InputLabel>Rate (%)</InputLabel>
+                        <InputLabel htmlFor="rate" value="Discount Rate (%)" />
                         <TextInput
+                            id="rate"
                             type="number"
-                            value={formData.rate}
-                            onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
-                            placeholder="20"
                             step="0.01"
-                            className="border-gray-400"
+                            min="0"
+                            max="100"
+                            className="mt-1 block w-full"
+                            value={data.rate}
+                            onChange={(e) => setData("rate", e.target.value)}
+                            placeholder="e.g., 20"
+                            required
                         />
+                        <InputError message={errors.rate} className="mt-2" />
+                        <p className="mt-1 text-xs text-gray-500">
+                            Enter percentage value (0-100)
+                        </p>
                     </div>
 
                     <div>
-                        <InputLabel>Description</InputLabel>
+                        <InputLabel
+                            htmlFor="description"
+                            value="Description (Optional)"
+                        />
                         <textarea
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            placeholder="Enter discount description..."
-                            rows={3}
-                            className="w-full rounded-lg border border-gray-400 bg-white/5 px-4 py-2.5 text-black placeholder:text-gray-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors resize-none"
+                            id="description"
+                            rows="3"
+                            className="mt-1 block w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm"
+                            value={data.description}
+                            onChange={(e) =>
+                                setData("description", e.target.value)
+                            }
+                            placeholder="Provide additional details about this discount..."
+                        />
+                        <InputError
+                            message={errors.description}
+                            className="mt-2"
                         />
                     </div>
+                </div>
 
-                    <div className="flex gap-3 pt-4">
-                        <PrimaryButton type="submit" className="flex-1">
-                            Create
-                        </PrimaryButton>
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 px-4 py-2 border-gray-500 shadow-xl bg-white/5 hover:bg-gray-300 text-black rounded-lg border border-white/10 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
+                <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-6">
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="flex-1 px-4 py-2.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 min-h-[44px] sm:min-h-0 touch-manipulation"
+                    >
+                        {processing ? "Creating..." : "Create Discount"}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleClose}
+                        disabled={processing}
+                        className="flex-1 px-4 py-2.5 sm:py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 min-h-[44px] sm:min-h-0 touch-manipulation"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
         </Modal>
     );
 }

@@ -101,7 +101,7 @@ class LabTestSeeder extends Seeder
                         'name' => $name,
                         'category' => $category,
                         'price' => $price,
-                        'description' => null,
+                        'description' => "$name - $category test",
                         'is_active' => true,
                     ]
                 );

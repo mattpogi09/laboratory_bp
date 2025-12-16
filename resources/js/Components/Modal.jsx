@@ -31,7 +31,8 @@ export default function Modal({
             <Dialog
                 as="div"
                 id="modal"
-                className="fixed inset-0 z-50 flex transform items-center justify-center overflow-hidden px-4 py-6 transition-all sm:px-0"
+                className="fixed inset-0 flex transform items-center justify-center overflow-hidden px-4 py-6 transition-all sm:px-0"
+                style={{ zIndex: 10000 }}
                 onClose={close}
             >
                 <TransitionChild

@@ -2,14 +2,10 @@ import { Loader2 } from 'lucide-react';
 
 export default function LoadingScreen() {
     return (
-        <div className="min-h-screen bg-gradient-custom flex flex-col items-center justify-center">
-            <div className="text-center">
-                <img 
-                    src="/images/logo.png" 
-                    alt="BP Diagnostic" 
-                    className="mx-auto h-16 mb-8 animate-pulse"
-                />
-                <Loader2 className="h-8 w-8 animate-spin text-white mx-auto" />
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center" style={{ zIndex: 9999 }}>
+            <div className="bg-white p-6 rounded-lg shadow-xl">
+                <Loader2 className="h-10 w-10 animate-spin text-black mx-auto mb-3" />
+                <p className="text-sm font-medium text-center text-gray-800">Loading...</p>
             </div>
         </div>
     );

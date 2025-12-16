@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -17,17 +16,15 @@ return new class extends Migration
             $table->string('username')->unique();
             $table->string('email')->unique();
             $table->enum('role', ['admin', 'lab_staff', 'cashier'])->default('cashier');
+            $table->boolean('is_active')->default(true);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
         });
 
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email')->primary();
-            $table->string('token');
-            $table->timestamp('created_at')->nullable();
-        });
+        // Password reset tokens table is created in a separate migration
+        // See: 2025_12_01_000000_create_password_reset_tokens_table.php
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
