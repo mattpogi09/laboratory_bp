@@ -31,8 +31,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Address API Routes
-    Route::prefix('api/address')->name('address.')->group(function () {
+    // Address Routes
+    Route::prefix('address')->name('address.')->group(function () {
         Route::get('/regions', [AddressController::class, 'getRegions'])->name('regions');
         Route::get('/provinces/{regionId}', [AddressController::class, 'getProvinces'])->name('provinces');
         Route::get('/cities/{provinceId}', [AddressController::class, 'getCities'])->name('cities');
@@ -49,10 +49,10 @@ Route::middleware('auth')->group(function () {
     });
 
     // Search endpoint with higher limit (60 searches per minute)
-    Route::middleware('throttle:60,1')->get('/api/patients/search', [PatientController::class, 'search'])->name('patients.search');
+    Route::middleware('throttle:60,1')->get('/patients/search', [PatientController::class, 'search'])->name('patients.search');
 
     // Get test result details
-    Route::get('/api/patients/test-details/{transactionTestId}', [PatientController::class, 'getTestDetails'])->name('patients.test-details');
+    Route::get('/patients/test-details/{transactionTestId}', [PatientController::class, 'getTestDetails'])->name('patients.test-details');
 
     // User management with rate limiting (15 per minute)
     Route::middleware('throttle:15,1')->prefix('users')->name('users.')->group(function () {

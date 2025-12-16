@@ -98,7 +98,7 @@ export default function AddressSelect({
             setLoading((prev) => ({ ...prev, regions: true }));
 
             try {
-                const response = await axios.get("/api/address/regions");
+                const response = await axios.get("/address/regions");
                 if (
                     response.data &&
                     Array.isArray(response.data) &&
@@ -217,9 +217,7 @@ export default function AddressSelect({
     const loadProvinces = async (regionId) => {
         setLoading((prev) => ({ ...prev, provinces: true }));
         try {
-            const response = await axios.get(
-                `/api/address/provinces/${regionId}`
-            );
+            const response = await axios.get(`/address/provinces/${regionId}`);
             setProvinces(response.data);
             setLoadErrors((prev) => ({ ...prev, provinces: null }));
             return response.data;
@@ -238,9 +236,7 @@ export default function AddressSelect({
     const loadCities = async (provinceId) => {
         setLoading((prev) => ({ ...prev, cities: true }));
         try {
-            const response = await axios.get(
-                `/api/address/cities/${provinceId}`
-            );
+            const response = await axios.get(`/address/cities/${provinceId}`);
             setCities(response.data);
             setLoadErrors((prev) => ({ ...prev, cities: null }));
             return response.data;
@@ -259,9 +255,7 @@ export default function AddressSelect({
     const loadBarangays = async (cityId) => {
         setLoading((prev) => ({ ...prev, barangays: true }));
         try {
-            const response = await axios.get(
-                `/api/address/barangays/${cityId}`
-            );
+            const response = await axios.get(`/address/barangays/${cityId}`);
             setBarangays(response.data);
             setLoadErrors((prev) => ({ ...prev, barangays: null }));
             return response.data;

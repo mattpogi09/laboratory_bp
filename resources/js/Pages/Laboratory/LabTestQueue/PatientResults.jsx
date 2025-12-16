@@ -11,10 +11,12 @@ import {
     ArrowUpDown,
     AlertTriangle,
     X,
+    Eye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SendResultsModal from "./SendResultsModal";
 import NotifyPatientModal from "./NotifyPatientModal";
+import ViewResultsModal from "./ViewResultsModal";
 import LoadingOverlay from "@/Components/LoadingOverlay";
 
 export default function PatientResults({ auth, transactions, filters = {} }) {
@@ -22,6 +24,7 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [showSendModal, setShowSendModal] = useState(false);
     const [showNotifyModal, setShowNotifyModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
     const [showErrorModal, setShowErrorModal] = useState(false);
     const [incompleteTests, setIncompleteTests] = useState([]);
     const [errorAction, setErrorAction] = useState(null); // 'send' or 'notify'
@@ -115,6 +118,11 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
         // All tests completed, open notify modal
         setSelectedTransaction(transaction);
         setShowNotifyModal(true);
+    };
+
+    const handleViewResults = (transaction) => {
+        setSelectedTransaction(transaction);
+        setShowViewModal(true);
     };
 
     return (
@@ -248,6 +256,21 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {(() => {
+                                                // Check if all tests are released
+                                                const allReleased =
+                                                    transaction.tests?.every(
+                                                        (test) => {
+                                                            const status = (
+                                                                test.status ||
+                                                                ""
+                                                            ).toLowerCase();
+                                                            return (
+                                                                status ===
+                                                                "released"
+                                                            );
+                                                        }
+                                                    ) ?? false;
+
                                                 const incompleteTests =
                                                     transaction.tests?.filter(
                                                         (test) => {
@@ -270,7 +293,13 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
                                                     transaction.tests.length >
                                                         0;
 
-                                                if (allCompleted) {
+                                                if (allReleased) {
+                                                    return (
+                                                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                            All Released
+                                                        </span>
+                                                    );
+                                                } else if (allCompleted) {
                                                     return (
                                                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                                                             All Completed
@@ -300,17 +329,50 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div className="flex gap-2">
-                                                <button
-                                                    onClick={() =>
-                                                        handleSendResults(
-                                                            transaction
-                                                        )
-                                                    }
-                                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-red-600 hover:bg-red-700 rounded transition-colors"
-                                                >
-                                                    <Send className="h-4 w-4" />
-                                                    Send Results
-                                                </button>
+                                                {(() => {
+                                                    // Check if all tests are released
+                                                    const allReleased =
+                                                        transaction.tests?.every(
+                                                            (test) => {
+                                                                const status = (
+                                                                    test.status ||
+                                                                    ""
+                                                                ).toLowerCase();
+                                                                return (
+                                                                    status ===
+                                                                    "released"
+                                                                );
+                                                            }
+                                                        ) ?? false;
+
+                                                    return (
+                                                        <button
+                                                            onClick={() =>
+                                                                !allReleased &&
+                                                                handleSendResults(
+                                                                    transaction
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                allReleased
+                                                            }
+                                                            className={cn(
+                                                                "inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded transition-colors",
+                                                                allReleased
+                                                                    ? "text-gray-400 bg-gray-200 cursor-not-allowed"
+                                                                    : "text-white bg-red-600 hover:bg-red-700"
+                                                            )}
+                                                            title={
+                                                                allReleased
+                                                                    ? "Results already released"
+                                                                    : "Send results to patient"
+                                                            }
+                                                        >
+                                                            <Send className="h-4 w-4" />
+                                                            Send Results
+                                                        </button>
+                                                    );
+                                                })()}
                                                 <button
                                                     onClick={() =>
                                                         handleNotifyPatient(
@@ -321,6 +383,18 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
                                                 >
                                                     <Bell className="h-4 w-4" />
                                                     Notify Patient
+                                                </button>
+                                                <button
+                                                    onClick={() =>
+                                                        handleViewResults(
+                                                            transaction
+                                                        )
+                                                    }
+                                                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-gray-600 hover:bg-gray-700 rounded transition-colors"
+                                                    title="View patient details and test results"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                    View
                                                 </button>
                                             </div>
                                         </td>
@@ -429,6 +503,18 @@ export default function PatientResults({ auth, transactions, filters = {} }) {
                     transaction={selectedTransaction}
                     onClose={() => {
                         setShowNotifyModal(false);
+                        setSelectedTransaction(null);
+                    }}
+                />
+            )}
+
+            {/* View Results Modal */}
+            {selectedTransaction && (
+                <ViewResultsModal
+                    show={showViewModal}
+                    transaction={selectedTransaction}
+                    onClose={() => {
+                        setShowViewModal(false);
                         setSelectedTransaction(null);
                     }}
                 />

@@ -249,6 +249,16 @@ class PatientController extends Controller
             ->limit(10)
             ->get()
             ->map(function ($patient) {
+                // Format date of birth to MM/DD/YYYY if it exists
+                $dateOfBirth = null;
+                if ($patient->date_of_birth) {
+                    try {
+                        $dateOfBirth = \Carbon\Carbon::parse($patient->date_of_birth)->format('m/d/Y');
+                    } catch (\Exception $e) {
+                        $dateOfBirth = $patient->date_of_birth;
+                    }
+                }
+
                 return [
                     'id' => $patient->id,
                     'patient_id' => 'P' . date('Y') . '-' . str_pad($patient->id, 3, '0', STR_PAD_LEFT),
@@ -266,7 +276,7 @@ class PatientController extends Controller
                     'city_id' => $patient->city_id,
                     'barangay_code' => $patient->barangay_code,
                     'street' => $patient->street,
-                    'date_of_birth' => $patient->date_of_birth,
+                    'date_of_birth' => $dateOfBirth,
                 ];
             });
 

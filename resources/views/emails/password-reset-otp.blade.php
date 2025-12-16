@@ -94,10 +94,14 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <img src="{{ $message->embed(public_path('images/logo.png')) }}" alt="BP Diagnostic Logo">
-            <h1>BP Diagnostic Laboratory</h1>
-        </div>
+  <div class="header">
+    @if(file_exists(public_path('images/logo.png')))
+      <div style="margin-bottom: 15px;">
+        <img src="{{ $message->embed(public_path('images/logo.png')) }}" alt="BP Diagnostic Logo" style="max-width: 100px; height: auto;">
+      </div>
+    @endif
+    <h1>BP Diagnostic Laboratory</h1>
+  </div>
         
         <div class="content">
             <p class="greeting">Hello {{ $userName }},</p>

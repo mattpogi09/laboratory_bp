@@ -227,7 +227,16 @@ class LabTestQueueController extends Controller
                             'test_name' => $test->test_name,
                             'status' => $test->status,
                             'result' => $test->result_values,
+                            'result_value' => $test->result_values,
+                            'normal_range' => $test->normal_range,
                             'result_notes' => $test->result_notes,
+                            'images' => $test->result_images ? collect($test->result_images)->map(function ($img) {
+                                return [
+                                    'name' => $img['name'] ?? 'Image',
+                                    'size' => isset($img['size']) ? round($img['size'] / 1024, 2) . ' KB' : 'Unknown',
+                                    'url' => Storage::url($img['path']),
+                                ];
+                            })->toArray() : [],
                         ];
                     }),
                 ];

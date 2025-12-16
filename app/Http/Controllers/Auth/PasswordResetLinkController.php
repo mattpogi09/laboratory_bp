@@ -64,10 +64,15 @@ class PasswordResetLinkController extends Controller
             'is_verified' => false,
         ]);
 
-        // Send OTP via email
-        Mail::to($request->email)->send(new SendPasswordResetOTP($otp, $user->name));
-
         $message = 'We have sent a 6-digit OTP to your email address. Please check your inbox.';
+
+        // Send OTP via email in background (don't wait for it)
+        try {
+            Mail::to($request->email)->queue(new SendPasswordResetOTP($otp, $user->name));
+        } catch (\Exception $e) {
+            // Log error but don't fail - OTP is already in database
+            \Log::error('Failed to queue OTP email: ' . $e->getMessage());
+        }
 
         // Return JSON for API requests
         if ($request->expectsJson()) {

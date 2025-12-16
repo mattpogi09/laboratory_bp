@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/patients/{patient}', [MobilePatientController::class, 'show'])->name('mobile.patients.show');
     Route::post('/patients', [MobilePatientController::class, 'store'])->name('mobile.patients.store');
     Route::put('/patients/{patient}', [MobilePatientController::class, 'update'])->name('mobile.patients.update');
+    Route::post('/patients/{patient}/toggle', [MobilePatientController::class, 'toggleActive'])->name('mobile.patients.toggle');
     Route::get('/tests/{id}', [MobilePatientController::class, 'testDetails'])->name('mobile.tests.show');
 
     // Address API Routes - use /addr/ prefix instead of /address/ to avoid Yajra package middleware conflict
@@ -44,6 +45,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/addr/barangays/{cityId}', [\App\Http\Controllers\AddressController::class, 'getBarangays'])->name('mobile.address.barangays');
 
     Route::get('/inventory', [MobileInventoryController::class, 'index'])->name('mobile.inventory.index');
+    Route::post('/inventory', [MobileInventoryController::class, 'store'])->name('mobile.inventory.store');
+    Route::post('/inventory/stock-in', [MobileInventoryController::class, 'stockIn'])->name('mobile.inventory.stock-in');
+    Route::post('/inventory/stock-out', [MobileInventoryController::class, 'stockOut'])->name('mobile.inventory.stock-out');
     Route::get('/inventory/transactions', [MobileInventoryController::class, 'transactions'])->name('mobile.inventory.transactions');
 
     Route::get('/lab-queue/summary', [MobileLabQueueController::class, 'summary'])->name('mobile.lab-queue.summary');

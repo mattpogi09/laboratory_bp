@@ -126,7 +126,8 @@ class PatientController extends Controller
                 'gender' => $patient->gender,
                 'contact_number' => $patient->contact_number,
                 'email' => $patient->email,
-                'birth_date' => $patient->birth_date?->format('Y-m-d'),
+                'birth_date' => ($patient->birth_date ?? $patient->date_of_birth)?->format('Y-m-d'),
+                'is_active' => $patient->is_active,
                 'address' => $patient->formatted_address,
                 'region_id' => $patient->region_id,
                 'province_id' => $patient->province_id,
@@ -213,6 +214,21 @@ class PatientController extends Controller
                 'contact_number' => $patient->contact_number,
                 'email' => $patient->email,
                 'address' => $patient->formatted_address,
+            ],
+        ]);
+    }
+
+    public function toggleActive(Patient $patient)
+    {
+        $patient->is_active = !$patient->is_active;
+        $patient->save();
+
+        return response()->json([
+            'message' => $patient->is_active ? 'Patient activated successfully.' : 'Patient deactivated successfully.',
+            'patient' => [
+                'id' => $patient->id,
+                'full_name' => $patient->full_name,
+                'is_active' => $patient->is_active,
             ],
         ]);
     }

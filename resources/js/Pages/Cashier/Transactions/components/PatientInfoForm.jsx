@@ -29,6 +29,9 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
                 });
                 setSearchResults(response.data);
             } catch (error) {
+                console.error("Patient search error:", error);
+                console.error("Search query:", searchQuery);
+                console.error("Route URL:", route("patients.search"));
                 setSearchResults([]);
             } finally {
                 setIsSearching(false);

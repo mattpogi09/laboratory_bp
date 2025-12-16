@@ -190,6 +190,9 @@ export default function PatientsIndex({
                                     <th className="hidden md:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">
                                         Total Tests
                                     </th>
+                                    <th className="hidden lg:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700">
+                                        Status
+                                    </th>
                                     <th className="px-2 sm:px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-700">
                                         Actions
                                     </th>
@@ -249,6 +252,18 @@ export default function PatientsIndex({
                                             <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
                                                 {patient.total_tests}
                                             </span>
+                                        </td>
+                                        <td className="hidden lg:table-cell px-4 py-3">
+                                            {patient.is_active ? (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
+                                                    Active
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-gray-600"></span>
+                                                    Inactive
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-2 sm:px-4 py-2 sm:py-3">
                                             <div className="flex items-center gap-1 sm:gap-2">

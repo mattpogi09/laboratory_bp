@@ -35,7 +35,6 @@ export default function CreateUserModal({ show, onClose }) {
     return (
         <Modal show={show} onClose={handleClose} maxWidth="md">
             <div className="p-4 sm:p-6">
-                m:p-6">
                 <div className="flex items-start justify-between mb-6">
                     <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                         Add New User
