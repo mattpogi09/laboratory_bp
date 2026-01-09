@@ -229,21 +229,22 @@ export default function UsersIndex({ auth, users, filters = {} }) {
                                         </td>
                                         <td className="px-3 sm:px-4 py-3">
                                             <div className="flex flex-col gap-1">
-                                                <span
-                                                    className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium w-fit ${
-                                                        user.role === "admin"
-                                                            ? "bg-red-100 text-red-800"
-                                                            : user.role ===
-                                                              "lab_staff"
-                                                            ? "bg-blue-100 text-blue-800"
-                                                            : "bg-teal-100 text-teal-800"
-                                                    }`}
-                                                >
-                                                    {formatRole(user.role)}
-                                                </span>
-                                                {user.id === 1 && (
+                                                {user.id === 1 ? (
                                                     <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-purple-100 text-purple-800 w-fit">
                                                         Primary Admin
+                                                    </span>
+                                                ) : (
+                                                    <span
+                                                        className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-medium w-fit ${
+                                                            user.role === "admin"
+                                                                ? "bg-red-100 text-red-800"
+                                                                : user.role ===
+                                                                  "lab_staff"
+                                                                ? "bg-blue-100 text-blue-800"
+                                                                : "bg-teal-100 text-teal-800"
+                                                        }`}
+                                                    >
+                                                        {formatRole(user.role)}
                                                     </span>
                                                 )}
                                             </div>

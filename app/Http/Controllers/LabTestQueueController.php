@@ -28,16 +28,24 @@ class LabTestQueueController extends Controller
         $completed = $this->getTestsByStatus('completed', 10);
         $released = $this->getTestsByStatus('released', 10);
 
+        $user = auth()->user();
+
         $stats = [
             'pending' => $pending['count'],
             'processing' => $processing['count'],
             'completed_today' => TransactionTest::where('status', 'completed')
                 ->whereDate('updated_at', now()->toDateString())
+                ->when($user->role === 'lab_staff' && !empty($user->test_categories), function ($q) use ($user) {
+                    $q->whereIn('category', $user->test_categories);
+                })
                 ->count(),
         ];
 
-        // Get full history with pagination (avoid duplicate query)
+        // Get full history with pagination filtered by user's categories
         $fullHistoryPaginated = TransactionTest::with(['transaction', 'transaction.patient'])
+            ->when($user->role === 'lab_staff' && !empty($user->test_categories), function ($q) use ($user) {
+                $q->whereIn('category', $user->test_categories);
+            })
             ->latest()
             ->paginate(25, ['*'], 'history_page');
 
@@ -69,10 +77,15 @@ class LabTestQueueController extends Controller
 
     protected function getTestsByStatus(string $status, int $limit = 15): array
     {
+        $user = auth()->user();
         $query = TransactionTest::with(['transaction', 'transaction.patient'])
             ->where('status', $status)
+            // Filter by test categories if user is lab staff with assigned categories
+            ->when($user->role === 'lab_staff' && !empty($user->test_categories), function ($q) use ($user) {
+                $q->whereIn('category', $user->test_categories);
+            })
             // Filter out tests from deactivated patients for non-admin users
-            ->when(auth()->user()->role !== 'admin', function ($q) {
+            ->when($user->role !== 'admin', function ($q) {
                 $q->whereHas('transaction.patient', function ($patientQuery) {
                     $patientQuery->where('is_active', true);
                 });
@@ -150,21 +163,35 @@ class LabTestQueueController extends Controller
         $sortOrder = $request->input('sort_order', 'desc');
         $perPage = $request->input('per_page', 20);
 
+        $user = auth()->user();
+
         // Get transactions where ALL tests are completed (not just at least one)
         // Only show patients when every single test is completed or released
         $query = Transaction::with([
             'patient', 
-            'tests',
+            'tests' => function ($q) use ($user) {
+                // Filter tests by user's categories if lab staff
+                if ($user->role === 'lab_staff' && !empty($user->test_categories)) {
+                    $q->whereIn('category', $user->test_categories);
+                }
+            },
             'region',
             'province',
             'city',
             'barangay'
         ])
-            // Must have at least one test
-            ->whereHas('tests')
-            // Must NOT have any pending or processing tests
-            ->whereDoesntHave('tests', function ($query) {
+            // Must have at least one test (in user's categories if lab staff)
+            ->whereHas('tests', function ($q) use ($user) {
+                if ($user->role === 'lab_staff' && !empty($user->test_categories)) {
+                    $q->whereIn('category', $user->test_categories);
+                }
+            })
+            // Must NOT have any pending or processing tests (in user's categories)
+            ->whereDoesntHave('tests', function ($query) use ($user) {
                 $query->whereIn('status', ['pending', 'processing']);
+                if ($user->role === 'lab_staff' && !empty($user->test_categories)) {
+                    $query->whereIn('category', $user->test_categories);
+                }
             });
 
         // Apply search filter
@@ -620,7 +647,24 @@ class LabTestQueueController extends Controller
         $perPage = $request->input('per_page', 20);
         $submissionType = $request->input('submission_type', 'all'); // all, full_results, notification
 
-        $query = ResultSubmission::with(['transaction.patient', 'transaction.tests', 'sentBy']);
+        $user = auth()->user();
+
+        $query = ResultSubmission::with([
+            'transaction.patient',
+            'transaction.tests' => function ($q) use ($user) {
+                // Filter tests by user's categories if lab staff
+                if ($user->role === 'lab_staff' && !empty($user->test_categories)) {
+                    $q->whereIn('category', $user->test_categories);
+                }
+            },
+            'sentBy'
+        ])
+        // Only show submissions where user has access to at least one test
+        ->when($user->role === 'lab_staff' && !empty($user->test_categories), function ($q) use ($user) {
+            $q->whereHas('transaction.tests', function ($testQuery) use ($user) {
+                $testQuery->whereIn('category', $user->test_categories);
+            });
+        });
 
         // Apply search filter
         if ($search) {

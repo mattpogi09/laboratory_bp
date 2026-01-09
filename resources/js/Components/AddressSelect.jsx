@@ -7,6 +7,7 @@ export default function AddressSelect({
     errors = {},
     disabled = false,
     required = false,
+    regionRequired = true,
 }) {
     const [regions, setRegions] = useState([]);
     const [provinces, setProvinces] = useState([]);
@@ -296,7 +297,7 @@ export default function AddressSelect({
             {/* Region */}
             <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Region {required && <span className="text-red-500">*</span>}
+                    Region {required && regionRequired && <span className="text-red-500">*</span>}
                 </label>
                 <select
                     value={selectedValues.region_id}

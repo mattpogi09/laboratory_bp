@@ -21,9 +21,9 @@ const initialPatient = {
     age: "",
     gender: "",
     contact: "",
-    region_id: "",
-    province_id: "",
-    city_id: "",
+    region_id: "09",
+    province_id: "09317",
+    city_id: "0931700",
     barangay_code: "",
     street: "",
 };

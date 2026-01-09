@@ -79,10 +79,10 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
         onChange("age", "");
         onChange("gender", "");
         onChange("contact", "");
-        // Clear address fields
-        onChange("region_id", "");
-        onChange("province_id", "");
-        onChange("city_id", "");
+        // Reset address fields to Zamboanga defaults
+        onChange("region_id", "09");
+        onChange("province_id", "09317");
+        onChange("city_id", "0931700");
         onChange("barangay_code", "");
         onChange("street", "");
     };
@@ -473,7 +473,8 @@ export default function PatientInfoForm({ patient, errors = {}, onChange }) {
                         street: errors["patient.street"],
                     }}
                     disabled={isExistingPatient}
-                    required
+                    required={false}
+                    regionRequired={false}
                 />
             </div>
         </section>

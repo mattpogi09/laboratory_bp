@@ -65,10 +65,14 @@ class LabTestSeeder extends Seeder
                 ['Dengue IgG % IgM', 900],
                 ['H. pylori', 450],
             ],
-            'Others' => [
+            'X-ray' => [
                 ['Chest X-ray', 250],
-                ['ECG', 300],
+            ],
+            'Drug Test' => [
                 ['Drug Test', 250],
+            ],
+            'Others' => [
+                ['ECG', 300],
             ],
             'Procedure Ultrasound' => [
                 ['Pelvic', 550],

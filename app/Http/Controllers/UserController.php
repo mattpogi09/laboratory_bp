@@ -63,6 +63,8 @@ class UserController extends Controller
       'email' => 'required|string|email|max:255|unique:users',
       'role' => 'required|in:admin,lab_staff,cashier',
       'password' => 'required|string|min:8',
+      'test_categories' => 'nullable|array',
+      'test_categories.*' => 'string|in:Blood Chemistry,Hematology,Clinical Microscopy,Serology / Immunology,Procedure Ultrasound,X-ray,Drug Test,Others',
     ], [
       'name.required' => 'Name is required.',
       'username.required' => 'Username is required.',
@@ -74,6 +76,7 @@ class UserController extends Controller
       'role.in' => 'Please select a valid user role.',
       'password.required' => 'Password is required.',
       'password.min' => 'Password must be at least 8 characters.',
+      'test_categories.*.in' => 'Invalid test category selected.',
     ]);
 
     $user = User::create([
@@ -81,6 +84,7 @@ class UserController extends Controller
       'username' => $validated['username'],
       'email' => $validated['email'],
       'role' => $validated['role'],
+      'test_categories' => $validated['role'] === 'lab_staff' ? ($validated['test_categories'] ?? []) : null,
       'is_active' => true,
       'password' => Hash::make($validated['password']),
     ]);
@@ -124,6 +128,8 @@ class UserController extends Controller
       'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
       'role' => 'required|in:admin,lab_staff,cashier',
       'password' => 'nullable|string|min:8',
+      'test_categories' => 'nullable|array',
+      'test_categories.*' => 'string|in:Blood Chemistry,Hematology,Clinical Microscopy,Serology / Immunology,Procedure Ultrasound,X-ray,Drug Test,Others',
     ], [
       'name.required' => 'Name is required.',
       'username.required' => 'Username is required.',
@@ -134,6 +140,7 @@ class UserController extends Controller
       'role.required' => 'User role is required.',
       'role.in' => 'Please select a valid user role.',
       'password.min' => 'Password must be at least 8 characters.',
+      'test_categories.*.in' => 'Invalid test category selected.',
     ]);
 
     $updateData = [
@@ -141,6 +148,7 @@ class UserController extends Controller
       'username' => $validated['username'],
       'email' => $validated['email'],
       'role' => $validated['role'],
+      'test_categories' => $validated['role'] === 'lab_staff' ? ($validated['test_categories'] ?? []) : null,
     ];
 
     if (!empty($validated['password'])) {

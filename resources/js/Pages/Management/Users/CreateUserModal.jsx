@@ -15,7 +15,31 @@ export default function CreateUserModal({ show, onClose }) {
         email: "",
         password: "",
         role: "",
+        test_categories: [],
     });
+
+    const availableCategories = [
+        "Blood Chemistry",
+        "Hematology",
+        "Clinical Microscopy",
+        "Serology / Immunology",
+        "Procedure Ultrasound",
+        "X-ray",
+        "Drug Test",
+        "Others",
+    ];
+
+    const handleCategoryToggle = (category) => {
+        const currentCategories = data.test_categories || [];
+        if (currentCategories.includes(category)) {
+            setData(
+                "test_categories",
+                currentCategories.filter((c) => c !== category)
+            );
+        } else {
+            setData("test_categories", [...currentCategories, category]);
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -132,6 +156,51 @@ export default function CreateUserModal({ show, onClose }) {
                         </select>
                         <InputError message={errors.role} className="mt-2" />
                     </div>
+
+                    {/* Test Categories - Only for Lab Staff */}
+                    {data.role === "lab_staff" && (
+                        <div>
+                            <InputLabel>
+                                Test Categories{" "}
+                                <span className="text-sm text-gray-500">
+                                    (Select categories this lab staff can
+                                    access)
+                                </span>
+                            </InputLabel>
+                            <div className="mt-2 space-y-2 p-3 border border-gray-300 rounded-lg bg-gray-50">
+                                {availableCategories.map((category) => (
+                                    <label
+                                        key={category}
+                                        className="flex items-center space-x-3 cursor-pointer hover:bg-gray-100 p-2 rounded transition-colors"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={(
+                                                data.test_categories || []
+                                            ).includes(category)}
+                                            onChange={() =>
+                                                handleCategoryToggle(category)
+                                            }
+                                            className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm text-gray-700">
+                                            {category}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                            {data.test_categories?.length === 0 && (
+                                <p className="mt-2 text-xs text-amber-600">
+                                    Note: Lab staff without categories assigned
+                                    will have no access to tests
+                                </p>
+                            )}
+                            <InputError
+                                message={errors.test_categories}
+                                className="mt-2"
+                            />
+                        </div>
+                    )}
 
                     <div className="flex flex-col sm:flex-row gap-3 pt-4">
                         <PrimaryButton
